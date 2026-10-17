@@ -1589,8 +1589,8 @@ msgstr "Les tournois que publient les arbitres, y compris des versions antérieu
 
 #: lib/openresults_web/controllers/terms_html/show.html.heex:119
 #, elixir-autogen, elixir-format
-msgid "There are no accounts and no tracking. The site's statistics count requests in memory and store no IP addresses and no user agents. The only cookie it sets remembers a language you picked."
-msgstr "Il n'y a ni comptes ni pistage. Les statistiques du site comptent les requêtes en mémoire et ne conservent ni adresses IP ni agents utilisateurs. Le seul cookie que le site dépose retient une langue que vous avez choisie."
+msgid "There are no accounts and no tracking. The only cookie this site sets remembers a language you picked. To count how many different people read it, the site turns your internet address and your browser's name into a short code with a secret key that is replaced every day and then thrown away. Neither the address nor the browser's name is stored, the code is kept in memory for that day only and never written to disk, and the same person on another day gets an unrelated code. What stays in the database are daily totals: how many readers, how many page views, and the same per tournament."
+msgstr "Il n'y a ni compte ni suivi. Le seul cookie que ce site dépose retient la langue que vous avez choisie. Pour compter combien de personnes différentes le lisent, le site transforme votre adresse internet et le nom de votre navigateur en un code court, avec une clé secrète remplacée chaque jour puis jetée. Ni l'adresse ni le nom du navigateur ne sont conservés, le code reste en mémoire pour ce jour seulement et n'est jamais écrit sur disque, et la même personne reçoit un code sans rapport le lendemain. La base de données ne garde que des totaux quotidiens : combien de lecteurs, combien de pages vues, et la même chose par tournoi."
 
 #: lib/openresults_web/controllers/terms_html/show.html.heex:210
 #, elixir-autogen, elixir-format

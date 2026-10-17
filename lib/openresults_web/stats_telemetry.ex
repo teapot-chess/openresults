@@ -51,6 +51,13 @@ defmodule OpenResultsWeb.StatsTelemetry do
       HTML pages, which this cannot tell from a real reader without the
       header; it is the same trade `Sec-Fetch` support itself makes.
 
+  ## Readers
+
+  The public pages' requests also go to `OpenResults.Stats.Viewers`, which
+  tells real readers from bots and refreshes and counts distinct readers per
+  day from a salted hash of address and user agent. That is the one place an
+  address is read, and it is hashed on the spot: see that module.
+
   Publishes, mints and registrations are recognised here from their route and
   success status, so the controllers that do them are not touched; refusals
   are counted where the refusal body is built, `OpenResultsWeb.ApiError`.
@@ -68,6 +75,7 @@ defmodule OpenResultsWeb.StatsTelemetry do
   """
 
   alias OpenResults.Stats
+  alias OpenResults.Stats.Viewers
 
   @static OpenResultsWeb.static_paths()
   @table Stats.table()
@@ -125,6 +133,7 @@ defmodule OpenResultsWeb.StatsTelemetry do
         cache = conn.private[:openresults_page_cache]
         Stats.record_request(@table, minute, group, conn.status, us, cache)
         after_request(group, conn, minute)
+        if group == :public, do: Viewers.observe(conn)
 
       _no_conn ->
         # Bandit could not build a request out of what arrived.

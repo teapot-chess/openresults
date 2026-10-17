@@ -50,6 +50,20 @@ defmodule OpenResultsWeb.TournamentHTML do
   end
 
   @doc """
+  The mark a finished tournament's pages carry so their refreshers stop
+  polling. Derived from the snapshot alone, so the page cache keyed by
+  snapshot stays right; the next poll of a tournament that has just finished
+  carries it, and the page stops by itself.
+  """
+  attr :payload, :map, required: true
+
+  def finished_marker(assigns) do
+    ~H"""
+    <span :if={Tournament.settled?(@payload)} data-results-finished hidden></span>
+    """
+  end
+
+  @doc """
   The tournament's name, its details, and the round strip.
 
   The strip lists every round the tournament has and not only the published
@@ -103,6 +117,7 @@ defmodule OpenResultsWeb.TournamentHTML do
             are coming in it polls twice as often. Derived from the snapshot
             alone, so the page cache keyed by snapshot stays right. --%>
       <span :if={Tournament.live?(@payload)} data-results-live hidden></span>
+      <.finished_marker payload={@payload} />
       <h1>{Tournament.name(@payload)}</h1>
 
       <%!-- Facts a printed pairing sheet carries as a matter of course, each
@@ -2802,6 +2817,7 @@ defmodule OpenResultsWeb.TournamentHTML do
       data-projector
       aria-label={gettext("Round pairings, projector view")}
     >
+      <.finished_marker payload={@payload} />
       <header class="projector-head">
         <h1>{Tournament.name(@payload)}</h1>
 
@@ -3073,6 +3089,17 @@ defmodule OpenResultsWeb.TournamentHTML do
         // reload - a reload would restart the cycle and blink the screen,
         // which is exactly what somebody watching this from across a hall
         // must never see.
+        // A finished tournament's board does not change, so it is not polled
+        // (`data-results-finished`, see `TournamentHTML.finished_marker/1`).
+        // One that finishes while the screen is up stops with the first
+        // poll that carries the mark.
+        let refresher = null;
+        let stopped = !!document.querySelector("[data-results-finished]");
+        const stopRefreshing = () => {
+          if (refresher !== null) { clearInterval(refresher); refresher = null; }
+          stopped = true;
+        };
+
         const refreshRows = () => {
           if (document.hidden) { return; }
 
@@ -3082,6 +3109,13 @@ defmodule OpenResultsWeb.TournamentHTML do
             .then((r) => (r.ok ? r.text() : Promise.reject(r.status)))
             .then((html) => {
               const doc = new DOMParser().parseFromString(html, "text/html");
+              if (doc.querySelector("[data-results-finished]")) {
+                stopRefreshing();
+              } else if (stopped) {
+                // Reopened by a correction: back to the usual pace.
+                stopped = false;
+                refresher = setInterval(refreshRows, REFRESH_MS);
+              }
               const fresh = doc.querySelector("#projector-boards tbody");
               // Against the rows as the server last sent them, not as they
               // stand: paging sets `hidden` on them, so the live markup never
@@ -3101,9 +3135,9 @@ defmodule OpenResultsWeb.TournamentHTML do
         refit();
         if (pageCount() > 1) { restartBar(); }
         scheduleCycle();
-        setInterval(refreshRows, REFRESH_MS);
+        if (!stopped) { refresher = setInterval(refreshRows, REFRESH_MS); }
         document.addEventListener("visibilitychange", () => {
-          if (!document.hidden) { refreshRows(); }
+          if (!document.hidden && !stopped) { refreshRows(); }
         });
         // The arbiter just published: the root layout's event stream says
         // so, and the rows are fetched now rather than within the minute.

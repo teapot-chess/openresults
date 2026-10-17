@@ -97,6 +97,21 @@ defmodule OpenResultsWeb.AdminStatsTest do
       end
     end
 
+    test "shows the readers: today so far, thirty days and the top tournaments" do
+      doc = doc(admin_get("/admin/stats"))
+
+      assert [_] = doc |> LazyHTML.query("section#readers") |> Enum.to_list()
+      assert [_] = doc |> LazyHTML.query("#stats-readers-today") |> Enum.to_list()
+
+      assert doc
+             |> LazyHTML.query("#stats-readers-days tbody tr")
+             |> Enum.count() == 30
+
+      for id <- ~w(today week month) do
+        assert [_] = doc |> LazyHTML.query("#stats-readers-top-#{id}") |> Enum.to_list()
+      end
+    end
+
     test "other admin pages do not reload themselves" do
       doc = doc(admin_get("/admin"))
       assert doc |> LazyHTML.query(~s(meta[http-equiv="refresh"])) |> Enum.to_list() == []

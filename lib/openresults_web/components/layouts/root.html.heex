@@ -698,7 +698,11 @@
                 // Redirected somewhere else - a renamed or withdrawn page. That
                 // page's region does not belong under this address.
                 if (r.redirected || inUse()) { return; }
-                if (swap(html)) {
+                const changed = swap(html);
+                // A tournament that went live again after being finished
+                // (a correction, a reopened round) takes the polling back up.
+                arm();
+                if (changed) {
                   // Said quietly and only when something actually changed, so
                   // a spectator knows the page is live rather than stuck.
                   if (status) {
@@ -734,17 +738,30 @@
           // still sends `x-openresults-refresh`, so none of them counts as a
           // view whatever the pace.
           const delay = () => (live.querySelector("[data-results-live]") ? 10000 : 20000);
-          const loop = () => {
-            setTimeout(() => {
+          // A finished tournament does not change under its readers, so its
+          // pages do not poll at all: the server marks them
+          // `data-results-finished` (see `TournamentHTML.finished_marker/1`).
+          // Checked before every wait and again when it ends, so a page open
+          // while its tournament finished stops with the first poll that
+          // carries the mark. No back-off for anything else: live
+          // tournaments and every other page keep the pace above.
+          const finished = () => !!live.querySelector("[data-results-finished]");
+          let timer = null;
+          const arm = () => {
+            if (timer !== null || finished()) { return; }
+            timer = setTimeout(() => {
+              timer = null;
+              if (finished()) { return; }
               tick();
-              loop();
+              arm();
             }, delay());
           };
-          loop();
+          arm();
           // A tab brought back to the front is stale by however long it was
-          // hidden, and its reader is looking at it right now.
+          // hidden, and its reader is looking at it right now - unless the
+          // tournament is over and there is nothing new to see.
           document.addEventListener("visibilitychange", () => {
-            if (!document.hidden) { tick(); }
+            if (!document.hidden && !finished()) { tick(); }
           });
           // The arbiter just published - see "hearing about a publish" below.
           document.addEventListener("openresults:changed", () => {
