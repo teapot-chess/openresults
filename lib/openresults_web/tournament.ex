@@ -714,6 +714,16 @@ defmodule OpenResultsWeb.Tournament do
   def live?(payload), do: live_rounds(payload) != []
 
   @doc """
+  Whether a tournament is over for good as far as the public pages are
+  concerned: `status/1` says `:finished` and no round is still taking results.
+
+  The refresher reads this (as `data-results-finished` in the page) to stop
+  polling. A finished tournament does not change under a reader, and the
+  event stream still wakes the page if the arbiter publishes a correction.
+  """
+  def settled?(payload), do: status(payload) == :finished and not live?(payload)
+
+  @doc """
   A round's byes.
   """
   def byes(round), do: round |> list("byes") |> Enum.filter(&is_map/1)
