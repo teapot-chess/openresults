@@ -16,6 +16,7 @@ defmodule OpenResultsWeb.Admin.StatsController do
   alias OpenResults.Stats
   alias OpenResults.Stats.DbCounts
   alias OpenResults.Stats.Report
+  alias OpenResults.Stats.Viewers
   alias OpenResults.Tournaments
 
   @refresh_seconds 30
@@ -27,6 +28,7 @@ defmodule OpenResultsWeb.Admin.StatsController do
       page_title: "Stats",
       refresh_seconds: @refresh_seconds,
       report: report,
+      readers: Viewers.report(),
       files: DbCounts.files(),
       disk: DiskSpace.reading(),
       statuses: statuses(report)

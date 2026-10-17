@@ -374,9 +374,12 @@ written to the action log with your address.
   busiest tournaments), server health (CPU and load, memory, schedulers online
   against logical CPUs, run queue, open connections), publishing and refusals
   in the last 24 hours, and the database (file and WAL size, row counts, query
-  and pool-queue times). Everything is counted in memory since the last
-  restart, which the page names; no addresses, user agents or query strings
-  are kept. "Schedulers: 2 online of 2" is how to confirm the deploy's
+  and pool-queue times). Traffic and health are counted in memory since the last
+  restart, which the page names. The Readers section is kept in the database:
+  daily unique readers, real page views, refreshes and bot hits, and the top
+  tournaments by unique readers, from a hash of address and user agent that
+  is salted afresh each day and never stored; no addresses, user agents or
+  query strings are kept. "Schedulers: 2 online of 2" is how to confirm the deploy's
   `+S 2:2` took effect. CPU, load and system memory come from `/proc` and say
   "not measured" anywhere else.
 

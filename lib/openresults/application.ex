@@ -88,6 +88,10 @@ defmodule OpenResults.Application do
       # `OpenResults.Stats`.
       {OpenResults.Stats.Collector,
        connections: &OpenResultsWeb.StatsTelemetry.open_connections/0},
+      # Distinct readers per day, from a daily-salted hash, flushed to daily
+      # totals in the database. After the Repo it writes to, before the
+      # endpoint. See `OpenResults.Stats.Viewers`.
+      OpenResults.Stats.Viewers,
 
       # Cloudflare Access's signing keys for the admin gate. Owns its table
       # and does every fetch itself, so a burst of admin requests with an

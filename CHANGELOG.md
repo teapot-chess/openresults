@@ -27,6 +27,9 @@ Each entry is tagged so a version can be skimmed:
 
 ## [Unreleased]
 
+- [Change] **Finished tournaments stop polling.** A tournament whose rounds are all in and whose results are all reported is, as far as its readers go, a document, and its pages no longer ask the server every twenty seconds whether that has changed. The server marks them and the page reads the mark; a tournament that finishes while a page is open stops the page by itself on the next poll, and one that is reopened by a correction starts it again. Live tournaments, and every page that is not a tournament's, poll at exactly the old pace: no back-off, by request.
+- [Feature] **Real numbers on the stats page.** A "Readers" section counts unique readers per day, real page views, auto-refreshes and bot hits, for today so far and the last 30 days, plus the top tournaments by unique readers today, over 7 days and over 30. A reader is a keyed hash of address and user agent under a salt that is replaced every day and thrown away: no cookie, no stored address, and the same person is an unrelated code tomorrow. Programs (bots, crawlers, link previews, curl and friends) are counted separately so the gap shows; so are polls. Daily totals, and only totals, are kept in the database for 400 days and survive a restart; counting itself stays in memory, so the request path pays a few ETS operations and no query.
+- [Change] The terms page says what is now counted and how, instead of claiming that nothing about visitors is looked at. English, Dutch and French.
 ## [0.24.1] - 2026-10-17
 
 - [Change] **Phone leftovers.** The line of facts under a tournament's name (city, dates, arbiter, tempo) stays on one line on a phone and trails off with an ellipsis instead of taking three; a screen reader still gets all of it. The player you follow is now marked on the cross-table too, in the same tint as on the standings, since it seemed unfair that only two of three pages noticed.
