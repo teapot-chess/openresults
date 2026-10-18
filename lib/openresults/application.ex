@@ -37,6 +37,9 @@ defmodule OpenResults.Application do
     children = [
       OpenResultsWeb.Telemetry,
       OpenResults.Repo,
+      # The FIDE list's own database file - see `OpenResults.FideList.Repo`
+      # for why it is not the main one.
+      OpenResults.FideList.Repo,
       {Ecto.Migrator,
        repos: Application.fetch_env!(:openresults, :ecto_repos), skip: skip_migrations?()},
       {DNSCluster, query: Application.get_env(:openresults, :dns_cluster_query) || :ignore},
@@ -109,6 +112,10 @@ defmodule OpenResults.Application do
       # Forgets old client addresses, releases minted slugs that never
       # published, and removes expired address blocks - once a day.
       OpenResults.Retention.Scheduler,
+      # Looks for a new FIDE list once a day and imports it in a process of
+      # its own; a fresh install's first import starts a minute after boot.
+      # Nothing waits for it - the entry form says "not yet" until it is done.
+      OpenResults.FideList.Sync,
       OpenResultsWeb.Endpoint
     ]
 

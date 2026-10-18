@@ -1,0 +1,12 @@
+ID Number      Name                                                         Fed Sex Tit  WTit OTit           FOA SRtng SGm SK RRtng RGm Rk BRtng BGm BK B-day Flag
+901001         De Vos, Ilse                                                 BEL F   WIM  WIM                     2105  0   20 2050                      1994  w
+901002         De Vos, Jan                                                  BEL M   FM                           2290      20 2240         2201         1980
+901003         Østergaard, Søren                                            DEN M                                1950      20                           1971
+901004         Müller, Jürgen                                               GER M                                2010      20              1990         1965  i
+901005         Peeters, Anna                                                BEL F                                                                       2008  w
+901006         Peeters, Marc                                                BEL M                                1720      40                           0
+901007         Janssens, Lucas                                              NED M                                1880      20 1810                      2001
+901008         Dubois, Élodie                                               FRA F   WFM  WFM                     2050      20                           1999  w
+
+   
+Truncated

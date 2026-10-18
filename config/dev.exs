@@ -17,6 +17,16 @@ config :openresults, OpenResults.Repo,
   stacktrace: true,
   show_sensitive_data_on_connection_error: true
 
+# The FIDE list's own file, beside the main one. The daily sync is off in
+# dev: a laptop has no business downloading 41 MB every time somebody runs
+# `mix phx.server`. Set it to true here to try the real thing, or run
+# `OpenResults.FideList.Run.once()` from iex for a single look.
+config :openresults, OpenResults.FideList.Repo,
+  database: Path.expand("../openresults_fide_dev.db", __DIR__)
+
+config :openresults, :fide_list_sync, false
+config :openresults, :fide_list_work_dir, Path.expand("../tmp/fide_list", __DIR__)
+
 # For development, we disable any cache and enable
 # debugging and code reloading.
 #

@@ -46,6 +46,30 @@ config :openresults, :disk_space_interval, :timer.minutes(1)
 # How often `OpenResults.Retention` runs. `:disabled` in test.
 config :openresults, :retention_interval, :timer.hours(24)
 
+# The FIDE rating list - `OpenResults.FideList`. On by default: a fresh
+# install fetches it in the background a minute after its first boot, and
+# after that looks once a day at :17 past `:fide_list_hour` (UTC), downloading
+# only when FIDE has published a new one. Test and dev switch it off.
+config :openresults, :fide_list_sync, true
+config :openresults, :fide_list_hour, 3
+config :openresults, :fide_list_boot_delay_ms, :timer.minutes(1)
+# A breath between thousand-row chunks of an import, so requests arriving
+# during it are not queued behind it on a two-core box.
+config :openresults, :fide_list_chunk_pause_ms, 5
+
+# Not ecto_sqlite3's defaults, which are a 64 MB page cache per connection
+# and temporary storage in memory: building the name index sorts 1.9 million
+# keys, and with those defaults the sort happened in RAM - measured at about
+# 230 MB above the service's usual footprint, on a service whose ceiling is
+# 768 MB. With these it spills to a temporary file and the import stays
+# within a few tens of megabytes.
+config :openresults, OpenResults.FideList.Repo,
+  pool_size: 3,
+  journal_mode: :wal,
+  busy_timeout: 5_000,
+  temp_store: :file,
+  cache_size: -8_000
+
 # Which environment this node was configured as, for the checks that must
 # know at runtime - today only the admin panel's development bypass, which
 # `OpenResultsWeb.AdminAccess.Config` refuses outside dev and test and which
