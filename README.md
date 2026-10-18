@@ -54,7 +54,9 @@ front page at all. See
 - **It does not hold tournament state.** It has snapshots and a registration
   queue. The source of truth is the arbiter's machine.
 - **It does not know who anybody is.** No accounts, no sessions, no cookies
-  on the reading path.
+  on the reading path. The stats page counts unique readers per day from a
+  hash under a salt that is thrown away each day; what is kept is in
+  [docs/privacy-retention.md](docs/privacy-retention.md).
 - **It cannot leak what it was not sent.** An unpublished round and a hidden
   board are absent from the payload, not filtered on render.
 
@@ -80,7 +82,8 @@ There is no bundle, no socket and no request on load. Two inline scripts,
 both of which only ever act after the page is already readable:
 
 - a theme preference reader that runs before first paint;
-- a right-click player card, a 20-second refresher for the standings, and the
+- a right-click player card, a 20-second refresher for the standings (a finished
+  tournament stops it), and the
   FIDE search on the entry form.
 
 Every page renders completely with all of it switched off. A player's name is
