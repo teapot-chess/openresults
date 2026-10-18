@@ -525,25 +525,12 @@ defmodule OpenResultsWeb.AccessibilityTest do
     end
   end
 
-  # The FIDE search panel renders only where this deployment can reach an
-  # arbiter's list, and it is the one part of the entry form with a script
-  # behind it - so the walk renders it.
+  # The FIDE search panel renders only where this server has a FIDE list,
+  # and it is the one part of the entry form with a script behind it - so
+  # the walk renders it, against the fixture list in a database of its own.
   defp with_fide_search(fun) do
-    saved =
-      for key <- [:fide_lookup_endpoint, :fide_lookup_token],
-          do: {key, Application.get_env(:openresults, key)}
-
-    Application.put_env(:openresults, :fide_lookup_endpoint, "http://localhost:1")
-    Application.put_env(:openresults, :fide_lookup_token, "a11y-test")
-
-    try do
-      fun.()
-    after
-      for {key, value} <- saved do
-        if is_nil(value),
-          do: Application.delete_env(:openresults, key),
-          else: Application.put_env(:openresults, key, value)
-      end
-    end
+    context = OpenResults.FideListCase.setup_fide_list(%{})
+    OpenResults.FideListCase.import_fixture!(context)
+    fun.()
   end
 end

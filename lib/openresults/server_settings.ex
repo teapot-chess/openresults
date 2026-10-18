@@ -182,8 +182,10 @@ defmodule OpenResults.ServerSettings do
     {"PHX_REDIRECT_HOSTS", nil, false},
     {"PHX_SHORT_HOST", nil, false},
     {"PORT", nil, false},
-    {"FIDE_LOOKUP_ENDPOINT", :fide_lookup_endpoint, false},
-    {"FIDE_LOOKUP_TOKEN", :fide_lookup_token, true}
+    {"OPENRESULTS_FIDE_LIST_SYNC", nil, false},
+    {"OPENRESULTS_FIDE_LIST_HOUR", nil, false},
+    {"FIDE_LIST_URL", :fide_list_url, false},
+    {"FIDE_LIST_DATABASE_PATH", nil, false}
   ]
 
   @type key ::

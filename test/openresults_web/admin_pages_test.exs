@@ -169,6 +169,24 @@ defmodule OpenResultsWeb.AdminPagesTest do
       assert world.block.cidr
     end
 
+    test "says which FIDE list the entry form searches, and when it was last looked for" do
+      context = OpenResults.FideListCase.setup_fide_list(%{})
+
+      none = admin_get("/admin") |> doc()
+      assert text(none, "#fide-list-live") =~ "none yet"
+      assert text(none, "#fide-list-live") =~ "offers no search"
+      assert text(none, "#fide-list-check") =~ "never"
+      assert text(none, "#fide-list-sync") =~ "OPENRESULTS_FIDE_LIST_SYNC"
+
+      OpenResults.FideListCase.import_fixture!(context)
+
+      doc = admin_get("/admin") |> doc()
+      assert text(doc, "#fide-list-live") =~ "published 2026-11-01"
+      assert text(doc, "#fide-list-live") =~ ~r/8\s+players/
+      assert text(doc, "#fide-list-check") =~ "a new list was imported"
+      refute text(doc, "#fide-list-check") =~ "stays live"
+    end
+
     test "says when public publishing is switched off on this server" do
       Application.put_env(:openresults, :public_publishing, false)
       on_exit(fn -> Application.put_env(:openresults, :public_publishing, true) end)

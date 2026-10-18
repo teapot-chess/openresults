@@ -64,6 +64,20 @@ config :openresults, OpenResults.Repo,
 
 # We don't run a server during test. If one is required,
 # you can enable the server option below.
+# The FIDE list's file. No sandbox: the import commits chunk by chunk and
+# renames tables, which is exactly what its tests are there to exercise, so
+# each of those tests starts a repo of its own on a file of its own (see
+# `OpenResults.FideListCase`). This named one stays empty, and every test
+# that does not import a list sees "no list" - with the sync off, that is
+# also "no search on the form".
+config :openresults, OpenResults.FideList.Repo,
+  database:
+    Path.expand("../openresults_fide_test#{System.get_env("MIX_TEST_PARTITION")}.db", __DIR__),
+  pool_size: 1
+
+config :openresults, :fide_list_sync, false
+config :openresults, :fide_list_chunk_pause_ms, 0
+
 config :openresults, OpenResultsWeb.Endpoint,
   http: [ip: {127, 0, 0, 1}, port: 4002],
   secret_key_base: "Hs4X1UdFiDVp/0nABZuXHWdB5NMCojPBkJIbbWnSqN7STA7wLJH+Itnxj2CngG8O",
@@ -105,3 +119,8 @@ config :openresults, :disk_space_reader, {OpenResults.DiskSpace, :unmeasured}
 
 config :openresults, :bel_retries, 0
 config :openresults, :bel_retry_backoff_ms, [0]
+
+# Every FIDE list request in the test suite goes to a `Req.Test` stub owned
+# by the test that made it. A test that forgot to stub gets an error, never
+# ratings.fide.com.
+config :openresults, :fide_list_req_options, plug: {Req.Test, OpenResults.FideList.Source}

@@ -151,6 +151,10 @@ the uploaded app tree, so that re-running the deploy (which re-uploads the
 whole app directory) can never touch it. Every deploy leaves the file alone
 except for `ecto.migrate` applying new migrations.
 
+Beside it, `fide_list.db` (or `FIDE_LIST_DATABASE_PATH`) holds this
+server's copy of the FIDE rating list - see "FIDE rating list" below. It is
+not backed up and need not be: deleting it costs one download.
+
 The data here is not precious in the way the arbiter's database is - every
 snapshot came from an arbiter's machine, which remains the source of truth
 and can republish. The registration queue is the exception: an entry a
@@ -460,6 +464,10 @@ All read in `config/runtime.exs`.
 | `OPENRESULTS_INGEST_TOKEN` | effectively | the bearer token an arbiter publishes with. Unset means every publish is refused with a 401 - except with an installation key, see "Public publishing" below |
 | `BACKUP_DIR` / `BACKUP_RETENTION` / `OPENRESULTS_BACKUP_PASSPHRASE` | no | see "Backups" above |
 | `POOL_SIZE` | no (default 10) | Ecto connection pool size |
+| `OPENRESULTS_FIDE_LIST_SYNC` | no (default on) | `off` stops the daily FIDE list check; a list already here keeps answering searches |
+| `OPENRESULTS_FIDE_LIST_HOUR` | no (default 3) | hour of the day, UTC, of that check (it runs at :17 past) |
+| `FIDE_LIST_URL` | no | fetch the list from here instead of `ratings.fide.com` - only something you control |
+| `FIDE_LIST_DATABASE_PATH` | no | the list's SQLite file; default `fide_list.db` beside `DATABASE_PATH` |
 | `DNS_CLUSTER_QUERY` | no | multi-node clustering, unused here |
 
 Notably absent, compared with OpenPairings: **no SMTP** (this app sends no
@@ -617,8 +625,44 @@ attaches.
 
 The panel is the one place this app now sets a session cookie
 (`_openresults_admin`, `Path=/admin`), and makes an outbound request of its
-own besides the FIDE search: Access's keys, from the team domain, at most
-once every 30 seconds.
+own besides the FIDE list's daily look: Access's keys, from the team domain,
+at most once every 30 seconds.
+
+### FIDE rating list
+
+The entry form's "find yourself on the FIDE list" search reads a copy of
+FIDE's combined rating list that this server keeps itself
+(`OpenResults.FideList`). It used to ask the arbiter's OpenPairings over
+`localhost` instead (`FIDE_LOOKUP_ENDPOINT` / `FIDE_LOOKUP_TOKEN`, both gone
+now and ignored if still set), which worked only where both apps share a box.
+
+- **When.** Once a day at :17 past `OPENRESULTS_FIDE_LIST_HOUR` (UTC,
+  default 3), and a minute after boot when there is no list yet or the last
+  look is more than a day old. A failed look is retried an hour later, three
+  times, then waits for the next day.
+- **Only if new.** The look is a `HEAD`; its `ETag` (or `Last-Modified` and
+  `Content-Length`) is compared with the list that was imported, and an
+  unchanged list is not downloaded. Ratings change monthly, but FIDE rebuilds
+  the file more often than that (new registrations; the one served on
+  2026-10-18 was dated the day before), so count on a 45 MB download on some
+  days and a few hundred bytes on the rest - at most one download a day.
+- **How.** The zip streams to `fide_list_work/` beside the list's database
+  and is deleted afterwards; its text is read without being unpacked, a
+  thousand rows at a time, at low priority, into a scratch table that is
+  indexed and then swapped in by rename in one transaction. A search sees
+  the whole old list or the whole new one. A list less than half the size of
+  the current one, or one that is not FIDE's layout, is refused and the old
+  one stays. Measured on 1.9 million rows: about 30 MB of memory above the
+  service's usual footprint, about a minute on a fast PC - several on this
+  box, which nobody is awake to notice at three in the morning.
+- **Disk.** `fide_list.db` is about 145 MB after the first import and about
+  290 MB from the second on (the old copy's pages are kept for the next one
+  to reuse), plus the 45 MB zip for the minutes it is being read. The index
+  build sorts in a temporary file, which SQLite puts in `/var/tmp` (the
+  unit's private one) unless `SQLITE_TMPDIR` says otherwise.
+- **Watching it.** The admin dashboard shows the live list's date and size,
+  the last look and its outcome, and what the sync is doing now. A failure
+  is logged as a warning and shown there; it never takes the old list away.
 
 ## Ports on this host
 

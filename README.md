@@ -115,12 +115,18 @@ mix phx.server
 |---|---|
 | `OPENRESULTS_INGEST_TOKEN` | the shared secret an arbiter's machine publishes with. Unset, every publish is refused. |
 | `PUBLIC_FRAME_ANCESTORS` | who may embed these pages. Default `*`. |
-| `FIDE_LOOKUP_ENDPOINT` | an arbiter's app this server can reach, so the entry form can offer a FIDE search. Unset, the form asks people to type their own details. |
-| `FIDE_LOOKUP_TOKEN` | the token for the above - the same ingest token, travelling the other way. |
+| `OPENRESULTS_FIDE_LIST_SYNC` | `off` stops this server fetching the FIDE rating list. Default on. |
+| `OPENRESULTS_FIDE_LIST_HOUR` | the hour (UTC, 0-23) of the daily look for a new list. Default 3. |
+| `FIDE_LIST_URL` | where to fetch the list from, for a host FIDE refuses. Default FIDE's own. |
+| `FIDE_LIST_DATABASE_PATH` | the list's own SQLite file. Default `fide_list.db` beside `DATABASE_PATH`. |
 
-The FIDE search needs the two machines to be reachable from each other, which
-in practice means deployed together; the list itself stays on the arbiter's
-machine, because that is the copy they actually pair from.
+The entry form's FIDE search reads this server's own copy of FIDE's rating
+list, so it works however the arbiter's machine is connected - a laptop
+behind a club's router included, which the old arrangement (asking the
+arbiter's machine over `localhost`) never reached. The copy is checked once a
+day and downloaded only when FIDE's file has changed since the last import -
+ratings move monthly, the file somewhat more often. A fresh install fetches it a minute after its first boot; until
+then the form says the search is not available yet.
 
 ## Status
 

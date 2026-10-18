@@ -822,15 +822,17 @@
         //
         // Fills the form's fields; never required, never blocking. Everything
         // it would fill can be typed, and a player who is not on the FIDE list
-        // ignores it entirely. The panel is only rendered where this
-        // deployment can actually reach an arbiter's list, so there is no
-        // "search unavailable" state to explain.
+        // ignores it entirely. The panel is only rendered where this server
+        // has a list, so "unavailable" is only ever the list vanishing
+        // between drawing the page and the search - said as such, because
+        // "no match" would tell somebody on the list that they are not.
         const fide = document.getElementById("fide-search");
 
         if (fide) {
           const box = document.getElementById("fide-query");
           const list = document.getElementById("fide-results");
           const none = document.getElementById("fide-none");
+          const unavailable = document.getElementById("fide-unavailable");
           const endpoint = fide.dataset.endpoint;
           let timer = null;
           let latest = 0;
@@ -854,10 +856,9 @@
             set("fide_id", player.fide_id);
             set("title", player.title);
             set("birth_year", player.birth_year);
-            // Since 2026-09-30 the arbiter's machine also answers from its
-            // national list (the KBSB/FRBE one in Belgium): a member number
-            // and a club. Absent from a plain FIDE match with no national row,
-            // and then left alone like every other blank above.
+            // The FIDE list has neither of these. Kept for an answer that
+            // does carry them (the arbiter's own machine used to add its
+            // national list's), and left alone like every other blank above.
             set("national_id", player.national_id);
             set("club", player.club);
 
@@ -872,8 +873,17 @@
             field("email")?.focus();
           };
 
-          const render = (players) => {
+          const render = (players, available) => {
             list.replaceChildren();
+            unavailable.hidden = true;
+
+            if (available === false) {
+              list.hidden = true;
+              none.hidden = true;
+              unavailable.hidden = false;
+              announce(unavailable.textContent.trim());
+              return;
+            }
 
             if (!players.length) {
               list.hidden = true;
@@ -922,7 +932,7 @@
               .then((r) => r.ok ? r.json() : Promise.reject(r.status))
               .then((data) => {
                 if (mine !== latest) { return; }
-                render(data.players || []);
+                render(data.players || [], data.available);
               })
               .catch(() => {
                 // The form works without this. An error about somebody else's
@@ -942,6 +952,7 @@
             if (query.length < 2) {
               list.hidden = true;
               none.hidden = true;
+              unavailable.hidden = true;
               return;
             }
 

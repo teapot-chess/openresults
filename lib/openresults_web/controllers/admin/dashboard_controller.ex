@@ -1,8 +1,8 @@
 defmodule OpenResultsWeb.Admin.DashboardController do
   @moduledoc """
   The panel's front page: both switches, the counts that say whether
-  anything needs looking at, what publishing costs in disk, and the most
-  recent actions.
+  anything needs looking at, what publishing costs in disk, which FIDE list
+  the entry form searches, and the most recent actions.
   """
   use OpenResultsWeb, :controller
 
@@ -15,6 +15,7 @@ defmodule OpenResultsWeb.Admin.DashboardController do
       settings: Moderation.settings(),
       counts: Moderation.counts(),
       storage: Moderation.storage(),
+      fide_list: OpenResults.FideList.status(),
       actions: Moderation.list_actions(%{limit: 10}),
       public_publishing?: PublicPublishing.enabled?()
     )

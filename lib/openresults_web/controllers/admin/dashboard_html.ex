@@ -172,6 +172,41 @@ defmodule OpenResultsWeb.Admin.DashboardHTML do
       </dl>
     </section>
 
+    <section class="admin-section" id="fide-list">
+      <h2>FIDE rating list</h2>
+      <p class="quiet">The copy the entry form's "find yourself" search reads.</p>
+      <dl class="admin-facts">
+        <dt>Live list</dt>
+        <dd :if={@fide_list.available?} id="fide-list-live">
+          <strong>{fide_list_date(@fide_list)}</strong>
+          <span class="quiet">
+            ({thousands(@fide_list.player_count || 0)} players, imported {at(
+              @fide_list.imported_at,
+              "at an unknown time"
+            )})
+          </span>
+        </dd>
+        <dd :if={not @fide_list.available?} id="fide-list-live">
+          <span>none yet</span>
+          <span class="quiet">{fide_missing_line(@fide_list)}</span>
+        </dd>
+
+        <dt>Last check</dt>
+        <dd id="fide-list-check">
+          {at(@fide_list.last_check_at)}
+          <span :if={@fide_list.last_check_result} class="quiet">
+            ({fide_check_result(@fide_list.last_check_result)})
+          </span>
+          <span :if={@fide_list.last_error} class="quiet" id="fide-list-error">
+            {@fide_list.last_error}. The list that was live stays live.
+          </span>
+        </dd>
+
+        <dt>Sync</dt>
+        <dd id="fide-list-sync">{fide_sync_line(@fide_list)}</dd>
+      </dl>
+    </section>
+
     <section class="admin-section" id="recent-actions">
       <h2>Recent actions</h2>
       <.actions_table actions={@actions} id="recent-actions-table" />
@@ -193,6 +228,32 @@ defmodule OpenResultsWeb.Admin.DashboardHTML do
     </section>
     """
   end
+
+  defp fide_list_date(%{list_date: %DateTime{} = date}),
+    do: "published " <> Calendar.strftime(date, "%Y-%m-%d")
+
+  defp fide_list_date(_undated), do: "undated"
+
+  defp fide_missing_line(%{enabled?: true}),
+    do: "- the entry form says the search is not available until the first import finishes."
+
+  defp fide_missing_line(_off), do: "- and the sync is off, so the entry form offers no search."
+
+  defp fide_check_result("unchanged"), do: "nothing new"
+  defp fide_check_result("imported"), do: "a new list was imported"
+  defp fide_check_result("failed"), do: "failed"
+  defp fide_check_result(other), do: other
+
+  defp fide_sync_line(%{enabled?: false}),
+    do: "Off (OPENRESULTS_FIDE_LIST_SYNC). Nothing fetches a new list."
+
+  defp fide_sync_line(%{sync: nil}), do: "On; its process is not answering."
+
+  defp fide_sync_line(%{sync: %{running?: true} = sync}),
+    do: "Running now: " <> (sync.progress || to_string(sync.phase)) <> "."
+
+  defp fide_sync_line(%{sync: sync, source: source}),
+    do: "On; next look #{at(sync.next_run_at, "not scheduled")}, at #{source}."
 
   defp percent(value) when is_number(value),
     do: :erlang.float_to_binary(value / 1, decimals: 1) <> "%"

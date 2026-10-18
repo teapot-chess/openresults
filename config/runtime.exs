@@ -30,18 +30,42 @@ if ingest_token = System.get_env("OPENRESULTS_INGEST_TOKEN") do
   config :openresults, :ingest_token, ingest_token
 end
 
-# Lending the entry form a search of the arbiter's FIDE list - see
-# `OpenResults.FideLookup`. Both must be set or the feature is simply absent
-# and the form asks people to type their own details, which is what it did
-# before this existed.
-#
-# On a deployment where both applications share a box this is
-# `http://localhost:4001` and the request never leaves the machine. There is
-# no sensible value for a results site that cannot reach an arbiter, which is
-# why it is opt-in rather than defaulted.
-#
-# The token is the arbiter's own ingest token, because it is the same pair of
-# machines and a second secret would be a second thing to rotate.
+# The FIDE rating list this server keeps for the entry form's search - see
+# `OpenResults.FideList`. On unless switched off; an hour of the day (UTC) for
+# the daily look; and an address to fetch it from other than FIDE's, for a
+# host whose network range FIDE refuses. Anything that is not a clear on/off
+# or an hour stops the boot rather than being guessed at.
+case System.get_env("OPENRESULTS_FIDE_LIST_SYNC") do
+  nil ->
+    :ok
+
+  value ->
+    case String.downcase(String.trim(value)) do
+      on when on in ~w(on true 1 yes enabled) ->
+        config :openresults, :fide_list_sync, true
+
+      off when off in ~w(off false 0 no disabled) ->
+        config :openresults, :fide_list_sync, false
+
+      _other ->
+        raise "OPENRESULTS_FIDE_LIST_SYNC is on or off, got: #{inspect(value)}"
+    end
+end
+
+if hour = System.get_env("OPENRESULTS_FIDE_LIST_HOUR") do
+  case Integer.parse(hour) do
+    {h, ""} when h in 0..23 ->
+      config :openresults, :fide_list_hour, h
+
+    _ ->
+      raise "OPENRESULTS_FIDE_LIST_HOUR is an hour of the day in UTC, 0 to 23, got: #{inspect(hour)}"
+  end
+end
+
+if list_url = System.get_env("FIDE_LIST_URL") do
+  config :openresults, :fide_list_url, list_url
+end
+
 # Backups - see `OpenResults.Backup`. Nothing in this database is
 # reproducible: the snapshots are a published record, `/history?at=` answers a
 # question that cannot be recomputed, the queue holds entries nobody has
@@ -235,14 +259,6 @@ if admin_emails = System.get_env("OPENRESULTS_ADMIN_EMAILS") do
   config :openresults, :admin_emails, admin_emails
 end
 
-if lookup = System.get_env("FIDE_LOOKUP_ENDPOINT") do
-  config :openresults, :fide_lookup_endpoint, lookup
-end
-
-if lookup_token = System.get_env("FIDE_LOOKUP_TOKEN") do
-  config :openresults, :fide_lookup_token, lookup_token
-end
-
 config :openresults, OpenResultsWeb.Endpoint,
   http: [port: String.to_integer(System.get_env("PORT", "4000"))]
 
@@ -293,6 +309,17 @@ if config_env() == :prod do
   config :openresults, OpenResults.Repo,
     database: database_path,
     pool_size: String.to_integer(System.get_env("POOL_SIZE") || "10")
+
+  # The FIDE list's own file, beside the main database unless told otherwise
+  # - which puts it inside whatever directory the service may already write
+  # to, and outside the backups, which copy the main file only. About 200 MB
+  # with the list in it, twice that for the minutes an import has the old
+  # and the new side by side. The zip being read goes into a directory
+  # beside it (`OpenResults.FideList.work_dir/0`).
+  config :openresults, OpenResults.FideList.Repo,
+    database:
+      System.get_env("FIDE_LIST_DATABASE_PATH") ||
+        Path.join(Path.dirname(database_path), "fide_list.db")
 
   # The secret key base is used to sign/encrypt cookies and other secrets.
   # A default value is used in config/dev.exs and config/test.exs but you
