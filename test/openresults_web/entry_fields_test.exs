@@ -78,28 +78,40 @@ defmodule OpenResultsWeb.EntryFieldsTest do
   end
 
   describe "the FIDE search" do
-    test "is not offered where this deployment cannot reach a list", %{conn: conn, slug: slug} do
+    # A list database of this test's own, empty until a test imports the
+    # fixture into it - see `OpenResults.FideListCase`.
+    setup context, do: OpenResults.FideListCase.setup_fide_list(context)
+
+    test "is not offered where there is no list and none is coming", %{conn: conn, slug: slug} do
       html = conn |> get(~p"/t/#{slug}/register") |> html_response(200)
 
       # A search box that cannot search is worse than none: it invites a click
-      # and answers nothing. Unconfigured is the default.
+      # and answers nothing. The sync is off in tests and no list is here.
       #
       # Asserted on the label rather than the element id: the id also appears
       # in the script that looks for the panel, so refuting it would pass
       # whether or not the panel rendered. (Second time today - the same trap
       # caught the refresher's test.)
       refute html =~ "Find yourself on the FIDE list"
+      refute html =~ ~s|id="fide-search-pending"|
       assert html =~ ~s|name="registration[name]"|
     end
 
-    test "is offered when it is configured", %{conn: conn, slug: slug} do
-      Application.put_env(:openresults, :fide_lookup_endpoint, "http://arbiter.example")
-      Application.put_env(:openresults, :fide_lookup_token, "s3cret")
+    test "says it is not there yet while the first list is on its way", %{
+      conn: conn,
+      slug: slug
+    } do
+      Application.put_env(:openresults, :fide_list_sync, true)
+      on_exit(fn -> Application.put_env(:openresults, :fide_list_sync, false) end)
 
-      on_exit(fn ->
-        Application.delete_env(:openresults, :fide_lookup_endpoint)
-        Application.delete_env(:openresults, :fide_lookup_token)
-      end)
+      html = conn |> get(~p"/t/#{slug}/register") |> html_response(200)
+
+      assert html =~ ~s|id="fide-search-pending"|
+      refute html =~ "Find yourself on the FIDE list"
+    end
+
+    test "is offered once a list is here", %{conn: conn, slug: slug} = context do
+      OpenResults.FideListCase.import_fixture!(context)
 
       html = conn |> get(~p"/t/#{slug}/register") |> html_response(200)
 
@@ -110,13 +122,28 @@ defmodule OpenResultsWeb.EntryFieldsTest do
       assert html =~ "Optional"
     end
 
-    test "the proxy answers empty rather than erroring when unconfigured", %{
+    test "answers from this server's own list", %{conn: conn, slug: slug} = context do
+      OpenResults.FideListCase.import_fixture!(context)
+
+      players = conn |> get(~p"/t/#{slug}/fide", q: "de vos") |> json_response(200)
+
+      assert %{"players" => [jan, ilse]} = players
+      assert jan["name"] == "De Vos, Jan"
+      assert jan["fide_id"] == 901_002
+      assert jan["federation"] == "BEL"
+      assert jan["title"] == "FM"
+      assert jan["birth_year"] == 1980
+      assert is_integer(jan["rating"])
+      assert ilse["name"] == "De Vos, Ilse"
+    end
+
+    test "says the list is not there rather than that nobody matched", %{
       conn: conn,
       slug: slug
     } do
       conn = get(conn, ~p"/t/#{slug}/fide", q: "De Vos")
 
-      assert json_response(conn, 200) == %{"players" => []}
+      assert json_response(conn, 200) == %{"players" => [], "available" => false}
     end
 
     test "and refuses entirely once entries are closed", %{conn: conn} do

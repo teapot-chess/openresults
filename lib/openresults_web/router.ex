@@ -233,10 +233,9 @@ defmodule OpenResultsWeb.Router do
     get "/t/:slug/register", RegistrationController, :new
     post "/t/:slug/register", RegistrationController, :create
 
-    # The entry form's FIDE search, proxied so the arbiter's address and the
-    # token stay off the page - see `OpenResults.FideLookup`. Returns an
-    # empty list rather than an error whenever it cannot answer, because the
-    # form works without it.
+    # The entry form's FIDE search, against this server's own copy of the
+    # list - see `OpenResults.FideList`. Returns an empty list rather than an
+    # error whenever it cannot answer, because the form works without it.
     get "/t/:slug/fide", RegistrationController, :fide
 
     # Reporting a page to the operator - fake results, personal data, spam.

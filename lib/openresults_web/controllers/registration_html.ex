@@ -38,6 +38,7 @@ defmodule OpenResultsWeb.RegistrationHTML do
   attr :form, Phoenix.HTML.Form, required: true
   attr :slug, :string, required: true
   attr :fide_search?, :boolean, default: false
+  attr :fide_available?, :boolean, default: true, doc: "false while the first list is on its way"
   attr :fide_url, :string, default: nil
   attr :rounds, :list, required: true, doc: "the rounds a bye may be requested for"
   attr :alarm, :string, default: nil, doc: "a failure that is not about one field"
@@ -68,20 +69,20 @@ defmodule OpenResultsWeb.RegistrationHTML do
         {gettext("Nothing has been sent. Fix what is marked below and send it again.")}
       </p>
 
-      <%!-- The FIDE search, when this deployment can reach an arbiter's
-            list. It fills the fields below and is never required: everything
-            it would fill can be typed, and a player who is not on the FIDE
-            list never uses it at all.
+      <%!-- The FIDE search, from this server's own copy of the list. It
+            fills the fields below and is never required: everything it would
+            fill can be typed, and a player who is not on the FIDE list never
+            uses it at all.
 
             Sits above the name field rather than beside it because it is the
             first thing to try, and because a player who finds themselves here
             can skip the four fields underneath. --%>
-      <%!-- The two `data-` sentences are what the script says to a screen
-            reader when a search comes back and when a result fills the form -
+      <%!-- The `data-` sentences are what the script says to a screen reader
+            when a search comes back and when a result fills the form -
             attributes, because a string built in JavaScript is a string
             outside the catalogue. --%>
       <div
-        :if={@fide_search?}
+        :if={@fide_search? and @fide_available?}
         class="fide-search"
         id="fide-search"
         data-endpoint={@fide_url}
@@ -107,7 +108,27 @@ defmodule OpenResultsWeb.RegistrationHTML do
         <p id="fide-none" class="hint" hidden>
           {gettext("No match. Fill the fields in below instead.")}
         </p>
+        <%!-- For the one case the server could not know when it drew the
+              page: the list went away between then and the search. --%>
+        <p id="fide-unavailable" class="hint" hidden>
+          {gettext(
+            "The FIDE list is not on this server yet, so there is nothing to search. Fill the fields in below instead."
+          )}
+        </p>
       </div>
+
+      <%!-- A fresh server, still fetching its first list. Said rather than
+            left out, so that somebody who was told "the form finds you on
+            the FIDE list" is not left wondering where it went. --%>
+      <p
+        :if={@fide_search? and not @fide_available?}
+        class="hint fide-search-pending"
+        id="fide-search-pending"
+      >
+        {gettext(
+          "The FIDE list is not on this server yet, so there is nothing to search. Fill the fields in below instead."
+        )}
+      </p>
 
       <.field
         field={@form[:name]}

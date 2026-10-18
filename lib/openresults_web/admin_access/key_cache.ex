@@ -31,7 +31,7 @@ defmodule OpenResultsWeb.AdminAccess.KeyCache do
 
   `:admin_access_jwks_fetcher` in the application environment, a
   `fn team_domain -> {:ok, decoded_jwks} | {:error, reason} end`. Unset, it
-  is `fetch_jwks/1`, which uses `Req` like `OpenResults.FideLookup` does.
+  is `fetch_jwks/1`, which uses `Req` like `OpenResults.FideList.Source` does.
   Tests put a function there, so no test touches the network.
   """
 
@@ -79,7 +79,7 @@ defmodule OpenResultsWeb.AdminAccess.KeyCache do
   Cloudflare's certs document for `team_domain`, decoded.
 
   The default fetcher. `:admin_access_req_options` is merged in last, the
-  same hook `OpenResults.FideLookup` has, so the HTTP layer can be stubbed
+  same hook `OpenResults.FideList.Source` has, so the HTTP layer can be stubbed
   with `Req.Test` too.
   """
   @spec fetch_jwks(String.t()) :: {:ok, map()} | {:error, term()}

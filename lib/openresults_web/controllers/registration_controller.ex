@@ -21,7 +21,7 @@ defmodule OpenResultsWeb.RegistrationController do
 
   use OpenResultsWeb, :controller
 
-  alias OpenResults.FideLookup
+  alias OpenResults.FideList
   alias OpenResults.RateLimit
   alias OpenResults.Registrations
   alias OpenResults.Registrations.Entry
@@ -89,11 +89,17 @@ defmodule OpenResultsWeb.RegistrationController do
   end
 
   @doc """
-  `GET /t/:slug/fide?q=` - candidates from the arbiter's FIDE list.
+  `GET /t/:slug/fide?q=` - candidates from this server's copy of the FIDE
+  list (`OpenResults.FideList`).
 
   Behind the same closed-form gate as the form itself: a tournament that is
   not taking entries has no reason to lend anybody a search, and leaving this
   open would make it reachable for every tournament on the site regardless.
+
+  Before the first import has finished the answer is an empty list with
+  `"available": false`, which the page turns into "not available yet"
+  rather than "no match" - the second would tell somebody who IS on the list
+  that they are not.
   """
   def fide(conn, %{"slug" => slug} = params) do
     case Tournaments.public_latest(slug) do
@@ -105,7 +111,10 @@ defmodule OpenResultsWeb.RegistrationController do
           query = params |> Map.get("q", "") |> to_string()
           tempo = Tournament.info(snapshot.payload)["tempo"]
 
-          json(conn, %{"players" => FideLookup.search(query, tempo)})
+          case FideList.search(query, tempo) do
+            {:ok, players} -> json(conn, %{"players" => players})
+            :unavailable -> json(conn, %{"players" => [], "available" => false})
+          end
         else
           conn |> put_status(:forbidden) |> json(%{"players" => []})
         end
@@ -218,10 +227,12 @@ defmodule OpenResultsWeb.RegistrationController do
       # shown with what was in it so the person can see what to clear.
       trap: Keyword.get(opts, :trap),
       trap_name: @trap,
-      # Offered only where this deployment can actually reach an arbiter's
-      # FIDE list. A search box that cannot search is worse than none: it
-      # invites a click and answers nothing.
-      fide_search?: FideLookup.configured?(),
+      # Offered where this server has a FIDE list or is fetching one. A
+      # search box that cannot search is worse than none: it invites a click
+      # and answers nothing - so while the first list is still on its way,
+      # the panel says that instead of showing the box.
+      fide_search?: FideList.offered?(),
+      fide_available?: FideList.available?(),
       form: Phoenix.Component.to_form(changeset, as: :registration)
     )
   end
