@@ -58,6 +58,15 @@ jobs:
     - name: Compile
       run: mix compile --warnings-as-errors
 
+    - name: Audit dependencies
+      run: |
+        mix deps.audit
+        mix hex.audit
+
+    - name: Sobelow
+      # Findings reviewed in context live in .sobelow-skips; a NEW finding fails here.
+      run: mix sobelow --config
+
     - name: Check formatting
       run: mix format --check-formatted
 

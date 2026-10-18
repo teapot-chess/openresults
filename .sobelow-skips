@@ -1,0 +1,46 @@
+CI.System: Command Injection via `System` function,lib/openresults/disk_space.ex:130,29B2313
+Config.CSP: Missing Content-Security-Policy,lib/openresults_web/router.ex:32,763D53A
+Config.CSWH: Cross-Site Websocket Hijacking,lib/openresults_web/endpoint.ex:11,5CDD6F6
+Config.CSWH: Cross-Site Websocket Hijacking,lib/openresults_web/endpoint.ex:47,43D2B9E
+DOS.StringToAtom: Unsafe `String.to_atom`,lib/openresults/chess.ex:554,96EC22
+DOS.StringToAtom: Unsafe `String.to_atom`,lib/openresults/chess.ex:555,17D413A
+DOS.StringToAtom: Unsafe `String.to_atom`,lib/openresults_web/controllers/tournament_html.ex:3350,574451D
+DOS.StringToAtom: Unsafe `String.to_atom`,lib/openresults_web/hall.ex:204,6E65F73
+DOS.StringToAtom: Unsafe `String.to_atom`,lib/openresults_web/live_boards_data.ex:269,4A38906
+SQL.Query: SQL injection,lib/openresults/fide_list/store.ex:142,2BCA564
+SQL.Query: SQL injection,lib/openresults/fide_list/store.ex:162,5E2BB90
+SQL.Query: SQL injection,lib/openresults/fide_list/store.ex:174,5202130
+SQL.Query: SQL injection,lib/openresults/fide_list/store.ex:222,649A096
+Traversal.FileModule: Directory Traversal in `File.mkdir_p!`,lib/openresults/fide_list/repo.ex:36,7430AD8
+Traversal.FileModule: Directory Traversal in `File.mkdir_p!`,lib/openresults/fide_list/source.ex:138,33A2B24
+Traversal.FileModule: Directory Traversal in `File.mkdir_p`,lib/openresults/backup.ex:90,13529B
+Traversal.FileModule: Directory Traversal in `File.mkdir_p`,lib/openresults/moderation_journal.ex:252,5D259F2
+Traversal.FileModule: Directory Traversal in `File.open`,lib/openresults/backup.ex:540,6E1564F
+Traversal.FileModule: Directory Traversal in `File.read`,lib/openresults/backup.ex:94,FF5BD6
+Traversal.FileModule: Directory Traversal in `File.read`,lib/openresults/backup.ex:432,DDCF2D
+Traversal.FileModule: Directory Traversal in `File.read`,lib/openresults/moderation_journal.ex:277,36F9924
+Traversal.FileModule: Directory Traversal in `File.read`,lib/openresults/moderation_journal.ex:675,2EB6131
+Traversal.FileModule: Directory Traversal in `File.read`,lib/openresults/stats/system_info.ex:102,12BC18F
+Traversal.FileModule: Directory Traversal in `File.rm`,lib/openresults/backup.ex:95,60F9FDA
+Traversal.FileModule: Directory Traversal in `File.rm`,lib/openresults/backup.ex:154,2221F90
+Traversal.FileModule: Directory Traversal in `File.rm`,lib/openresults/backup.ex:213,58C13D1
+Traversal.FileModule: Directory Traversal in `File.rm`,lib/openresults/backup.ex:253,6FBF026
+Traversal.FileModule: Directory Traversal in `File.rm`,lib/openresults/backup.ex:290,2FBCB83
+Traversal.FileModule: Directory Traversal in `File.rm`,lib/openresults/backup.ex:347,67136D9
+Traversal.FileModule: Directory Traversal in `File.rm`,lib/openresults/backup.ex:371,3BFE24F
+Traversal.FileModule: Directory Traversal in `File.rm`,lib/openresults/fide_list/run.ex:113,2C07117
+Traversal.FileModule: Directory Traversal in `File.rm`,lib/openresults/moderation_journal.ex:702,1D8FDD4
+Traversal.FileModule: Directory Traversal in `File.write`,lib/openresults/backup.ex:249,4381BB0
+Traversal.FileModule: Directory Traversal in `File.write`,lib/openresults/backup.ex:292,6FFA8F
+Traversal.FileModule: Directory Traversal in `File.write`,lib/openresults/backup.ex:400,681742
+Traversal.FileModule: Directory Traversal in `File.write`,lib/openresults/moderation_journal.ex:694,70642DF
+XSS.Raw: XSS,lib/openresults_web/controllers/changelog_controller.ex:28,7401725
+XSS.Raw: XSS,lib/openresults_web/controllers/changelog_html/show.html.heex:9,6DC7F62
+XSS.Raw: XSS,lib/openresults_web/controllers/registration_html/received.html.heex:7,432BECB
+XSS.Raw: XSS,lib/openresults_web/controllers/registration_html/received.html.heex:17,234C7B2
+XSS.Raw: XSS,lib/openresults_web/controllers/tournament_html.ex:3447,4D64A2D
+XSS.Raw: XSS,lib/openresults_web/controllers/tournament_html/player.html.heex:104,31DE7E6
+XSS.SendResp: XSS in `send_resp`,lib/openresults_web/controllers/feed_controller.ex:58,277C1E7
+XSS.SendResp: XSS in `send_resp`,lib/openresults_web/controllers/sitemap_controller.ex:39,9EAAA7
+XSS.SendResp: XSS in `send_resp`,lib/openresults_web/plugs/revalidate.ex:196,29D3D60
+XSS.SendResp: XSS in `send_resp`,lib/openresults_web/plugs/revalidate.ex:206,48A155E
