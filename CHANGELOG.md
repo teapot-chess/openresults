@@ -27,6 +27,7 @@ Each entry is tagged so a version can be skimmed:
 
 ## [Unreleased]
 
+- [Change] **New address.** The repository moved to github.com/teapot-chess; old links still redirect, out of politeness rather than obligation.
 ## [0.25.0] - 2026-10-18
 
 - [Change] **A player's card now has a button to their other tournaments.** The link to a player's history across tournaments used to be a line of small text that the page's own stylesheet hid, which made it admirably discreet and entirely useless. It is now a pill at the top of the card, "All tournaments of" the player, full width on a phone, and still absent when there is no FIDE id to follow. The history page already linked every entry back to that tournament's card.

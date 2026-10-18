@@ -4,7 +4,7 @@ How the public half is run in production, and the two things a person has to
 do by hand that no script can do for them.
 
 For the arbiter's app see
-[OpenPairings' own `docs/deployment.md`](https://github.com/AuroraRyunix/openpairings/blob/main/docs/deployment.md).
+[OpenPairings' own `docs/deployment.md`](https://github.com/teapot-chess/openpairings/blob/main/docs/deployment.md).
 The two apps share a host, a deploy script and nothing else.
 
 ## Where it runs

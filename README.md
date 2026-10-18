@@ -1,6 +1,6 @@
 # OpenResults
 
-The public half of [OpenPairings](https://github.com/AuroraRyunix/openpairings):
+The public half of [OpenPairings](https://github.com/teapot-chess/openpairings):
 published pairings, standings and player registration for a chess tournament.
 
 It renders what an arbiter sends it. **It computes nothing.**
@@ -43,7 +43,7 @@ The arbiter chooses how much of it is shown. Ratings, titles, federations,
 clubs, categories, tiebreak columns and the player cards can each be switched
 off per tournament, and a tournament can be published without appearing on the
 front page at all. See
-[OpenPairings' public-pages doc](https://github.com/AuroraRyunix/openpairings/blob/main/docs/public-pages.md).
+[OpenPairings' public-pages doc](https://github.com/teapot-chess/openpairings/blob/main/docs/public-pages.md).
 
 ## What it deliberately does not do
 
@@ -158,7 +158,7 @@ total, and its own dates - never computed or stored. See
 
 OpenResults is source-available under the **Elastic License 2.0** (see
 [LICENSE](LICENSE)), (c) 2026 Jorian Burssens - the same licence
-[OpenPairings](https://github.com/AuroraRyunix/openpairings) uses.
+[OpenPairings](https://github.com/teapot-chess/openpairings) uses.
 Self-hosting and modifying the software are both permitted; the one thing
 the licence withholds is offering it to someone else as a hosted or managed
 service - selling access to a copy of this app, rather than running it for
