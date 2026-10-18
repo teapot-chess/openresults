@@ -781,6 +781,12 @@ html.has-js .index-controls {
   display: block;
 }
 
+/* Under the year chips the box needs the same air the chips get from the
+   masthead; without it the two sat glued together like they were related. */
+.rounds + .index-controls {
+  margin-top: 0.875rem;
+}
+
 .index-search {
   display: block;
   max-width: 22rem;
