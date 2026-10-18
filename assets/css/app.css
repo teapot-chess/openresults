@@ -1214,6 +1214,10 @@ mark {
   margin-top: 0.5rem;
 }
 
+.entry-list .pending td {
+  color: var(--quiet);
+}
+
 .entry-list .title {
   margin-right: 0.25rem;
   font-size: 0.75rem;

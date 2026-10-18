@@ -228,6 +228,61 @@ defmodule OpenResultsWeb.RegistrationWorkflowTest do
       refute html =~ @email
     end
 
+    test "lists the arbiter's pending names after the players, marked unconfirmed, escaped", %{
+      conn: conn
+    } do
+      payload =
+        SnapshotPayloads.swiss()
+        |> with_settings(%{
+          "list_public" => true,
+          "pending" => [%{"name" => "Waiting, Wim"}, %{"name" => "<script>alert(1)</script>"}]
+        })
+
+      slug = publish(payload)
+      html = conn |> get(~p"/t/#{slug}/register") |> html_response(200)
+      document = LazyHTML.from_document(html)
+
+      assert count(document, "#entry-list tbody tr.pending") == 2
+      assert count(document, "#entry-list tbody tr.pending .tag") == 2
+      assert document |> LazyHTML.query("#entry-pending-count") |> LazyHTML.text() =~ "2"
+      assert document |> LazyHTML.query("#entry-list") |> LazyHTML.text() =~ "Waiting, Wim"
+      refute html =~ "<script>alert(1)</script>"
+      assert html =~ "&lt;script&gt;"
+      # The confirmed players are untouched, and come first.
+      confirmed = length(Tournament.players(payload))
+      assert count(document, "#entry-list tbody tr") == confirmed + 2
+    end
+
+    test "pending names are not shown when the list is not public, or when none are sent", %{
+      conn: conn
+    } do
+      closed =
+        SnapshotPayloads.swiss()
+        |> with_settings(%{"pending" => [%{"name" => "Waiting, Wim"}]})
+        |> publish()
+
+      html = conn |> get(~p"/t/#{closed}/register") |> html_response(200)
+      refute html =~ "Waiting, Wim"
+
+      open = SnapshotPayloads.swiss() |> with_settings(%{"list_public" => true}) |> publish()
+      assert conn |> get(~p"/t/#{open}/register") |> doc(200) |> count("tr.pending") == 0
+    end
+
+    test "malformed pending entries are dropped and the list is capped" do
+      payload =
+        SnapshotPayloads.swiss()
+        |> with_settings(%{
+          "list_public" => true,
+          "pending" =>
+            [%{"name" => "  "}, %{"name" => 5}, "x", %{"name" => "Fine\u0007  Name"}] ++
+              for(n <- 1..300, do: %{"name" => "N#{n}"})
+        })
+
+      names = Tournament.pending_entrants(payload)
+      assert hd(names) == "Fine Name"
+      assert length(names) == 200
+    end
+
     test "stays on the closed page, where people who missed out look", %{conn: conn} do
       slug =
         SnapshotPayloads.swiss()
@@ -254,6 +309,65 @@ defmodule OpenResultsWeb.RegistrationWorkflowTest do
       refute "Club" in headers
       refute "Rating" in headers
       assert "Name" in headers
+    end
+  end
+
+  describe "the entry fee" do
+    test "is stated on the form when the arbiter set one", %{conn: conn} do
+      slug =
+        SnapshotPayloads.swiss()
+        |> with_settings(%{
+          "fee" => %{"amount" => "12.50", "currency" => "EUR", "note" => "Free for juniors"}
+        })
+        |> publish()
+
+      text = conn |> get(~p"/t/#{slug}/register") |> doc(200) |> LazyHTML.query("#entry-fee")
+      assert LazyHTML.text(text) =~ "12.50 EUR"
+      assert LazyHTML.text(text) =~ "Free for juniors"
+    end
+
+    test "can be a note alone, and is absent when unset", %{conn: conn} do
+      free =
+        SnapshotPayloads.swiss()
+        |> with_settings(%{"fee" => %{"note" => "Free for everyone"}})
+        |> publish()
+
+      document = conn |> get(~p"/t/#{free}/register") |> doc(200)
+      assert document |> LazyHTML.query("#entry-fee") |> LazyHTML.text() =~ "Free for everyone"
+
+      none = SnapshotPayloads.swiss() |> with_settings(%{}) |> publish()
+      assert conn |> get(~p"/t/#{none}/register") |> doc(200) |> count("#entry-fee") == 0
+    end
+
+    test "reads nonsense as no fee, and escapes the note" do
+      read = fn fee ->
+        SnapshotPayloads.swiss() |> with_settings(%{"fee" => fee}) |> Tournament.entry_fee()
+      end
+
+      assert read.(%{"amount" => "lots", "currency" => "EUR"}) == nil
+      assert read.("12") == nil
+
+      assert read.(%{"amount" => "7", "currency" => "euro"}) ==
+               %{amount: "7", currency: nil, note: nil}
+    end
+
+    test "escapes a hostile note", %{conn: conn} do
+      slug =
+        SnapshotPayloads.swiss()
+        |> with_settings(%{"fee" => %{"note" => "<b>free</b>"}})
+        |> publish()
+
+      html = conn |> get(~p"/t/#{slug}/register") |> html_response(200)
+      refute html =~ "<b>free</b>"
+      assert html =~ "&lt;b&gt;free"
+    end
+  end
+
+  describe "no confirmation e-mail" do
+    test "the page that acknowledges an entry says so, and nothing is mailed", %{conn: conn} do
+      slug = SnapshotPayloads.swiss() |> with_settings(%{}) |> publish()
+      html = conn |> submit(slug, entry()) |> html_response(200)
+      assert html =~ "No confirmation e-mail is sent"
     end
   end
 
