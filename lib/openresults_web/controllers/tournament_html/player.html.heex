@@ -11,13 +11,45 @@
       so a right-click and a left-click produced the same thing and the
       overlay's whole value was not losing your place in the standings. --%>
 <section id="player-summary">
-  <h2>
-    <span :if={Tournament.show?(@payload, "title") && @player["title"]} class="title">
-      {@player["title"]}
-    </span>
-    {@player["name"]}
-    <span class="quiet">{gettext("no. %{number}", number: @player["no"])}</span>
-  </h2>
+  <%!-- The name, and beside it the two ways off this page: the player's whole
+        record and the follow switch. Small secondary controls on the same line
+        as the name (wrapping under it on a phone), not blocks of their own.
+        Both stay out of the right-click peek, which lifts this section: the
+        overlay script removes whatever is marked `data-peek-hide`, so the
+        peek carries neither a follow switch for the page it is peeking at nor
+        a duplicate `#follow-player`. --%>
+  <div id="player-heading" class="player-head">
+    <h2>
+      <Flags.name_flag code={@player["federation"]} on={Tournament.flags?(@payload)} />
+      <span :if={Tournament.show?(@payload, "title") && @player["title"]} class="title">
+        {@player["title"]}
+      </span>
+      {@player["name"]}
+      <span class="quiet">{gettext("no. %{number}", number: @player["no"])}</span>
+    </h2>
+
+    <div
+      :if={@player["fide_id"] || @follow?}
+      id="player-actions"
+      class="player-actions"
+      data-peek-hide
+    >
+      <%!-- The one link on the page that leaves the tournament for the player.
+            Never by name - see `OpenResultsWeb.PlayerHistory` for why matching
+            on a name would silently merge two different people. A player with
+            no FIDE id gets no cross-link at all, here or anywhere else. --%>
+      <a
+        :if={@player["fide_id"]}
+        id="player-history-link"
+        class="history-button"
+        href={~p"/players/#{@player["fide_id"]}"}
+      >
+        {gettext("All tournaments of %{name}", name: @player["name"])}
+      </a>
+
+      <.follow_button :if={@follow?} slug={@slug} no={@player["no"]} />
+    </div>
+  </div>
 
   <p class="details">
     <span :if={Tournament.show?(@payload, "rating") && @player["rating"]}>{@player["rating"]}</span>
@@ -40,33 +72,6 @@
 </section>
 
 <section id="player-detail">
-  <%!-- Up top, next to the name, because this is the one link on the page
-        that leaves the tournament for the player. A button, not a footnote.
-        Its own class: `.card-more` is hidden on the page itself. --%>
-  <p :if={@player["fide_id"]} class="history-link">
-    <a id="player-history-link" class="history-button" href={~p"/players/#{@player["fide_id"]}"}>
-      {gettext("All tournaments of %{name}", name: @player["name"])}
-    </a>
-  </p>
-
-  <%!-- Outside the summary, so the right-click peek does not carry a switch
-        for the page it is peeking at. Only where the pages it pins rows on
-        exist. --%>
-  <.follow_button
-    :if={
-      Tournament.show?(@payload, "player_cards") and
-        (Tournament.show?(@payload, "standings") or Tournament.show?(@payload, "pairings"))
-    }
-    slug={@slug}
-    no={@player["no"]}
-  />
-  <%!-- Deliberately outside #player-summary: the overlay lifts that section
-        verbatim for the right-click peek, and this is not part of the peek -
-        it is a reason to leave this tournament altogether, which belongs
-        with the rest of "open the page properly". Never by name - see
-        `OpenResultsWeb.PlayerHistory` for why matching on a name would
-        silently merge two different people. A player with no FIDE id gets no
-        cross-link at all, here or anywhere else. --%>
   <%!-- A link that follows the player from round to round - see
         `TournamentController.board/2`. Worth bookmarking, so it says what it
         will keep doing rather than which round it points at today. --%>

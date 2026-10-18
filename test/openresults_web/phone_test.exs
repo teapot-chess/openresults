@@ -254,11 +254,12 @@ defmodule OpenResultsWeb.PhoneTest do
 
       assert present?(
                document,
-               "#player-detail #follow-player[hidden][data-follow-slug='#{slug}'][data-follow-no='1']"
+               "#player-heading #follow-player[hidden][data-follow-slug='#{slug}'][data-follow-no='1']"
              )
 
-      # Not in the right-click peek, which lifts #player-summary only.
-      refute present?(document, "#player-summary #follow-player")
+      # In the heading row, marked so the right-click peek (which lifts
+      # #player-summary) strips it rather than carrying a second switch.
+      assert present?(document, "#player-summary #player-actions[data-peek-hide] #follow-player")
     end
 
     test "no pin where names are not links, since nothing could be found", %{conn: conn} do

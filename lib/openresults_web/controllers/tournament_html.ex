@@ -844,10 +844,18 @@ defmodule OpenResultsWeb.TournamentHTML do
   def follow_button(assigns) do
     ~H"""
     <div class="follow-control">
+      <%!-- The explanation is the button's own title now: a paragraph under it
+            would put the compact control back to being a block. The script
+            still reveals a `.follow-hint` if a page carries one. --%>
       <button
         type="button"
         id="follow-player"
         class="follow-button"
+        title={
+          gettext(
+            "Their row stays at the top of the standings, and their board at the top of each round - on this device only."
+          )
+        }
         data-follow-slug={@slug}
         data-follow-no={@no}
         data-label-follow={gettext("Follow this player")}
@@ -856,12 +864,6 @@ defmodule OpenResultsWeb.TournamentHTML do
       >
         {gettext("Follow this player")}
       </button>
-
-      <p class="quiet follow-hint" hidden>
-        {gettext(
-          "Their row stays at the top of the standings, and their board at the top of each round - on this device only."
-        )}
-      </p>
     </div>
     """
   end
@@ -1012,6 +1014,7 @@ defmodule OpenResultsWeb.TournamentHTML do
   defp tiebreak_heading(assigns) do
     assigns =
       assign(assigns,
+        code: Tournament.tiebreak_code(assigns.tiebreak),
         label: Tournament.tiebreak_label(assigns.tiebreak),
         short: Tournament.tiebreak_short(assigns.tiebreak)
       )
@@ -1020,6 +1023,7 @@ defmodule OpenResultsWeb.TournamentHTML do
     # name; a phone's stylesheet swaps what is drawn for `data-short`.
     ~H"""
     <span class="tb-head" title={@label} data-short={@short != @label && @short}>{@label}</span>
+    <TiebreakHelp.help code={@code} name={@label} />
     """
   end
 
@@ -3523,7 +3527,9 @@ defmodule OpenResultsWeb.TournamentHTML do
 
       <tbody>
         <tr :for={code <- @codes}>
-          <th scope="row">{@labels[code]}</th>
+          <th scope="row">
+            {@labels[code]} <TiebreakHelp.help code={code} name={@labels[code]} />
+          </th>
 
           <td class="num strong">{number(@working[code]["total"])}</td>
 
@@ -3593,7 +3599,8 @@ defmodule OpenResultsWeb.TournamentHTML do
 
       <div :for={code <- @codes} class="working-block">
         <h4>
-          {@labels[code]} <span class="num strong">{number(@working[code]["total"])}</span>
+          {@labels[code]} <TiebreakHelp.help code={code} name={@labels[code]} />
+          <span class="num strong">{number(@working[code]["total"])}</span>
         </h4>
 
         <div class="scroller">

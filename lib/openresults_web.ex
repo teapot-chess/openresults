@@ -90,6 +90,7 @@ defmodule OpenResultsWeb do
       # Common modules used in templates
       alias Phoenix.LiveView.JS
       alias OpenResultsWeb.Flags
+      alias OpenResultsWeb.TiebreakHelp
       alias OpenResultsWeb.Layouts
 
       # Routes generation with the ~p sigil

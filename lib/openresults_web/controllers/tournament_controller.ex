@@ -431,6 +431,11 @@ defmodule OpenResultsWeb.TournamentController do
           slug: slug,
           player: player,
           card: Tournament.card(payload, number),
+          # The follow switch pins rows on the standings and the pairings, so
+          # it is offered only where the player cards and one of those exist.
+          follow?:
+            Tournament.show?(payload, "player_cards") and
+              (Tournament.show?(payload, "standings") or Tournament.show?(payload, "pairings")),
           current: {:player, number}
         )
     end
