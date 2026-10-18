@@ -155,6 +155,10 @@ defmodule OpenResultsWeb.PlayerHistoryControllerTest do
 
       html = conn |> get(~p"/t/#{slug}/player/1") |> html_response(200)
       assert html =~ ~s|href="/players/#{@fide_id}"|
+
+      link = html |> LazyHTML.from_document() |> LazyHTML.query("a#player-history-link")
+      assert LazyHTML.attribute(link, "href") == ["/players/#{@fide_id}"]
+      assert LazyHTML.text(link) =~ "Müller, Jörg"
     end
 
     test "a player with no FIDE id gets no cross-link", %{conn: conn} do
@@ -163,6 +167,11 @@ defmodule OpenResultsWeb.PlayerHistoryControllerTest do
 
       html = conn |> get(~p"/t/#{slug}/player/4") |> html_response(200)
       refute html =~ "/players/"
+
+      assert html
+             |> LazyHTML.from_document()
+             |> LazyHTML.query("a#player-history-link")
+             |> Enum.empty?()
     end
   end
 end

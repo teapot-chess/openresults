@@ -40,6 +40,15 @@
 </section>
 
 <section id="player-detail">
+  <%!-- Up top, next to the name, because this is the one link on the page
+        that leaves the tournament for the player. A button, not a footnote.
+        Its own class: `.card-more` is hidden on the page itself. --%>
+  <p :if={@player["fide_id"]} class="history-link">
+    <a id="player-history-link" class="history-button" href={~p"/players/#{@player["fide_id"]}"}>
+      {gettext("All tournaments of %{name}", name: @player["name"])}
+    </a>
+  </p>
+
   <%!-- Outside the summary, so the right-click peek does not carry a switch
         for the page it is peeking at. Only where the pages it pins rows on
         exist. --%>
@@ -67,12 +76,6 @@
   >
     <a href={~p"/t/#{@slug}/player/#{@player["no"]}/board"}>
       {gettext("Their board in the latest round")}
-    </a>
-  </p>
-
-  <p :if={@player["fide_id"]} class="card-more">
-    <a href={~p"/players/#{@player["fide_id"]}"}>
-      {gettext("This player's history across tournaments")}
     </a>
   </p>
 
