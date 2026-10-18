@@ -27,6 +27,8 @@ Each entry is tagged so a version can be skimmed:
 
 ## [Unreleased]
 
+- [Feature] **An installation can be given a name.** `in_QBbAqjK8_A` told the operator nothing, which is the nature of identifiers and the reason people invented names. The installation's page now has a "Name it" link (Rename once it has one), taking a label of up to 80 characters such as "Club X laptop". The label appears above the id on the installations list and the tournament lists, as the heading of the installation's page and beside the owner of a tournament, and the list's search finds it. It is for the operator alone: no public page, API answer, snapshot or notice carries it, and the installation is never told. Saving it is logged like any other change, so the name's history is at least as well kept as its owner's memory.
+
 ## [0.26.0] - 2026-10-18
 
 - [Feature] **The entry form states its fee.** When the arbiter sets one, the form says what taking part costs: an amount, a currency and a note such as "free for juniors". It is a sentence and not a till; this site takes no payment, and the page that acknowledges an entry now says in plain words that no confirmation e-mail follows, because none will.

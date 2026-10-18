@@ -312,6 +312,12 @@ h2 {
   font-size: 0.875rem;
 }
 
+/* The operator's private name for an installation, above its id in the panel. */
+.installation-label {
+  display: block;
+  font-weight: 600;
+}
+
 /* A match the arbiter forfeited by decision: its own line under the score,
    in the body colour and weight, so it is not mistaken for a footnote. */
 .match-forfeit {

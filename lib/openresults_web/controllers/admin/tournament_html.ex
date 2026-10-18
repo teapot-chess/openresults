@@ -80,6 +80,7 @@ defmodule OpenResultsWeb.Admin.TournamentHTML do
             <td>
               <.owner
                 installation_id={tournament.installation_id}
+                label={@labels[tournament.installation_id]}
                 owner_email={tournament.owner_email}
               />
             </td>
@@ -148,6 +149,9 @@ defmodule OpenResultsWeb.Admin.TournamentHTML do
 
       <dd>
         <%= if @tournament.installation do %>
+          <span :if={@tournament.installation.label} id="owner-label">
+            {@tournament.installation.label}
+          </span>
           <a href={~p"/admin/installations/#{@tournament.installation.id}"}>
             {@tournament.installation.id}
           </a>
@@ -316,6 +320,7 @@ defmodule OpenResultsWeb.Admin.TournamentHTML do
         stats.snapshots >= OpenResults.PublicPublishing.installation_max_versions()
 
   attr :installation_id, :string, default: nil
+  attr :label, :string, default: nil
   attr :owner_email, :string, default: nil
 
   # The owner column. `owner_email` only ever accompanies a `nil`
@@ -325,6 +330,7 @@ defmodule OpenResultsWeb.Admin.TournamentHTML do
   # alone, or "operator · email" for a hosted account's own publish.
   defp owner(assigns) do
     ~H"""
+    <span :if={@label} class="installation-label">{@label}</span>
     <a :if={@installation_id} href={~p"/admin/installations/#{@installation_id}"}>
       {@installation_id}
     </a>
