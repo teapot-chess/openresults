@@ -1,0 +1,109 @@
+name: Deep checks
+
+# By hand only: test coverage and Dialyzer. Neither is a gate - coverage is a
+# map of what the tests reach, and Dialyzer's findings are reported, not
+# enforced. Run it from the Actions tab (or `gh workflow run deep-checks.yml`).
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  coverage:
+    name: Test coverage
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Elixir
+        uses: erlef/setup-beam@54075bcc5e249e4758d363f27d099f55d843f124 # v1.24.1
+        with:
+          elixir-version: '1.20'
+          otp-version: '29.0'
+
+      - name: Restore dependencies and build cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            deps
+            _build
+          key: ${{ runner.os }}-cover-otp29.0-ex1.20-${{ hashFiles('mix.lock') }}
+          restore-keys: ${{ runner.os }}-cover-otp29.0-ex1.20-
+
+      - name: Install dependencies
+        run: mix deps.get --check-locked
+
+      - name: Run tests with coverage
+        run: |
+          set -o pipefail
+          mix test --cover 2>&1 | tee cover.txt
+
+      - name: Write the coverage table to the summary
+        if: always()
+        run: |
+          {
+            echo '## Test coverage'
+            echo '```'
+            sed -n '/^Percentage/,/^Generated HTML/p' cover.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload coverage
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: coverage
+          path: |
+            cover/
+            cover.txt
+
+  dialyzer:
+    name: Dialyzer
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Elixir
+        id: beam
+        uses: erlef/setup-beam@54075bcc5e249e4758d363f27d099f55d843f124 # v1.24.1
+        with:
+          elixir-version: '1.20'
+          otp-version: '29.0'
+
+      - name: Restore dependencies and build cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            deps
+            _build
+          key: ${{ runner.os }}-dialyzer-build-otp29.0-ex1.20-${{ hashFiles('mix.lock') }}
+          restore-keys: ${{ runner.os }}-dialyzer-build-otp29.0-ex1.20-
+
+      - name: Restore the PLTs
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: priv/plts
+          key: plt-${{ runner.os }}-${{ steps.beam.outputs.otp-version }}-${{ steps.beam.outputs.elixir-version }}-${{ hashFiles('mix.lock') }}
+          restore-keys: plt-${{ runner.os }}-${{ steps.beam.outputs.otp-version }}-${{ steps.beam.outputs.elixir-version }}-
+
+      - name: Install dependencies
+        run: mix deps.get --check-locked
+
+      - name: Build the PLTs
+        run: mix dialyzer --plt
+
+      - name: Dialyzer (annotations)
+        continue-on-error: true
+        run: mix dialyzer --format github
+
+      - name: Dialyzer (text report)
+        run: mix dialyzer --format short > dialyzer.txt || true
+
+      - name: Upload the report
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: dialyzer
+          path: dialyzer.txt

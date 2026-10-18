@@ -50,3 +50,6 @@ agents.md
 .claude/
 .mcp.json
 graphify-out/
+
+# Dialyzer PLTs (mix dialyzer), rebuilt on demand.
+/priv/plts/
