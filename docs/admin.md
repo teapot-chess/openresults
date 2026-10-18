@@ -287,8 +287,9 @@ written to the action log with your address.
 
 - **Dashboard.** The two switches, what needs attention (pending tournaments,
   open reports), what published tournaments take on disk, the free space on
-  the database's volume against the free-disk floor, the version cap, and the
-  latest actions. While free space is below the floor a warning sits at the
+  the database's volume against the free-disk floor, the version cap, the
+  FIDE rating list the entry form searches (its date, how many players, the
+  last daily look and what came of it), and the latest actions. While free space is below the floor a warning sits at the
   top: installation keys cannot publish or create tournaments until there is
   room (deleting still works). "Not measured" means the floor is not
   protecting anything. **Pausing public publishing takes arbiters' live updates offline
