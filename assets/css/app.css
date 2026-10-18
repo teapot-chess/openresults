@@ -1811,6 +1811,50 @@ html[data-theme-source="user"][data-theme="contrast"] .theme-picker-item[data-th
   margin-bottom: 0;
 }
 
+/* The way from one tournament's card to the player's whole record. A pill
+   like the follow button, but filled on hover so it reads as a destination,
+   and tall enough to hit with a thumb. */
+.history-link {
+  margin: 0.75rem 0 1rem;
+}
+
+.history-button {
+  display: inline-block;
+  padding: 0.45rem 1rem;
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  background: var(--panel);
+  color: var(--accent);
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.history-button:hover,
+.history-button:focus-visible {
+  background: var(--accent);
+  color: var(--bg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .history-button {
+    transition: none;
+  }
+}
+
+@media screen and (pointer: coarse), screen and (max-width: 40rem) {
+  .history-button {
+    display: block;
+    min-height: 2.75rem;
+    padding-top: 0.7rem;
+    text-align: center;
+    box-sizing: border-box;
+  }
+}
+
 .placing {
   display: flex;
   align-items: baseline;
@@ -4255,6 +4299,7 @@ tr.is-followed > :first-child {
   .site-foot .feed-link,
   .site-foot .terms-link,
   .site-foot .build-id,
+  .history-link,
   .card-more {
     display: none !important;
   }
