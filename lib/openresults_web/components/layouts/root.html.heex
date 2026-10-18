@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>{title(assigns)}</title>
-    
+
     <%!--
       What a link to this page says when it is pasted into a club's WhatsApp
       group, which is how most people arrive here. Before this it said
@@ -137,7 +137,7 @@
       })();
     </script>
   </head>
-  
+
   <body>
     <%!-- First on the page, so the first Tab reaches it: past the brand, the
           three languages and the theme picker, straight to the table. Out of
@@ -150,7 +150,7 @@
           node every time, and a new node is not announced. Always present and
           never `hidden` for the same reason. --%>
     <div id="announcer" class="visually-hidden" aria-live="polite" aria-atomic="true"></div>
-    
+
     <div class={page_class(assigns)}>
       <%!-- The picker lives up here, not in the footer where it started.
             A popover anchored to the last element on the page can only open
@@ -163,7 +163,7 @@
         <a class="brand" href={~p"/"}>
           <.logo /> OpenResults
         </a>
-        
+
         <div class="masthead-tools">
           <%!-- Three links, not a menu. A reader whose browser already asks
                 for Dutch never needs this, so it is here for the minority
@@ -185,7 +185,7 @@
               <span class="visually-hidden">{name}</span>
             </a>
           </nav>
-          
+
           <%!-- The same popover the arbiter's app uses, so the two feel like
                 one system. The active option is highlighted purely from CSS,
                 keyed off the `data-theme` / `data-theme-source` attributes the
@@ -200,7 +200,7 @@
               <span class="theme-picker-swatch" aria-hidden="true"></span>
               <span class="theme-picker-word">{gettext("Theme")}</span>
             </summary>
-            
+
             <div class="theme-picker-panel" role="group" aria-label={gettext("Colour theme")}>
               <button
                 :for={
@@ -223,7 +223,7 @@
           </details>
         </div>
       </header>
-      
+
       <%!-- `data-live` marks the region the refresher replaces. Everything
             outside it - the theme, the scroll position, an open card - is
             untouched, which is the whole reason this is not a page reload.
@@ -249,13 +249,13 @@
           {@inner_content}
         </div>
       </main>
-      
+
       <%!-- The one thing an embed keeps from the footer: where it came from,
             and the way to the full page with everything the embed left out. --%>
       <footer :if={embed?(assigns)} class="site-foot embed-foot">
         <a href={full_page_path(assigns)}>{gettext("Full results on OpenResults")}</a>
       </footer>
-      
+
       <footer :if={!embed?(assigns)} class="site-foot">
         <span>{gettext("Published by the arbiter. Results are theirs, not this site's.")}</span>
         <%!-- The two things the refresher can say, carried as attributes
@@ -276,14 +276,14 @@
         <a :if={assigns[:feed_path]} class="feed-link" href={assigns[:feed_path]}>
           {gettext("Follow (feed)")}
         </a>
-        
+
         <%!-- Only on a tournament page the public can see - the controller
               sets it after finding the tournament, so a 404 never carries
               one. See `OpenResultsWeb.ReportController`. --%>
         <a :if={assigns[:report_path]} class="report-link" href={assigns[:report_path]}>
           {gettext("Report this page")}
         </a>
-        
+
         <%!-- On every public page, so the terms and the way to have something
               removed are one click from anywhere. Not on the projector view,
               where nobody can click and the footer is hidden anyway: left out
@@ -291,7 +291,7 @@
         <a :if={!assigns[:display?]} class="terms-link" href={~p"/terms"}>
           {gettext("Terms and privacy")}
         </a>
-        
+
         <%!-- In the footer of a site with no login, because the person asking
               "did my deploy land" is looking at this from outside. A version
               number could not answer it: this app reported the same 0.1.0 for
@@ -310,7 +310,7 @@
         </a>
       </footer>
     </div>
-    
+
     <%!--
       The player card, shown in place on right-click.
 
@@ -335,13 +335,13 @@
         <button type="button" class="card-close">
           {gettext("Close")}
         </button>
-        
+
         <div id="card-body">
           <p class="card-loading">{gettext("Loading…")}</p>
         </div>
       </div>
     </div>
-    
+
     <script>
       (() => {
         const KEY = "openresults:theme";
@@ -1019,7 +1019,7 @@
         });
       })();
     </script>
-    
+
     <%!--
       Two small things for a phone, kept apart from the script above because
       neither has anything to do with it.
