@@ -27,6 +27,8 @@ Each entry is tagged so a version can be skimmed:
 
 ## [Unreleased]
 
+## [0.26.0] - 2026-10-18
+
 - [Feature] **The entry form states its fee.** When the arbiter sets one, the form says what taking part costs: an amount, a currency and a note such as "free for juniors". It is a sentence and not a till; this site takes no payment, and the page that acknowledges an entry now says in plain words that no confirmation e-mail follows, because none will.
 - [Feature] **Entries waiting for the arbiter can be listed by name.** On the public entry list, when the arbiter allows both, the entries not yet decided on appear after the players by name only, each marked "unconfirmed". The list is the arbiter's own: discard an entry there and it is gone from here with the next copy. Names are cleaned, capped and escaped on the way in and on the way out, since a stranger chose them.
 
