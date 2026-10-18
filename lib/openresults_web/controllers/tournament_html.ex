@@ -1008,13 +1008,14 @@ defmodule OpenResultsWeb.TournamentHTML do
   # A tie-break's column heading. The full name on a screen with room for it,
   # the regulations' abbreviation on a phone - "Buchholz Cut-1" spelled out
   # made one column wider than the name beside it. The abbreviation carries
-  # the full name as its title.
+  # the full name as its title. No "?" here: a table full of question marks
+  # reads like an exam. The explanations live on the player page, where
+  # someone who opened a row is actually asking.
   attr :tiebreak, :map, required: true
 
   defp tiebreak_heading(assigns) do
     assigns =
       assign(assigns,
-        code: Tournament.tiebreak_code(assigns.tiebreak),
         label: Tournament.tiebreak_label(assigns.tiebreak),
         short: Tournament.tiebreak_short(assigns.tiebreak)
       )
@@ -1023,7 +1024,6 @@ defmodule OpenResultsWeb.TournamentHTML do
     # name; a phone's stylesheet swaps what is drawn for `data-short`.
     ~H"""
     <span class="tb-head" title={@label} data-short={@short != @label && @short}>{@label}</span>
-    <TiebreakHelp.help code={@code} name={@label} />
     """
   end
 

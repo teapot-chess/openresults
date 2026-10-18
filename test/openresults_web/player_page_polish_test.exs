@@ -53,11 +53,12 @@ defmodule OpenResultsWeb.PlayerPagePolishTest do
              |> Enum.any?(&(LazyHTML.text(&1) =~ "final scores of all your opponents"))
     end
 
-    test "the standings headings carry the same ?", %{conn: conn} do
+    test "the standings stay free of them; the ? waits for an opened player", %{conn: conn} do
       slug = publish!()
       document = doc(conn, ~p"/t/#{slug}")
 
-      assert count(document, "thead th button.tb-help[data-tb-help]") > 0
+      assert count(document, "thead th") > 0
+      assert count(document, ".tb-help") == 0
     end
 
     test "a Dutch visitor reads Dutch", %{conn: conn} do
