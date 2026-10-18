@@ -4,7 +4,7 @@ defmodule OpenResults.MixProject do
   def project do
     [
       app: :openresults,
-      version: "0.24.1",
+      version: "0.25.0",
       elixir: "~> 1.17",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
