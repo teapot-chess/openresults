@@ -37,6 +37,7 @@ Each entry is tagged so a version can be skimmed:
 - [Feature] The admin dashboard shows which FIDE list is live, how many players it holds, when it was last looked for and what came of it. `OPENRESULTS_FIDE_LIST_SYNC=off` stops the looking; `FIDE_LIST_URL` fetches from somewhere other than FIDE, for hosts FIDE has decided it does not like.
 - [Removed] `FIDE_LOOKUP_ENDPOINT` and `FIDE_LOOKUP_TOKEN`, and the proxy behind them. Still set, they are ignored. With them went the national (KBSB) half of the answer the arbiter's machine used to add, so a Belgian club player without a FIDE id is now back to typing their own details.
 - [Change] **New address.** The repository moved to github.com/teapot-chess; old links still redirect, out of politeness rather than obligation.
+
 ## [0.25.0] - 2026-10-18
 
 - [Change] **A player's card now has a button to their other tournaments.** The link to a player's history across tournaments used to be a line of small text that the page's own stylesheet hid, which made it admirably discreet and entirely useless. It is now a pill at the top of the card, "All tournaments of" the player, full width on a phone, and still absent when there is no FIDE id to follow. The history page already linked every entry back to that tournament's card.
