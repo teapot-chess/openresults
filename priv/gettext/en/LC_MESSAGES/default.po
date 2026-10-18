@@ -91,7 +91,7 @@ msgstr ""
 msgid "Arbiter: %{name}"
 msgstr ""
 
-#: lib/openresults_web/controllers/registration_html.ex:512
+#: lib/openresults_web/controllers/registration_html.ex:545
 #, elixir-autogen, elixir-format
 msgid "Asking is not the same as getting. What a missed round is worth - a half point, nothing at all - is the arbiter's decision and their tournament's rules, not this form's."
 msgstr ""
@@ -103,7 +103,7 @@ msgstr ""
 msgid "Back"
 msgstr ""
 
-#: lib/openresults_web/controllers/registration_html/received.html.heex:33
+#: lib/openresults_web/controllers/registration_html/received.html.heex:39
 #, elixir-autogen, elixir-format
 msgid "Back to %{tournament}"
 msgstr ""
@@ -192,7 +192,7 @@ msgstr ""
 #: lib/openresults_web/components/filter_bar.ex:216
 #: lib/openresults_web/components/filter_bar.ex:218
 #: lib/openresults_web/controllers/registration_html.ex:160
-#: lib/openresults_web/controllers/registration_html.ex:302
+#: lib/openresults_web/controllers/registration_html.ex:316
 #: lib/openresults_web/controllers/tournament_html.ex:1570
 #, elixir-autogen, elixir-format
 msgid "Club"
@@ -271,7 +271,7 @@ msgstr ""
 #: lib/openresults_web/components/filter_bar.ex:202
 #: lib/openresults_web/components/filter_bar.ex:204
 #: lib/openresults_web/controllers/registration_html.ex:144
-#: lib/openresults_web/controllers/registration_html.ex:301
+#: lib/openresults_web/controllers/registration_html.ex:315
 #: lib/openresults_web/controllers/tournament_html.ex:1568
 #, elixir-autogen, elixir-format
 msgid "Federation"
@@ -333,7 +333,7 @@ msgstr ""
 msgid "Loading…"
 msgstr ""
 
-#: lib/openresults_web/tournament.ex:918
+#: lib/openresults_web/tournament.ex:1011
 #, elixir-autogen, elixir-format
 msgid "Match %{match}, game %{game}"
 msgstr ""
@@ -345,7 +345,7 @@ msgid "Match device"
 msgstr ""
 
 #: lib/openresults_web/controllers/registration_html.ex:114
-#: lib/openresults_web/controllers/registration_html.ex:299
+#: lib/openresults_web/controllers/registration_html.ex:313
 #: lib/openresults_web/live/hall_live.ex:698
 #, elixir-autogen, elixir-format
 msgid "Name"
@@ -398,7 +398,7 @@ msgstr ""
 msgid "No tournament has published under %{slug}."
 msgstr ""
 
-#: lib/openresults_web/controllers/registration_html.ex:403
+#: lib/openresults_web/controllers/registration_html.ex:436
 #, elixir-autogen, elixir-format
 msgid "None"
 msgstr ""
@@ -531,7 +531,7 @@ msgid "Published tournaments"
 msgstr ""
 
 #: lib/openresults_web/controllers/registration_html.ex:137
-#: lib/openresults_web/controllers/registration_html.ex:300
+#: lib/openresults_web/controllers/registration_html.ex:314
 #: lib/openresults_web/controllers/tournament_html.ex:663
 #: lib/openresults_web/controllers/tournament_html.ex:1350
 #: lib/openresults_web/controllers/tournament_html.ex:1566
@@ -559,8 +559,8 @@ msgid "Result"
 msgstr ""
 
 #: lib/openresults_web/controllers/event_html.ex:33
-#: lib/openresults_web/tournament.ex:923
-#: lib/openresults_web/tournament.ex:927
+#: lib/openresults_web/tournament.ex:1016
+#: lib/openresults_web/tournament.ex:1020
 #, elixir-autogen, elixir-format
 msgid "Round %{number}"
 msgstr ""
@@ -587,7 +587,7 @@ msgstr ""
 msgid "Rounds"
 msgstr ""
 
-#: lib/openresults_web/controllers/registration_html.ex:496
+#: lib/openresults_web/controllers/registration_html.ex:529
 #, elixir-autogen, elixir-format
 msgid "Rounds you already know you cannot play"
 msgstr ""
@@ -613,7 +613,7 @@ msgstr ""
 msgid "Send your details to the arbiter of %{tournament}. They decide who plays; this form only carries the message."
 msgstr ""
 
-#: lib/openresults_web/controllers/registration_html/received.html.heex:26
+#: lib/openresults_web/controllers/registration_html/received.html.heex:32
 #, elixir-autogen, elixir-format
 msgid "Sent it twice, or spotted a mistake? Send it again and say so in the name field, or write to the organisers. Nothing on this page can edit or delete an entry: sorting out two entries for the same player is the arbiter's job, the same as it is with a paper form."
 msgstr ""
@@ -791,7 +791,7 @@ msgstr ""
 msgid "Too many entries have arrived from this connection."
 msgstr ""
 
-#: lib/openresults_web/tournament.ex:312
+#: lib/openresults_web/tournament.ex:405
 #, elixir-autogen, elixir-format
 msgid "Tournament"
 msgstr ""
@@ -954,7 +954,7 @@ msgstr ""
 msgid "pairing-allocated bye"
 msgstr ""
 
-#: lib/openresults_web/controllers/registration_html.ex:412
+#: lib/openresults_web/controllers/registration_html.ex:445
 #: lib/openresults_web/controllers/report_html.ex:69
 #, elixir-autogen, elixir-format
 msgid "required"
@@ -1440,7 +1440,7 @@ msgstr ""
 
 #: lib/openresults_web/controllers/terms_html/show.html.heex:96
 #, elixir-autogen, elixir-format
-msgid "Entries sent through a tournament's entry form: the name, the email address and the other details the form asks for. They are kept for the organiser only and never shown on a page."
+msgid "Entries sent through a tournament's entry form: the name, the email address and the other details the form asks for. They are kept for the organiser. If the organiser switches it on, the name alone of an entry still waiting for a decision is shown on the entry list, marked unconfirmed; the email address and the other details are never shown on a page."
 msgstr ""
 
 #: lib/openresults_web/controllers/terms_html/show.html.heex:127
@@ -2231,12 +2231,12 @@ msgstr ""
 msgid "provisional"
 msgstr ""
 
-#: lib/openresults_web/controllers/registration_html.ex:358
+#: lib/openresults_web/controllers/registration_html.ex:391
 #, elixir-autogen, elixir-format
 msgid "%{date}, %{time} UTC"
 msgstr ""
 
-#: lib/openresults_web/controllers/registration_html.ex:251
+#: lib/openresults_web/controllers/registration_html.ex:260
 #, elixir-autogen, elixir-format
 msgid "%{taken} of %{max} places taken, counting entries the arbiter has not decided yet."
 msgstr ""
@@ -2246,7 +2246,7 @@ msgstr ""
 msgid "All %{max} places in %{tournament} are taken or waiting for the arbiter, so this form is not taking more entries. Nothing you typed has been stored."
 msgstr ""
 
-#: lib/openresults_web/controllers/registration_html.ex:287
+#: lib/openresults_web/controllers/registration_html.ex:298
 #, elixir-autogen, elixir-format
 msgid "Entered so far"
 msgstr ""
@@ -2256,7 +2256,7 @@ msgstr ""
 msgid "Entries are not open yet"
 msgstr ""
 
-#: lib/openresults_web/controllers/registration_html.ex:248
+#: lib/openresults_web/controllers/registration_html.ex:257
 #, elixir-autogen, elixir-format
 msgid "Entries close on %{when}."
 msgstr ""
@@ -2286,7 +2286,7 @@ msgstr ""
 msgid "National ID"
 msgstr ""
 
-#: lib/openresults_web/controllers/registration_html.ex:292
+#: lib/openresults_web/controllers/registration_html.ex:306
 #, elixir-autogen, elixir-format
 msgid "Nobody is on the entry list yet."
 msgstr ""
@@ -2299,11 +2299,6 @@ msgstr ""
 #: lib/openresults_web/controllers/registration_html/closed.html.heex:41
 #, elixir-autogen, elixir-format
 msgid "Places can come free: the arbiter turns some entries down, and the form opens again by itself when they do. The organisers can also tell you whether there is a waiting list."
-msgstr ""
-
-#: lib/openresults_web/controllers/registration_html.ex:325
-#, elixir-autogen, elixir-format
-msgid "Players the arbiter has entered. Entries still waiting for a decision are not listed by name."
 msgstr ""
 
 #: lib/openresults_web/controllers/registration_controller.ex:305
@@ -3000,3 +2995,33 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgid "All tournaments of %{name}"
 msgstr "All tournaments of %{name}"
+
+#: lib/openresults_web/controllers/registration_html.ex:301
+#, elixir-autogen, elixir-format
+msgid "+ %{count} unconfirmed"
+msgstr ""
+
+#: lib/openresults_web/controllers/registration_html.ex:252
+#, elixir-autogen, elixir-format
+msgid "Entry fee: %{amount}."
+msgstr ""
+
+#: lib/openresults_web/controllers/registration_html/received.html.heex:26
+#, elixir-autogen, elixir-format
+msgid "No confirmation e-mail is sent: this page is the only acknowledgement you will get."
+msgstr ""
+
+#: lib/openresults_web/controllers/registration_html.ex:352
+#, elixir-autogen, elixir-format
+msgid "Players the arbiter has entered, and entries still waiting for a decision, marked unconfirmed. An unconfirmed entry is a request, not a place."
+msgstr ""
+
+#: lib/openresults_web/controllers/registration_html.ex:350
+#, elixir-autogen, elixir-format
+msgid "Players the arbiter has entered."
+msgstr ""
+
+#: lib/openresults_web/controllers/registration_html.ex:339
+#, elixir-autogen, elixir-format
+msgid "unconfirmed"
+msgstr ""

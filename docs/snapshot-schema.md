@@ -1100,7 +1100,9 @@ it. `list_public` is the exception and reads the other way, below.
   "closes_at": "2026-02-28T22:00:00Z",
   "max_players": 60,
   "taken": 42,
-  "list_public": true
+  "list_public": true,
+  "fee": { "amount": "12.50", "currency": "EUR", "note": "Free for juniors" },
+  "pending": [{ "name": "Waiting, Wim" }]
 }
 ```
 
@@ -1113,15 +1115,34 @@ it. `list_public` is the exception and reads the other way, below.
   it. Counting what arrived since is what keeps the cap honest while the
   arbiter's laptop is closed: those entries are not in `taken` yet.
 - `taken` - players already on the entry list **plus** entries waiting on
-  the arbiter's machine for a decision. A count and nothing more; no name
-  of an undecided entry ever travels in a snapshot.
+  the arbiter's machine for a decision. A count; names are `pending`, below.
 - `list_public` - whether the form page may list who has entered so far.
   The list is `players[]`, which the snapshot already publishes, rendered
-  with the same `display` switches as every other page. Undecided entries
-  appear only as a count, never by name: a name typed into a public form is
-  not something anybody has checked yet. **Absent means not listed**: this key
+  with the same `display` switches as every other page, followed by
+  `pending` when that is present. **Absent means not listed**: this key
   decides whether a page shows names in a place the arbiter never chose to
   put them, and the arbiter's app sends it `false` unless they switch it on.
+
+- `fee` - what the form says taking part costs, **a statement and nothing
+  more**; no payment is taken anywhere. `amount` is a decimal string with at
+  most two decimals (`"12"`, `"12.50"`), `currency` three capital letters,
+  `note` free text of at most 120 characters ("Free for juniors"). Any part
+  may be missing; no `fee` means none stated. The page prints `amount` and
+  `currency` together and the note beside them, and drops a part that does
+  not have the stated shape.
+- `pending` (added 2026-10-18) - the entries still waiting for the arbiter,
+  by name, in the order they arrived: `[{"name": "..."}]` and nothing else
+  about the entrant. The arbiter's app sends it **only** while `list_public`
+  is true and the arbiter has left "also list entries waiting for your
+  decision" on (the default); at most 200 names of at most 100 characters,
+  control characters removed. The form page shows them after the players,
+  each marked *unconfirmed*, with every name escaped. The arbiter's Discard
+  (or Accept, when the entry becomes a player) takes the name out of the
+  next snapshot, and every decision enqueues a publish. This server keeps no
+  list of its own, so there is nothing to keep in step; older stored
+  versions of the snapshot may still hold a name until they are pruned, but
+  only the latest is ever rendered. Absent means none. Nothing is e-mailed
+  to anybody at any stage.
 
 `registration_open: false` still closes the form outright, whatever this
 object says. None of it is enforced anywhere but on this server's form, and

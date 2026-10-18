@@ -240,10 +240,19 @@ defmodule OpenResultsWeb.RegistrationHTML do
   attr :places, :map, default: nil, doc: "%{taken: n, max: n}, or nil when uncapped"
 
   def entry_facts(assigns) do
-    assigns = assign(assigns, :closes_at, Tournament.registration_closes_at(assigns.payload))
+    assigns =
+      assigns
+      |> assign(:closes_at, Tournament.registration_closes_at(assigns.payload))
+      |> assign(:fee, Tournament.entry_fee(assigns.payload))
 
     ~H"""
-    <ul :if={@closes_at || @places} class="entry-facts" id="entry-facts">
+    <ul :if={@closes_at || @places || @fee} class="entry-facts" id="entry-facts">
+      <li :if={@fee} id="entry-fee">
+        <span :if={@fee.amount}>
+          {gettext("Entry fee: %{amount}.", amount: fee_amount(@fee))}
+        </span>
+        <span :if={@fee.note}>{@fee.note}</span>
+      </li>
       <li :if={@closes_at}>
         {gettext("Entries close on %{when}.", when: instant(@closes_at))}
       </li>
@@ -262,9 +271,10 @@ defmodule OpenResultsWeb.RegistrationHTML do
 
   Built from `players[]` - the entry list the snapshot already publishes -
   with the same `display` switches as the standings, so a column the arbiter
-  hid there is hidden here. Entries still waiting for the arbiter are a
-  count and never a name: a name typed into a public form is not something
-  anybody has checked yet. And no email, ever - `players[]` has none.
+  hid there is hidden here. Entries still waiting for the arbiter are listed
+  by name, after the players and marked unconfirmed, when the arbiter's app
+  sends them (`Tournament.pending_entrants/1`) - the arbiter's Discard takes
+  one off the next snapshot. And no email, ever - `players[]` has none.
   """
   attr :payload, :map, required: true
   attr :places, :map, default: nil
@@ -275,6 +285,7 @@ defmodule OpenResultsWeb.RegistrationHTML do
     assigns =
       assigns
       |> assign(:players, entrants(payload))
+      |> assign(:pending, Tournament.pending_entrants(payload))
       |> assign(:rating?, Tournament.show?(payload, "rating"))
       |> assign(:title?, Tournament.show?(payload, "title"))
       |> assign(:federation?, Tournament.show?(payload, "federation"))
@@ -286,13 +297,16 @@ defmodule OpenResultsWeb.RegistrationHTML do
       <h2 id="entry-list-heading">
         {gettext("Entered so far")}
         <span class="quiet">{length(@players)}</span>
+        <span :if={@pending != []} id="entry-pending-count" class="quiet">
+          {gettext("+ %{count} unconfirmed", count: length(@pending))}
+        </span>
       </h2>
 
-      <p :if={@players == []} class="empty">
+      <p :if={@players == [] and @pending == []} class="empty">
         {gettext("Nobody is on the entry list yet.")}
       </p>
 
-      <table :if={@players != []} class="standings entry-list">
+      <table :if={@players != [] or @pending != []} class="standings entry-list">
         <thead>
           <tr>
             <th scope="col" class="num">#</th>
@@ -318,13 +332,27 @@ defmodule OpenResultsWeb.RegistrationHTML do
             </td>
             <td :if={@club?}>{player["club"]}</td>
           </tr>
+          <tr :for={name <- @pending} class="pending">
+            <td class="num"></td>
+            <td>
+              {name}
+              <span class="tag">{gettext("unconfirmed")}</span>
+            </td>
+            <td :if={@rating?}></td>
+            <td :if={@federation?}></td>
+            <td :if={@club?}></td>
+          </tr>
         </tbody>
       </table>
 
       <p class="footnote">
-        {gettext(
-          "Players the arbiter has entered. Entries still waiting for a decision are not listed by name."
-        )}
+        <%= if @pending == [] do %>
+          {gettext("Players the arbiter has entered.")}
+        <% else %>
+          {gettext(
+            "Players the arbiter has entered, and entries still waiting for a decision, marked unconfirmed. An unconfirmed entry is a request, not a place."
+          )}
+        <% end %>
       </p>
     </section>
     """
@@ -342,6 +370,11 @@ defmodule OpenResultsWeb.RegistrationHTML do
       {-rating, player["name"]}
     end)
   end
+
+  # "12.50 EUR". The amount and the currency travel apart and are put back
+  # together here, because how a currency is written is a page's business.
+  defp fee_amount(%{amount: amount, currency: nil}), do: amount
+  defp fee_amount(%{amount: amount, currency: currency}), do: "#{amount} #{currency}"
 
   defp rating(value) when is_integer(value) and value > 0, do: value
   defp rating(_unrated), do: nil

@@ -288,6 +288,99 @@ defmodule OpenResultsWeb.Tournament do
   """
   def entry_list_public?(payload), do: Map.get(registration(payload), "list_public") == true
 
+  @max_pending_names 200
+
+  @doc """
+  The names of entries still waiting for the arbiter's decision, for the
+  public entry list - or `[]`.
+
+  Decided 2026-10-18: waiting entries may be listed by name, marked
+  unconfirmed, but only where the arbiter has turned the public list on, and
+  only the names the arbiter's machine put in `tournament.registration.pending`.
+  That list is the arbiter's own curation - a discarded entry is simply absent
+  from the next snapshot - so this server holds no list of its own and has
+  nothing to keep in step. The names were typed by strangers, so each is
+  re-cleaned here as well (control characters out, whitespace collapsed, 100
+  characters at most, at most #{@max_pending_names} of them) and the page
+  escapes them like every other string it prints.
+  """
+  @spec pending_entrants(map()) :: [String.t()]
+  def pending_entrants(payload) do
+    if entry_list_public?(payload) do
+      case Map.get(registration(payload), "pending") do
+        entries when is_list(entries) ->
+          entries
+          |> Enum.map(&pending_name/1)
+          |> Enum.reject(&is_nil/1)
+          |> Enum.take(@max_pending_names)
+
+        _absent_or_malformed ->
+          []
+      end
+    else
+      []
+    end
+  end
+
+  defp pending_name(%{"name" => name}) when is_binary(name) do
+    case name
+         |> String.replace(~r/[[:cntrl:]]+/u, " ")
+         |> String.replace(~r/\s+/u, " ")
+         |> String.trim()
+         |> String.slice(0, 100) do
+      "" -> nil
+      clean -> clean
+    end
+  end
+
+  defp pending_name(_other), do: nil
+
+  @doc """
+  What the form says it costs: `%{amount: "12.50", currency: "EUR", note: ...}`
+  with any part nil, or nil when the arbiter stated nothing.
+
+  Statement only. Nothing on this site takes payment. Every part is read
+  defensively because it is printed on a public page: an amount must look
+  like one, a currency is three capital letters, a note is stripped of
+  control characters and cut at 120 characters. A part that fails is
+  dropped rather than printed.
+  """
+  @spec entry_fee(map()) ::
+          %{amount: String.t() | nil, currency: String.t() | nil, note: String.t() | nil} | nil
+  def entry_fee(payload) do
+    fee = object(registration(payload), "fee")
+
+    amount =
+      case Map.get(fee, "amount") do
+        value when is_binary(value) -> if value =~ ~r/\A\d{1,6}(\.\d{1,2})?\z/, do: value
+        _other -> nil
+      end
+
+    currency =
+      case Map.get(fee, "currency") do
+        value when is_binary(value) -> if value =~ ~r/\A[A-Z]{3}\z/, do: value
+        _other -> nil
+      end
+
+    note =
+      case Map.get(fee, "note") do
+        value when is_binary(value) ->
+          case value
+               |> String.replace(~r/[[:cntrl:]]+/u, " ")
+               |> String.replace(~r/\s+/u, " ")
+               |> String.trim()
+               |> String.slice(0, 120) do
+            "" -> nil
+            clean -> clean
+          end
+
+        _other ->
+          nil
+      end
+
+    if amount || note, do: %{amount: amount, currency: amount && currency, note: note}
+  end
+
   defp full?(payload, queued_since) do
     case max_players(payload) do
       nil -> false
