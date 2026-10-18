@@ -3966,6 +3966,124 @@ a.xt-opp:hover {
   margin: 0.35rem 0 0;
 }
 
+/* The name and the two ways off the page, on one line: the actions sit
+   beside the name and drop under it when the line runs out (a phone). Small
+   and secondary - the name is the heading, these are footnotes with a border. */
+.player-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.9rem;
+}
+
+.player-head h2 {
+  margin-right: 0;
+}
+
+.player-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.5rem;
+}
+
+.player-actions .follow-control {
+  margin: 0;
+}
+
+.player-actions .history-button,
+.player-actions .follow-button {
+  display: inline-block;
+  min-height: 0;
+  margin: 0;
+  padding: 0.15rem 0.6rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.4;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+.player-actions .follow-button:not(.is-on) {
+  font-weight: 400;
+}
+
+@media screen and (pointer: coarse) {
+  .player-actions .history-button,
+  .player-actions .follow-button {
+    min-height: 2rem;
+    padding-top: 0.3rem;
+    padding-bottom: 0.3rem;
+  }
+}
+
+/* The "?" after a tie-break's name, and its explanation (`TiebreakHelp`).
+   The text is fixed-position so a scrolling table cannot clip it; the script
+   in the root layout places it, and without the script it opens on hover and
+   keyboard focus at its natural spot. */
+.tb-help-wrap {
+  position: relative;
+  display: inline-block;
+  margin-left: 0.25rem;
+  font-weight: 400;
+  letter-spacing: normal;
+  text-transform: none;
+  white-space: normal;
+}
+
+.tb-help {
+  box-sizing: border-box;
+  width: 1.1rem;
+  height: 1.1rem;
+  padding: 0;
+  border: 1px solid var(--quiet);
+  border-radius: 50%;
+  background: var(--panel);
+  color: var(--quiet);
+  font: inherit;
+  font-size: 0.7rem;
+  font-weight: 600;
+  line-height: 1;
+  cursor: help;
+  vertical-align: baseline;
+}
+
+.tb-help:hover,
+.tb-help:focus-visible,
+.tb-help[aria-expanded="true"] {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.tb-help-text {
+  display: none;
+  position: fixed;
+  z-index: 40;
+  box-sizing: border-box;
+  max-width: min(20rem, calc(100vw - 1rem));
+  padding: 0.5rem 0.7rem;
+  border: 1px solid var(--rule);
+  border-radius: 0.4rem;
+  background: var(--panel);
+  box-shadow: 0 4px 14px rgb(0 0 0 / 0.18);
+  color: var(--ink);
+  font-size: 0.8125rem;
+  font-weight: 400;
+  line-height: 1.4;
+  text-align: left;
+}
+
+.tb-help:focus-visible + .tb-help-text,
+.tb-help[aria-expanded="true"] + .tb-help-text {
+  display: block;
+}
+
+@media (hover: hover) {
+  .tb-help-wrap:hover .tb-help-text {
+    display: block;
+  }
+}
+
 /* The pinned copy: no rule under its one row. */
 .follow-pin-rows tbody tr:last-child > * {
   border-bottom: 0;
@@ -4316,6 +4434,8 @@ tr.is-followed > :first-child {
   .site-foot .terms-link,
   .site-foot .build-id,
   .history-link,
+  .player-actions,
+  .tb-help-wrap,
   .card-more {
     display: none !important;
   }

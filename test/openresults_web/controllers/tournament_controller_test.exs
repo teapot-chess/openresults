@@ -39,9 +39,14 @@ defmodule OpenResultsWeb.TournamentControllerTest do
   # (`TournamentHTML.row_meta/1`), which repeats the columns beside it and
   # is `display: none` everywhere but a narrow screen.
   defp seen_text(cell) do
-    meta = cell |> LazyHTML.query(".row-meta") |> LazyHTML.text()
-    text = LazyHTML.text(cell)
-    if meta == "", do: text, else: String.replace(text, meta, "")
+    # And the "?" explainer beside a tie-break's name (`TiebreakHelp`), which
+    # has its own tests.
+    Enum.reduce([".row-meta", ".tb-help-wrap"], LazyHTML.text(cell), fn selector, text ->
+      case cell |> LazyHTML.query(selector) |> LazyHTML.text() do
+        "" -> text
+        extra -> String.replace(text, extra, "")
+      end
+    end)
   end
 
   # The plain value a standings cell shows, ignoring a tiebreak's own

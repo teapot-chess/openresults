@@ -290,6 +290,7 @@ defmodule OpenResultsWeb.TiebreakWorkingTest do
       document = conn |> get(~p"/t/partly-hidden") |> doc()
 
       headers = texts(document, "table.standings thead th")
+      headers = Enum.map(headers, &String.replace(&1, ~r/ \?.*$/, ""))
 
       assert "Buchholz Cut-1" in headers
       refute "Sonneborn-Berger" in headers

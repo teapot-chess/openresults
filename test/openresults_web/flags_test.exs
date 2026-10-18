@@ -349,7 +349,11 @@ defmodule OpenResultsWeb.FlagsTest do
       slug = publish!()
 
       card = doc(conn, ~p"/t/#{slug}/player/1")
-      assert count(card, ".flag-name") == 0
+      # The heading carries the one flag (the code is printed in the details
+      # line beside it too, so the picture says it twice at most: its alt is
+      # the code); the tables below keep their federation column's own flag.
+      assert count(card, "#player-heading .flag-name") == 1
+      assert count(card, ".flag-name") == 1
       assert count(card, ~s(td .fed img.flag[alt=""])) > 0
     end
 

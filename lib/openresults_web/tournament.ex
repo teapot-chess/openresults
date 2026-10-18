@@ -1050,6 +1050,9 @@ defmodule OpenResultsWeb.Tournament do
     string(tiebreak, "label") || string(tiebreak, "code") || ""
   end
 
+  @doc "A tiebreak's code as the document declares it, or nil."
+  def tiebreak_code(tiebreak), do: string(tiebreak, "code")
+
   @doc """
   A tiebreak's short heading, for a column with no room for its name: the
   code the arbiter's app sends (the regulations' abbreviation), with the cut
