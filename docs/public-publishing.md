@@ -561,6 +561,13 @@ moderation.
   overrides (`installation_max_tournaments` and so on, see "Server
   settings"). They are independent of trust: an untrusted installation can
   have its own limits too.
+- **A label**, the operator's own name for the installation ("Club X
+  laptop"), set from its page in the panel (`put_installation_label/3`):
+  trimmed, at most 80 characters, blank clears it, logged as `label` with the
+  old and new text. It lives in the `installations.label` column, is shown only
+  in the admin panel (lists, installation page, a tournament's owner) and is
+  searchable there. It is never in a public page, an `/api` answer, a snapshot
+  or anything an installation receives, and it is not journalled.
 - Nothing here changes what an installation key may do otherwise: ownership,
   tournament keys, blocks, the pause and `storage_low` all apply as before.
 

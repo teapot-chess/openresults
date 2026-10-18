@@ -426,6 +426,9 @@ defmodule OpenResultsWeb.Router do
     get "/installations/:id/untrust", InstallationController, :confirm_untrust
     post "/installations/:id/untrust", InstallationController, :untrust
     # GET the form; GET with `check=1` the confirmation; POST the change.
+    # A private name: its own form is the page that posts, carrying the marker.
+    get "/installations/:id/label", InstallationController, :edit_label
+    post "/installations/:id/label", InstallationController, :label
     get "/installations/:id/limits", InstallationController, :confirm_limits
     post "/installations/:id/limits", InstallationController, :limits
 

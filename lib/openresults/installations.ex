@@ -133,7 +133,7 @@ defmodule OpenResults.Installations do
 
   @doc """
   Installations, newest first. Filters: `status` (`active` | `suspended` |
-  `revoked`), `search` (a substring of the id, client, client version or
+  `revoked`), `search` (a substring of the id, label, client, client version or
   either address), `limit`, `offset`.
 
   Each carries `tournament_count`: its `pending` and `listed` tournaments,
@@ -174,6 +174,7 @@ defmodule OpenResults.Installations do
       query,
       [i],
       fragment("? LIKE ? ESCAPE '\\'", i.id, ^pattern) or
+        fragment("? LIKE ? ESCAPE '\\'", i.label, ^pattern) or
         fragment("? LIKE ? ESCAPE '\\'", i.client, ^pattern) or
         fragment("? LIKE ? ESCAPE '\\'", i.client_version, ^pattern) or
         fragment("? LIKE ? ESCAPE '\\'", i.created_from, ^pattern) or
@@ -283,6 +284,39 @@ defmodule OpenResults.Installations do
     |> Map.put(:action, nil)
     |> Ecto.Changeset.put_change(:updated_at, DateTime.utc_now())
     |> Repo.update!()
+  end
+
+  @doc """
+  The operator's label for an installation, as the panel's form sends it
+  (string key `label`). Stores nothing.
+  """
+  @spec label_changeset(Installation.t(), map()) :: Ecto.Changeset.t()
+  def label_changeset(%Installation{} = installation, attrs) when is_map(attrs) do
+    installation
+    |> Installation.label_changeset(attrs)
+    |> Map.put(:action, :validate)
+  end
+
+  @doc false
+  # Stores a valid label changeset. For `OpenResults.Moderation`.
+  def update_label!(%Ecto.Changeset{valid?: true} = changeset) do
+    changeset
+    |> Map.put(:action, nil)
+    |> Ecto.Changeset.put_change(:updated_at, DateTime.utc_now())
+    |> Repo.update!()
+  end
+
+  @doc """
+  The labels of the given installations, `%{id => label}`; those without one
+  are left out. For the panel's lists.
+  """
+  @spec labels([String.t() | nil]) :: %{String.t() => String.t()}
+  def labels(ids) do
+    ids = ids |> Enum.reject(&is_nil/1) |> Enum.uniq()
+
+    from(i in Installation, where: i.id in ^ids and not is_nil(i.label), select: {i.id, i.label})
+    |> Repo.all()
+    |> Map.new()
   end
 
   @doc """

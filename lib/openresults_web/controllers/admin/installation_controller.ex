@@ -31,7 +31,7 @@ defmodule OpenResultsWeb.Admin.InstallationController do
   alias OpenResultsWeb.Admin.{Confirmation, Params}
 
   plug Confirmation
-       when action in [:suspend, :unsuspend, :revoke, :move, :trust, :untrust, :limits]
+       when action in [:suspend, :unsuspend, :revoke, :move, :trust, :untrust, :limits, :label]
 
   @statuses ~w(active suspended revoked)
 
@@ -311,6 +311,46 @@ defmodule OpenResultsWeb.Admin.InstallationController do
 
   defp pending_tournaments(installation),
     do: Enum.filter(installation.tournaments, &(&1.status == "pending"))
+
+  # --- the operator's label ---------------------------------------------------
+
+  def edit_label(conn, %{"id" => id}) do
+    with_installation(conn, id, fn installation ->
+      render_label(conn, installation, installation.label, nil)
+    end)
+  end
+
+  def label(conn, %{"id" => id} = params) do
+    with_installation(conn, id, fn installation ->
+      text = if is_binary(params["label"]), do: params["label"], else: ""
+
+      case Moderation.put_installation_label(installation.id, text, conn.assigns.admin) do
+        {:ok, updated} ->
+          conn
+          |> put_flash(:info, "Saved the name of #{updated.id}.")
+          |> redirect(to: ~p"/admin/installations/#{updated.id}")
+
+        {:error, %Ecto.Changeset{} = changeset} ->
+          {message, _} = Keyword.fetch!(changeset.errors, :label)
+
+          conn
+          |> put_status(:unprocessable_entity)
+          |> render_label(installation, text, "The name #{message}.")
+
+        {:error, :not_found} ->
+          gone(conn, id)
+      end
+    end)
+  end
+
+  defp render_label(conn, installation, value, error) do
+    render(conn, :label,
+      page_title: "Name for #{installation.id}",
+      installation: installation,
+      value: value,
+      error: error
+    )
+  end
 
   # --- own limits --------------------------------------------------------------
 

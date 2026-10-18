@@ -41,7 +41,7 @@ defmodule OpenResultsWeb.Admin.InstallationHTML do
           type="search"
           name="search"
           value={@filters["search"]}
-          placeholder="id, client, version or address"
+          placeholder="id, name, client, version or address"
         />
       </label>
       <button type="submit">Filter</button>
@@ -64,7 +64,10 @@ defmodule OpenResultsWeb.Admin.InstallationHTML do
         </thead>
         <tbody>
           <tr :for={installation <- @installations}>
-            <td><a href={~p"/admin/installations/#{installation.id}"}>{installation.id}</a></td>
+            <td>
+              <span :if={installation.label} class="installation-label">{installation.label}</span>
+              <a href={~p"/admin/installations/#{installation.id}"}>{installation.id}</a>
+            </td>
             <td>{client_label(installation)}</td>
             <td><.status value={installation.status} /></td>
             <td>{at(installation.inserted_at)}</td>
@@ -82,8 +85,9 @@ defmodule OpenResultsWeb.Admin.InstallationHTML do
   def show(assigns) do
     ~H"""
     <p class="admin-crumbs"><a href={~p"/admin/installations"}>Installations</a></p>
-    <h1>{@installation.id}</h1>
+    <h1>{@installation.label || @installation.id}</h1>
     <p class="details">
+      <span :if={@installation.label} id="installation-id">{@installation.id}</span>
       <span>{client_label(@installation)}</span>
       <span><.status value={@installation.status} /></span>
     </p>
@@ -129,6 +133,9 @@ defmodule OpenResultsWeb.Admin.InstallationHTML do
         id="untrust-installation"
       >
         Stop trusting
+      </a>
+      <a href={~p"/admin/installations/#{@installation.id}/label"} id="installation-label-link">
+        {if @installation.label, do: "Rename…", else: "Name it…"}
       </a>
       <a href={~p"/admin/installations/#{@installation.id}/limits"} id="installation-limits-link">
         Own limits…
@@ -402,6 +409,45 @@ defmodule OpenResultsWeb.Admin.InstallationHTML do
         </ul>
       </fieldset>
     </.confirmation>
+    """
+  end
+
+  def label(assigns) do
+    ~H"""
+    <p class="admin-crumbs">
+      <a href={~p"/admin/installations/#{@installation.id}"}>{@installation.id}</a>
+    </p>
+    <h1>A name for {@installation.id}</h1>
+
+    <p>
+      Only you see it, here in this panel. It is never shown on a public page and never sent to
+      the installation. Empty removes it.
+    </p>
+
+    <.form
+      for={%{}}
+      method="post"
+      action={~p"/admin/installations/#{@installation.id}/label"}
+      class="admin-form"
+      id="label-form"
+    >
+      <input type="hidden" name="confirm" value={~p"/admin/installations/#{@installation.id}/label"} />
+      <p :if={@error} class="alarm" role="alert" id="label-error">{@error}</p>
+      <div class={["field", @error && "field-wrong"]}>
+        <label for="installation-label">Name</label>
+        <input
+          type="text"
+          id="installation-label"
+          name="label"
+          value={@value}
+          placeholder="Club X laptop"
+        />
+      </div>
+      <div class="actions">
+        <button type="submit" id="label-save">Save</button>
+        <a href={~p"/admin/installations/#{@installation.id}"} class="cancel">Cancel</a>
+      </div>
+    </.form>
     """
   end
 

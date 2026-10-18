@@ -772,6 +772,57 @@ defmodule OpenResults.Moderation do
     end
   end
 
+  @doc "The labels of the given installation ids, `%{id => label}`; see `Installations.labels/1`."
+  @spec installation_labels([String.t() | nil]) :: %{String.t() => String.t()}
+  def installation_labels(ids), do: Installations.labels(ids)
+
+  @doc """
+  An installation's label, validated as `put_installation_label/3` would and
+  not stored.
+  """
+  @spec change_installation_label(Installation.t(), map()) :: Ecto.Changeset.t()
+  def change_installation_label(%Installation{} = installation, attrs),
+    do: Installations.label_changeset(installation, attrs)
+
+  @doc """
+  Gives an installation the operator's own name, or clears it (blank).
+  Trimmed, at most #{Installation.label_max()} characters. The label is for the panel
+  alone: nothing public and nothing an installation receives carries it. It
+  is not journalled - a restore has nothing to re-apply that makes the site
+  safer.
+
+  `{:ok, installation}`, `{:error, :not_found}`, or `{:error, changeset}`.
+  """
+  @spec put_installation_label(String.t(), String.t() | nil, actor()) ::
+          {:ok, Installation.t()} | {:error, :not_found | Ecto.Changeset.t()}
+  def put_installation_label(id, label, actor) do
+    email = actor!(actor)
+
+    case Repo.get(Installation, to_string(id)) do
+      nil ->
+        {:error, :not_found}
+
+      installation ->
+        changeset = Installations.label_changeset(installation, %{"label" => label})
+
+        if changeset.valid? do
+          transaction(fn ->
+            updated = Installations.update_label!(changeset)
+
+            log!(email, "label", "installation", installation.id, %{
+              from: installation.label,
+              to: updated.label
+            })
+
+            updated
+          end)
+          |> committed(& &1)
+        else
+          {:error, changeset}
+        end
+    end
+  end
+
   # Each limit whose value in force is now lower than before, with the
   # installation's own value after the change (`nil` for the server's). The
   # server's value stands in for a blank on both sides, read now.

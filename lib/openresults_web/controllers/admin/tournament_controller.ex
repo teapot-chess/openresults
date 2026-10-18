@@ -33,6 +33,7 @@ defmodule OpenResultsWeb.Admin.TournamentController do
     render(conn, :index,
       page_title: "Tournaments",
       tournaments: tournaments,
+      labels: tournaments |> Enum.map(& &1.installation_id) |> Moderation.installation_labels(),
       page: page,
       more?: more?,
       filters: %{"status" => status, "reported" => if(reported?, do: "true"), "search" => search}
