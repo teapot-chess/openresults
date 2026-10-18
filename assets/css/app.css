@@ -1851,16 +1851,6 @@ html[data-theme-source="user"][data-theme="contrast"] .theme-picker-item[data-th
   }
 }
 
-@media screen and (pointer: coarse), screen and (max-width: 40rem) {
-  .history-button {
-    display: block;
-    min-height: 2.75rem;
-    padding-top: 0.7rem;
-    text-align: center;
-    box-sizing: border-box;
-  }
-}
-
 .placing {
   display: flex;
   align-items: baseline;
@@ -3584,6 +3574,16 @@ a.xt-opp:hover {
    and leaves it zoomed - the table the reader was searching then sits half
    off the screen. 16px exactly, only where a finger or a narrow screen is. */
 @media screen and (pointer: coarse), screen and (max-width: 40rem) {
+  /* The history pill goes full width under a thumb. It lives here, with
+     every other phone rule, because the phone tests read one block. */
+  .history-button {
+    display: block;
+    min-height: 2.75rem;
+    padding-top: 0.7rem;
+    text-align: center;
+    box-sizing: border-box;
+  }
+
   .index-search-input,
   .filter-bar .filter-search-input,
   .filter-bar .filter-pill select,
