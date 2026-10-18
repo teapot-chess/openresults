@@ -3134,13 +3134,13 @@ msgstr "Het aantal partijen dat je met zwart won."
 
 #: lib/openresults_web/tiebreak_help.ex:82
 #, elixir-autogen, elixir-format
-msgid "The number of games you won, forfeit wins included."
-msgstr "Het aantal partijen dat je won, winst door forfait inbegrepen."
+msgid "The number of rounds in which you scored as much as a win: wins at the board, forfeit wins and the pairing bye all count."
+msgstr "Het aantal ronden waarin je evenveel scoorde als voor een overwinning: winst aan het bord, winst door forfait en de bye van de paring tellen allemaal mee."
 
 #: lib/openresults_web/tiebreak_help.ex:128
 #, elixir-autogen, elixir-format
-msgid "The number of rounds you actually played at the board."
-msgstr "Het aantal rondes dat je echt aan het bord speelde."
+msgid "The number of rounds you chose to play: every round except a bye you asked for and a game you forfeited. A round your opponent did not turn up for still counts."
+msgstr "Het aantal ronden waarin je koos om te spelen: elke ronde behalve een bye die je zelf vroeg en een partij die je forfait gaf. Een ronde waarin je tegenstander niet kwam opdagen telt wel mee."
 
 #: lib/openresults_web/tiebreak_help.ex:104
 #, elixir-autogen, elixir-format

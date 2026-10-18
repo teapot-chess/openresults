@@ -3134,13 +3134,13 @@ msgstr "Le nombre de parties gagnées avec les Noirs."
 
 #: lib/openresults_web/tiebreak_help.ex:82
 #, elixir-autogen, elixir-format
-msgid "The number of games you won, forfeit wins included."
-msgstr "Le nombre de parties gagnées, victoires par forfait comprises."
+msgid "The number of rounds in which you scored as much as a win: wins at the board, forfeit wins and the pairing bye all count."
+msgstr "Le nombre de rondes où vous avez marqué autant qu'une victoire : victoires sur l'échiquier, gains par forfait et l'exempt de l'appariement comptent tous."
 
 #: lib/openresults_web/tiebreak_help.ex:128
 #, elixir-autogen, elixir-format
-msgid "The number of rounds you actually played at the board."
-msgstr "Le nombre de rondes réellement jouées à l'échiquier."
+msgid "The number of rounds you chose to play: every round except a bye you asked for and a game you forfeited. A round your opponent did not turn up for still counts."
+msgstr "Le nombre de rondes où vous avez choisi de jouer : toutes sauf un bye demandé et une partie perdue par forfait. Une ronde où votre adversaire ne s'est pas présenté compte quand même."
 
 #: lib/openresults_web/tiebreak_help.ex:104
 #, elixir-autogen, elixir-format

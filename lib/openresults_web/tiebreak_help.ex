@@ -79,7 +79,7 @@ defmodule OpenResultsWeb.TiebreakHelp do
         "Only looked at between players who are tied on everything before it: the result of the games they played against each other."
       )
 
-  defp text("WIN"), do: gettext("The number of games you won, forfeit wins included.")
+  defp text("WIN"), do: gettext("The number of rounds in which you scored as much as a win: wins at the board, forfeit wins and the pairing bye all count.")
 
   defp text("WON"),
     do: gettext("The number of games you won over the board. Forfeit wins and byes do not count.")
@@ -125,7 +125,7 @@ defmodule OpenResultsWeb.TiebreakHelp do
         "The average rating of your opponents, with the two highest-rated and the two lowest-rated ones left out."
       )
 
-  defp text("REP"), do: gettext("The number of rounds you actually played at the board.")
+  defp text("REP"), do: gettext("The number of rounds you chose to play: every round except a bye you asked for and a game you forfeited. A round your opponent did not turn up for still counts.")
 
   defp text("MP"),
     do: gettext("Match points: what a team scores for winning, drawing or losing a match.")
