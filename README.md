@@ -124,8 +124,8 @@ The entry form's FIDE search reads this server's own copy of FIDE's rating
 list, so it works however the arbiter's machine is connected - a laptop
 behind a club's router included, which the old arrangement (asking the
 arbiter's machine over `localhost`) never reached. The copy is checked once a
-day and downloaded only when FIDE has published a new one, which is about
-once a month. A fresh install fetches it a minute after its first boot; until
+day and downloaded only when FIDE's file has changed since the last import -
+ratings move monthly, the file somewhat more often. A fresh install fetches it a minute after its first boot; until
 then the form says the search is not available yet.
 
 ## Status

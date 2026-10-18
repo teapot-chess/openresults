@@ -18,7 +18,7 @@ config :openresults, OpenResults.Repo,
   show_sensitive_data_on_connection_error: true
 
 # The FIDE list's own file, beside the main one. The daily sync is off in
-# dev: a laptop has no business downloading 41 MB every time somebody runs
+# dev: a laptop has no business downloading 45 MB every time somebody runs
 # `mix phx.server`. Set it to true here to try the real thing, or run
 # `OpenResults.FideList.Run.once()` from iex for a single look.
 config :openresults, OpenResults.FideList.Repo,

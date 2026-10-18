@@ -642,8 +642,10 @@ now and ignored if still set), which worked only where both apps share a box.
   times, then waits for the next day.
 - **Only if new.** The look is a `HEAD`; its `ETag` (or `Last-Modified` and
   `Content-Length`) is compared with the list that was imported, and an
-  unchanged list is not downloaded. FIDE publishes monthly, so this is one
-  41 MB download a month.
+  unchanged list is not downloaded. Ratings change monthly, but FIDE rebuilds
+  the file more often than that (new registrations; the one served on
+  2026-10-18 was dated the day before), so count on a 45 MB download on some
+  days and a few hundred bytes on the rest - at most one download a day.
 - **How.** The zip streams to `fide_list_work/` beside the list's database
   and is deleted afterwards; its text is read without being unpacked, a
   thousand rows at a time, at low priority, into a scratch table that is
@@ -655,7 +657,7 @@ now and ignored if still set), which worked only where both apps share a box.
   box, which nobody is awake to notice at three in the morning.
 - **Disk.** `fide_list.db` is about 145 MB after the first import and about
   290 MB from the second on (the old copy's pages are kept for the next one
-  to reuse), plus the 41 MB zip for the minutes it is being read. The index
+  to reuse), plus the 45 MB zip for the minutes it is being read. The index
   build sorts in a temporary file, which SQLite puts in `/var/tmp` (the
   unit's private one) unless `SQLITE_TMPDIR` says otherwise.
 - **Watching it.** The admin dashboard shows the live list's date and size,

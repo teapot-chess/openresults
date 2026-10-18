@@ -9,10 +9,10 @@ defmodule OpenResults.FideList do
   `localhost`. That was one list instead of two, and it worked exactly where
   both programs share a box. An arbiter running OpenPairings on a laptop
   behind a club's router cannot be reached from here at all - which is most
-  arbiters - so for them the search was simply absent. A copy that is a day
-  stale beats a search that does not exist, and FIDE only publishes monthly
-  anyway: the copy is the same list the arbiter has on all but the first day
-  of a month.
+  arbiters - so for them the search was simply absent. A copy that is at
+  most a day stale beats a search that does not exist; the ratings in it
+  change once a month anyway, and what changes in between is mostly players
+  FIDE has just registered.
 
   ## The pieces
 
@@ -192,7 +192,7 @@ defmodule OpenResults.FideList do
   @doc """
   Where the zip is written while it is read: `:fide_list_work_dir`, or a
   directory beside the list's database. Never the system's temp directory,
-  which on some hosts is memory - and 41 MB of it counted against this
+  which on some hosts is memory - and 45 MB of it counted against this
   service's memory ceiling.
   """
   def work_dir do

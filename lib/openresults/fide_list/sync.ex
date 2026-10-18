@@ -6,8 +6,9 @@ defmodule OpenResults.FideList.Sync do
 
     * **Once a day, at a quiet hour** - `:fide_list_hour` (UTC, default 3),
       seventeen minutes past, so it does not land on the same second as
-      every other cron job on the internet. Most days that is one `HEAD`
-      request and nothing else; see `OpenResults.FideList.Source`.
+      every other cron job on the internet. On a day FIDE has not touched
+      its file that is one `HEAD` request and nothing else; see
+      `OpenResults.FideList.Source`.
     * **Shortly after boot** (`:fide_list_boot_delay_ms`, a minute by
       default), but only when there is no list yet - a fresh install - or the
       last check is more than a day old, which is what a server that was

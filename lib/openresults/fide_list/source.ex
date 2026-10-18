@@ -4,11 +4,14 @@ defmodule OpenResults.FideList.Source do
 
   ## "Only if new"
 
-  FIDE publishes once a month and this server looks once a day, so on about
-  twenty-nine days out of thirty the right amount to download is nothing.
-  Whether today is the thirtieth is decided by a `HEAD` request - a few
-  hundred bytes - whose validators are compared with the ones recorded when
-  the live list was imported (`changed?/2`):
+  Ratings change once a month. The file does not wait for them: FIDE
+  rebuilds it whenever it likes - the copy served on 2026-10-18 was dated the
+  17th - with new registrations in it. So whether today's 45 MB are worth
+  downloading is decided by a `HEAD` request, a few hundred bytes, whose
+  validators are compared with the ones recorded when the live list was
+  imported (`changed?/2`). Measured on 2026-10-18, FIDE sends an `ETag`
+  (nginx's: modification time and size), a `Last-Modified` and a
+  `Content-Length`.
 
     1. both sides have an `ETag`: changed when they differ;
     2. otherwise both have a `Last-Modified`: changed when it differs, or
@@ -33,7 +36,7 @@ defmodule OpenResults.FideList.Source do
 
   @default_url "https://ratings.fide.com/download/players_list.zip"
 
-  # The real zip is about 41 MB. Generous, and still a bound on what a
+  # The real zip is about 45 MB. Generous, and still a bound on what a
   # redirected or misbehaving endpoint can pour onto this disk.
   @max_download_bytes 250_000_000
 
