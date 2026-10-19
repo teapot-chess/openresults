@@ -205,6 +205,19 @@ defmodule OpenResults.TournamentKeys do
   def claimed?(slug), do: not is_nil(fetch(slug))
 
   @doc """
+  Is `presented` - a value from the tournament-key header - the operator
+  token? What break-glass is. For `OpenResults.Tombstones`, which lets
+  exactly that through a deleted tournament and nothing else.
+  """
+  @spec break_glass_key?(term()) :: boolean()
+  def break_glass_key?(presented) do
+    case normalize(presented) do
+      nil -> false
+      key -> master_token?(key)
+    end
+  end
+
+  @doc """
   Forgets the claim on `slug`, returning how many rows went.
 
   Part of a takedown and only that. There is no other way to release a key,

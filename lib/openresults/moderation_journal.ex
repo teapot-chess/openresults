@@ -60,8 +60,12 @@ defmodule OpenResults.ModerationJournal do
     * `delete`: if anything is still held for the slug that is OLDER than the
       line (a snapshot, a registration, the key claim, the tournament row),
       the database predates the delete, and the slug is purged again
-      (`OpenResults.Takedown.purge/1`). A tournament published again under the
-      slug after the delete is newer than the line, and stays.
+      (`OpenResults.Takedown.purge/2`). A tournament published again under the
+      slug after the delete is newer than the line, and stays. An admin
+      delete (`by: "admin"`) also gets its tombstone back
+      (`OpenResults.Tombstones`) when the database lacks it - with the
+      purge, or alone when nothing at all is held for the slug - unless the
+      action log shows a `lift_tombstone` at or after the line.
     * `hide`, `suspend`, and the two switches: if the action log has any row
       about the same target at or after the line's time - the action itself,
       a later reversal, an earlier replay of this line or a later one (a
@@ -111,6 +115,7 @@ defmodule OpenResults.ModerationJournal do
   alias OpenResults.Settings
   alias OpenResults.Snapshots.Snapshot
   alias OpenResults.Takedown
+  alias OpenResults.Tombstones
   alias OpenResults.TournamentKeys.TournamentKey
   alias OpenResults.Tournaments
   alias OpenResults.Tournaments.Tournament
@@ -371,24 +376,52 @@ defmodule OpenResults.ModerationJournal do
   end
 
   defp reapply(%{"action" => "delete", "target" => slug, "at" => at} = entry, _later, _now) do
-    if older_data?(slug, at) do
-      {:ok, counts} =
+    older? = older_data?(slug, at)
+    tombstone? = tombstone_owed?(entry, older?)
+
+    cond do
+      older? ->
+        {:ok, counts} =
+          Repo.transaction(fn ->
+            counts =
+              Takedown.purge(slug,
+                tombstone: if(tombstone?, do: Moderation.restore_replay_actor())
+              )
+
+            replayed!(
+              "delete",
+              "tournament",
+              slug,
+              entry,
+              counts |> Map.put(:by, entry["by"]) |> Map.put(:tombstone, tombstone?)
+            )
+
+            counts
+          end)
+
+        Tournaments.forget(slug)
+
+        announce(
+          entry,
+          "#{counts.snapshots} snapshot(s) and #{counts.registrations} entries removed"
+        )
+
+        true
+
+      # Nothing to purge, but the operator's delete left a tombstone the
+      # restored database does not have - a backup taken between the delete
+      # and the tombstones existing, or one taken before the delete of a slug
+      # that held nothing older. Without it the next publish would bring the
+      # tournament back.
+      tombstone? ->
         Repo.transaction(fn ->
-          counts = Takedown.purge(slug)
-          replayed!("delete", "tournament", slug, entry, Map.put(counts, :by, entry["by"]))
-          counts
+          Tombstones.put(slug, nil, Moderation.restore_replay_actor())
+          replayed!("delete", "tournament", slug, entry, %{by: entry["by"], tombstone: true})
         end)
+        |> applied?(entry)
 
-      Tournaments.forget(slug)
-
-      announce(
-        entry,
-        "#{counts.snapshots} snapshot(s) and #{counts.registrations} entries removed"
-      )
-
-      true
-    else
-      false
+      true ->
+        false
     end
   end
 
@@ -573,6 +606,35 @@ defmodule OpenResults.ModerationJournal do
       "Moderation journal: #{entry["action"]} #{entry["target"] || entry["cidr"]} of " <>
         "#{DateTime.to_iso8601(entry["at"])} was not in the database - #{what}."
     )
+  end
+
+  # An admin delete's tombstone, when the database lacks it - unless it was
+  # lifted (break-glass) at or after the line, which the action log records,
+  # or the slug was published again after the delete and before the
+  # tombstones existed: data newer than the line with none older is a page
+  # somebody put back on purpose, and a tombstone under a live page would
+  # refuse its next publish while leaving it up.
+  defp tombstone_owed?(%{"by" => "admin", "target" => slug, "at" => at}, older?) do
+    not Tombstones.tombstoned?(slug) and not lifted_since?(slug, at) and
+      (older? or not held?(slug))
+  end
+
+  defp tombstone_owed?(_owner_or_operator_delete, _older?), do: false
+
+  defp lifted_since?(slug, at) do
+    Repo.exists?(
+      from a in Action,
+        where:
+          a.target_type == "tournament" and a.target == ^slug and
+            a.action == "lift_tombstone" and a.inserted_at >= ^at
+    )
+  end
+
+  # Anything at all held for the slug, of any age.
+  defp held?(slug) do
+    Repo.exists?(from s in Snapshot, where: s.tournament_slug == ^slug) or
+      Repo.exists?(from t in Tournament, where: t.slug == ^slug) or
+      Repo.exists?(from k in TournamentKey, where: k.tournament_slug == ^slug)
   end
 
   # Anything held for the slug that is older than the delete - the database

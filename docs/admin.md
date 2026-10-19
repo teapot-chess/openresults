@@ -309,7 +309,13 @@ written to the action log with your address.
   transfer to another installation by its `in_...` id (this clears the
   tournament key, so that installation's next publish claims it), or delete
   (every stored version and the entry list with its email addresses; it
-  cannot be undone).
+  cannot be undone). A delete leaves a tombstone on the address: every later
+  publish to it is refused with `tournament_deleted`, including a hosted
+  OpenPairings publishing with the operator token, which then switches
+  publishing off for that tournament and tells its arbiter. Without that, the
+  next result typed in would have put the page straight back. Only a
+  break-glass publish (the operator token sent as the tournament key too)
+  lifts a tombstone, and the action log records it as `lift_tombstone`.
 - **Installations.** Suspend (its key stops publishing until unsuspended),
   unsuspend, or revoke (final; you choose whether to hide its tournaments
   too). Addresses show as "forgotten after 30 days" once retention has

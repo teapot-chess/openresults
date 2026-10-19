@@ -36,6 +36,9 @@ defmodule OpenResultsWeb.ApiError do
     tournament_hidden:
       {403,
        "this tournament has been hidden by the operator; it can be deleted but not published"},
+    tournament_deleted:
+      {410,
+       "the operator of this server deleted this tournament; it cannot be published again under this slug"},
     tournament_limit: {403, "this installation already holds as many tournaments as it may"},
     address_blocked: {403, "requests from this address are blocked; contact the operator"},
     snapshot_too_large: {413, "the snapshot is larger than an installation key may publish"},
