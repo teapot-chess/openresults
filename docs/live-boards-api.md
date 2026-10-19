@@ -146,7 +146,9 @@ the panel.
 A publisher loses its keys with the tournament: a takedown (`DELETE
 /api/tournaments/:slug`) deletes them, a transfer to another installation
 revokes them, and revoking an installation revokes the keys of all its
-tournaments. Hiding a tournament revokes nothing: the live endpoint refuses a
+tournaments. A revocation also survives the server being restored from an
+older backup: it is kept in the moderation journal and applied again at boot
+(`docs/public-publishing.md`). Hiding a tournament revokes nothing: the live endpoint refuses a
 hidden tournament whatever is presented.
 
 ### Body

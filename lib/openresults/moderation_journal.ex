@@ -33,6 +33,7 @@ defmodule OpenResults.ModerationJournal do
       {"v":1,"at":"...","action":"put_setting","target":"public_publishing_paused","value":true}
       {"v":1,"at":"...","action":"untrust","target":"in_XWtJ..."}
       {"v":1,"at":"...","action":"lower_limits","target":"in_XWtJ...","limits":{"max_versions":5,"max_tournaments":null}}
+      {"v":1,"at":"...","action":"revoke_relay_keys","target":"gent-open","keys":["<sha-256 hex>"]}
 
   **Only the safer direction is journalled**: `delete` - the admin panel's,
   and an owner's or the operator's `DELETE /api/tournaments/:slug` (`by` says
@@ -80,6 +81,10 @@ defmodule OpenResults.ModerationJournal do
     * `untrust`: as `suspend` - passed over when the action log has a row
       about the installation at or after the line; otherwise a trusted
       installation's trust is cleared.
+    * `revoke_relay_keys` (the 2026-10-19 sweep): every listed key the
+      restored database still holds unrevoked is revoked again. Nothing to
+      look up first - revoked is final. A replayed `revoke` also revokes the
+      installation's relay keys, as the live one does.
     * `lower_limits`: passed over the same way; otherwise every journalled
       limit whose value in force is still HIGHER than the journalled one
       (a blank counting as the server's value now) is set to it. A limit
@@ -110,6 +115,7 @@ defmodule OpenResults.ModerationJournal do
   alias OpenResults.Moderation
   alias OpenResults.Moderation.Action
   alias OpenResults.Registrations.Registration
+  alias OpenResults.RelayKeys
   alias OpenResults.Repo
   alias OpenResults.ServerSettings
   alias OpenResults.Settings
@@ -122,7 +128,8 @@ defmodule OpenResults.ModerationJournal do
 
   require Logger
 
-  @actions ~w(delete hide revoke suspend block_address put_setting untrust lower_limits)
+  @actions ~w(delete hide revoke suspend block_address put_setting untrust lower_limits
+               revoke_relay_keys)
   @margin_days 7
 
   # The switch and the value that makes the site safer. The other direction is
@@ -190,6 +197,26 @@ defmodule OpenResults.ModerationJournal do
           at
         )
   end
+
+  @doc """
+  Relay keys of `slug` revoked - by the panel, by the publisher, replaced
+  under a label, or taken away by a transfer. The line carries each key's
+  stored SHA-256 fingerprint, never a key. `keys` are `RelayKey` structs or
+  fingerprints; none is a no-op.
+  """
+  def record_relay_key_revoke(slug, keys, %DateTime{} = at)
+      when is_binary(slug) and is_list(keys) do
+    case Enum.map(keys, &fingerprint/1) do
+      [] ->
+        :ok
+
+      fingerprints ->
+        append(%{"action" => "revoke_relay_keys", "target" => slug, "keys" => fingerprints}, at)
+    end
+  end
+
+  defp fingerprint(%RelayKeys.RelayKey{key_hash: hash}), do: hash
+  defp fingerprint(hash) when is_binary(hash), do: hash
 
   @doc "An address or range blocked, until `expires_at`."
   def record_block(cidr, %DateTime{} = expires_at, %DateTime{} = at) when is_binary(cidr),
@@ -350,6 +377,13 @@ defmodule OpenResults.ModerationJournal do
       else: :error
   end
 
+  defp well_formed(%{"action" => "revoke_relay_keys", "target" => slug, "keys" => keys} = entry)
+       when is_binary(slug) and is_list(keys) and keys != [] do
+    if Enum.all?(keys, &(is_binary(&1) and &1 =~ ~r/^[0-9a-f]{64}$/)),
+      do: {:ok, entry},
+      else: :error
+  end
+
   defp well_formed(%{"action" => action, "target" => target} = entry)
        when action in ~w(delete hide revoke suspend untrust) and is_binary(target),
        do: {:ok, entry}
@@ -456,9 +490,17 @@ defmodule OpenResults.ModerationJournal do
           {:ok, _installation} ->
             hidden = if hide?, do: Tournaments.hide_all_for(id), else: []
 
+            # As the live revoke does: a hall box the installation minted a
+            # key for would otherwise go on writing for an organiser the
+            # operator has shown the door, and the restored database holds
+            # those keys unrevoked.
+            relay_keys_revoked =
+              RelayKeys.revoke_all_for_installation(id, Moderation.restore_replay_actor())
+
             replayed!("revoke", "installation", id, entry, %{
               hide_tournaments: hide?,
-              hidden: hidden
+              hidden: hidden,
+              relay_keys_revoked: relay_keys_revoked
             })
 
             hidden
@@ -470,6 +512,22 @@ defmodule OpenResults.ModerationJournal do
 
     with {:ok, hidden} <- result, do: Enum.each(hidden, &Tournaments.forget/1)
     applied?(result, entry)
+  end
+
+  # Revoked is final, so there is no reversal to look for in the action log:
+  # any listed key the restored database still holds unrevoked is revoked again.
+  defp reapply(
+         %{"action" => "revoke_relay_keys", "target" => slug, "keys" => keys} = entry,
+         _later,
+         _now
+       ) do
+    Repo.transaction(fn ->
+      case RelayKeys.revoke_fingerprints(keys, Moderation.restore_replay_actor()) do
+        0 -> Repo.rollback(:already_revoked)
+        n -> replayed!("relay_key_revoke", "tournament", slug, entry, %{revoked: n})
+      end
+    end)
+    |> applied?(entry)
   end
 
   defp reapply(%{"action" => "suspend", "target" => id, "at" => at} = entry, _later, _now) do

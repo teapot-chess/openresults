@@ -240,11 +240,36 @@ defmodule OpenResults.RelayKeys do
   the new one a tournament that a stranger's Raspberry Pi can still post
   into would be an odd welcome present.
   """
-  @spec revoke_all_for(String.t(), String.t(), DateTime.t()) :: non_neg_integer()
+  @spec revoke_all_for(String.t(), String.t(), DateTime.t()) :: [RelayKey.t()]
   def revoke_all_for(slug, revoked_by, now \\ DateTime.utc_now()) do
+    keys =
+      Repo.all(from k in RelayKey, where: k.tournament_slug == ^slug and is_nil(k.revoked_at))
+
+    if keys != [] do
+      ids = Enum.map(keys, & &1.id)
+
+      Repo.update_all(from(k in RelayKey, where: k.id in ^ids),
+        set: [revoked_at: now, revoked_by: revoked_by]
+      )
+    end
+
+    keys
+  end
+
+  @doc false
+  # For `OpenResults.ModerationJournal`: the keys among `fingerprints` (their
+  # stored SHA-256) that a restored database still holds unrevoked, revoked
+  # again. Returns how many. Revoked is final, so this never asks whether it
+  # should.
+  @spec revoke_fingerprints([String.t()], String.t(), DateTime.t()) :: non_neg_integer()
+  def revoke_fingerprints(fingerprints, revoked_by, now \\ DateTime.utc_now())
+
+  def revoke_fingerprints([], _revoked_by, _now), do: 0
+
+  def revoke_fingerprints(fingerprints, revoked_by, now) when is_list(fingerprints) do
     {count, _} =
       Repo.update_all(
-        from(k in RelayKey, where: k.tournament_slug == ^slug and is_nil(k.revoked_at)),
+        from(k in RelayKey, where: k.key_hash in ^fingerprints and is_nil(k.revoked_at)),
         set: [revoked_at: now, revoked_by: revoked_by]
       )
 

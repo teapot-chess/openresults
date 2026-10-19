@@ -841,6 +841,17 @@ clear_public_notice(actor) :: {:ok, notice} | {:error, :not_set}
   raising an installation's limit are never journalled
   and never replayed. Each re-applied action writes one action log row with
   the actor `restore-replay`.
+- **(settled in the 2026-10-19 sweep)** Relay keys are credentials too, and a
+  restore used to bring revoked ones back. A `revoke` replayed from the
+  journal now revokes the installation's relay keys with it
+  (`RelayKeys.revoke_all_for_installation/2`), as the live revoke does. Every
+  other relay-key revocation - the panel's, the publisher's
+  `DELETE .../relay-keys`, a key replaced under the same label, and the ones
+  a `transfer/3` takes away - is journalled as `revoke_relay_keys` with the
+  slug and the keys' SHA-256 fingerprints (never a key), and replayed by
+  revoking any of those keys the restored database still holds unrevoked.
+  Revoked is final, so there is nothing to ask the action log first. An admin
+  delete's replay keeps its tombstone - see "Deleted tournaments".
 
 **(settled in the build)** What the panel gets back:
 

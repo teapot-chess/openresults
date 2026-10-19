@@ -408,6 +408,108 @@ defmodule OpenResults.ModerationJournalTest do
     end
   end
 
+  describe "relay keys, after a restore (2026-10-19 sweep)" do
+    import OpenResults.PublicPublishingFixtures
+
+    alias OpenResults.RelayKeys.RelayKey
+
+    # What a restore does to a revoked key: the backup holds it unrevoked.
+    defp unrevoke(id) do
+      import Ecto.Query
+
+      Repo.update_all(from(k in RelayKey, where: k.id == ^id),
+        set: [revoked_at: nil, revoked_by: nil]
+      )
+    end
+
+    defp revoked?(id), do: Repo.get!(RelayKey, id).revoked_at != nil
+
+    defp published!(prefix) do
+      slug = unique_slug(prefix)
+      assert json_response(publish(payload(slug), operator_token(), random_key()), 200)
+      slug
+    end
+
+    test "a revoked key is journalled by fingerprint, and revoked again by the replay",
+         %{journal: journal} do
+      slug = published!("relay")
+      {:ok, %{relay_key: relay_key, key: key}} = Moderation.create_relay_key(slug, "hall", @ops)
+      {:ok, _} = Moderation.revoke_relay_key(slug, relay_key.id, @ops)
+
+      assert [%{"action" => "revoke_relay_keys", "target" => ^slug, "keys" => [fingerprint]}] =
+               lines(journal)
+
+      assert fingerprint == relay_key.key_hash
+      refute File.read!(journal) =~ key
+
+      unrevoke(relay_key.id)
+      assert ModerationJournal.replay() == 1
+      assert revoked?(relay_key.id)
+      assert ModerationJournal.replay() == 0
+    end
+
+    test "the publisher's withdrawals and a transfer are journalled too", %{journal: journal} do
+      slug = published!("relay-pub")
+      {:ok, %{relay_key: first}} = Moderation.publisher_relay_key(slug, "hall", :operator_token)
+      # Replaces `first` under the same label.
+      {:ok, %{relay_key: second}} = Moderation.publisher_relay_key(slug, "hall", :operator_token)
+      {:ok, 1} = Moderation.publisher_revoke_relay_keys(slug, nil, :operator_token)
+
+      other = published!("relay-moved")
+      {:ok, %{relay_key: third}} = Moderation.create_relay_key(other, "hall", @ops)
+      {installation, _key} = installation!()
+      {:ok, _} = Moderation.transfer(other, installation.id, @ops)
+
+      assert Enum.map(lines(journal), & &1["keys"]) ==
+               [[first.key_hash], [second.key_hash], [third.key_hash]]
+
+      Enum.each([first, second, third], &unrevoke(&1.id))
+      assert ModerationJournal.replay() == 3
+      assert Enum.all?([first, second, third], &revoked?(&1.id))
+    end
+
+    test "a replayed installation revoke revokes its relay keys, as the live one does", %{
+      journal: journal
+    } do
+      {installation, key} = installation!({198, 51, 100, 31})
+      slug = mint!(installation)
+      assert json_response(publish(payload(slug), key, random_key()), 200)
+      {:ok, %{relay_key: relay_key}} = Moderation.create_relay_key(slug, "hall", @ops)
+
+      line = %{
+        "v" => 1,
+        "action" => "revoke",
+        "target" => installation.id,
+        "hide_tournaments" => false,
+        "at" => DateTime.to_iso8601(DateTime.utc_now())
+      }
+
+      File.write!(journal, [Jason.encode!(line), "\n"])
+
+      assert ModerationJournal.replay() == 1
+      assert Installations.get(installation.id).status == "revoked"
+      assert revoked?(relay_key.id)
+    end
+
+    test "a line with something other than fingerprints in it is skipped", %{journal: journal} do
+      slug = published!("relay-torn")
+      {:ok, %{relay_key: relay_key, key: key}} = Moderation.create_relay_key(slug, "hall", @ops)
+
+      line = %{
+        "v" => 1,
+        "action" => "revoke_relay_keys",
+        "target" => slug,
+        "keys" => [key],
+        "at" => DateTime.to_iso8601(DateTime.utc_now())
+      }
+
+      File.write!(journal, [Jason.encode!(line), "\n"])
+
+      assert ModerationJournal.replay() == 0
+      refute revoked?(relay_key.id)
+    end
+  end
+
   describe "trimming" do
     test "drops what no backup can bring back, keeps the rest", %{journal: journal} do
       now = ~U[2026-09-13 12:00:00Z]
