@@ -262,6 +262,46 @@ defmodule OpenResultsWeb.EventGroupTest do
       refute LazyHTML.text(event) =~ "Fake"
     end
 
+    test "the event stays its first publisher's when that publisher's sections are gone", %{
+      conn: conn
+    } do
+      # The 2026-10-19 sweep: the first claim used to be worked out from the
+      # tournaments still claiming the id, so hiding the real sections handed
+      # the event page to whoever had copied the id since.
+      festival!()
+      {squatter, _key} = installation!({198, 51, 100, 22})
+      a = mint!(squatter)
+      b = mint!(squatter)
+      a |> section("Fake A", 1, [{b, "Fake B"}]) |> publish!(installation: squatter)
+      b |> section("Fake B", 2, [{a, "Fake A"}]) |> publish!(installation: squatter)
+
+      admin = %{email: "admin@example.invalid"}
+      for slug <- ~w(fest-open fest-u20 fest-u12), do: {:ok, _} = Moderation.hide(slug, admin)
+
+      assert TournamentGroups.owners([@event]) == %{@event => nil}
+      assert TournamentGroups.member_slugs(@event) == []
+      assert conn |> get(~p"/e/#{@event}") |> html_response(404)
+
+      # Deleted rather than hidden: the same.
+      for slug <- ~w(fest-open fest-u20 fest-u12), do: {:ok, _} = Moderation.delete(slug, admin)
+      assert TournamentGroups.member_slugs(@event) == []
+    end
+
+    test "an operator's transfer takes the event along, once the last section has moved" do
+      festival!()
+      {organiser, _key} = installation!({198, 51, 100, 23})
+      admin = %{email: "admin@example.invalid"}
+
+      {:ok, _} = Moderation.transfer("fest-open", organiser.id, admin)
+      # The operator token still publishes two of its sections.
+      assert TournamentGroups.owners([@event]) == %{@event => nil}
+
+      {:ok, _} = Moderation.transfer("fest-u20", organiser.id, admin)
+      {:ok, _} = Moderation.transfer("fest-u12", organiser.id, admin)
+      assert TournamentGroups.owners([@event]) == %{@event => organiser.id}
+      assert TournamentGroups.member_slugs(@event) == ~w(fest-open fest-u20 fest-u12)
+    end
+
     test "a tournament moderation hid leaves its siblings' strips and the event page", %{
       conn: conn
     } do

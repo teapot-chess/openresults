@@ -383,6 +383,18 @@ from one that is. The event page belongs to the publisher that claimed the
 `id` first; it answers 404 unless at least two sections can be shown. See
 `OpenResults.TournamentGroups` and `OpenResultsWeb.EventGroup`.
 
+**(settled in the 2026-10-19 sweep)** "First" is kept in a table of its own
+(`event_claims`: the id, the publisher, when), written once at the first
+publish that names the id and never by a later one. It used to be worked out
+each time from the tournaments still claiming the id, so once the first
+publisher's sections were hidden or deleted the next claimant became the
+owner - and a stranger who had copied the id from a public page could take
+the event over by hiding nothing more than somebody else's patience. Only
+the operator moves a claim: transferring a tournament (or all of an
+installation's) in the admin panel takes the event with it once the old
+publisher has no section left in it. Deleting every section leaves the
+claim where it was.
+
 The hall display, the projector and the live-board pages are full-screen
 views and carry no strip.
 

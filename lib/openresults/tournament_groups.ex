@@ -29,9 +29,16 @@ defmodule OpenResults.TournamentGroups do
       whatever either snapshot says.
 
   The event page has no tournament to stand beside, so its publisher is the
-  one that claimed the id first (`event_since`): an id is random and unknown
-  to everyone else until its first publish, so nobody can get there before
-  its owner.
+  one that claimed the id first: an id is random and unknown to everyone
+  else until its first publish, so nobody can get there before its owner.
+
+  "First" is a row of its own in `event_claims` (`EventClaim`), written once
+  by the first publish naming the id (the 2026-10-19 sweep). It used to be
+  derived from whichever non-hidden tournament claimed the id earliest, so
+  hiding or deleting the owner's sections handed the event to whoever had
+  copied the id off a public page and published under it since. Only the
+  operator moves a claim: `follow_transfer/3`, from a transfer in the admin
+  panel.
 
   ## Telling the pages
 
@@ -52,6 +59,7 @@ defmodule OpenResults.TournamentGroups do
 
   alias OpenResults.Repo
   alias OpenResults.TournamentGroups.Epochs
+  alias OpenResults.TournamentGroups.EventClaim
   alias OpenResults.Tournaments.Tournament
   alias OpenResultsWeb.Plugs.Revalidate.Page
 
@@ -85,13 +93,19 @@ defmodule OpenResults.TournamentGroups do
   @spec record(String.t(), map(), boolean()) :: :ok
   def record(slug, payload, changed?) when is_binary(slug) do
     new = claimed_id(payload)
-    old = Repo.one(from t in Tournament, where: t.slug == ^slug, select: t.event_id)
+
+    {old, owner} =
+      Repo.one(
+        from t in Tournament, where: t.slug == ^slug, select: {t.event_id, t.installation_id}
+      ) || {nil, nil}
 
     if new != old do
       now = DateTime.utc_now()
 
       from(t in Tournament, where: t.slug == ^slug)
       |> Repo.update_all(set: [event_id: new, event_since: new && now, updated_at: now])
+
+      if new, do: claim(new, owner, now)
     end
 
     if new != old or (changed? and not is_nil(new)) do
@@ -165,17 +179,18 @@ defmodule OpenResults.TournamentGroups do
   """
   @spec member_slugs(String.t()) :: [String.t()]
   def member_slugs(id) when is_binary(id) do
-    rows =
-      from(t in Tournament,
-        where: t.event_id == ^id and t.status != "hidden",
-        order_by: [asc: t.event_since, asc: t.id],
-        select: {t.slug, t.installation_id}
-      )
-      |> Repo.all()
+    case Repo.get(EventClaim, id) do
+      nil ->
+        []
 
-    case rows do
-      [] -> []
-      [{_slug, owner} | _] -> for {slug, ^owner} <- rows, do: slug
+      %EventClaim{installation_id: owner} ->
+        from(t in Tournament,
+          where: t.event_id == ^id and t.status != "hidden",
+          order_by: [asc: t.event_since, asc: t.id],
+          select: t.slug
+        )
+        |> same_publisher(owner)
+        |> Repo.all()
     end
   end
 
@@ -183,19 +198,56 @@ defmodule OpenResults.TournamentGroups do
 
   @doc """
   The publisher each of `ids` belongs to - the one that claimed it first:
-  `%{id => installation_id | nil}`. An id nobody public claims is absent.
+  `%{id => installation_id | nil}`. An id nobody has claimed is absent.
   """
   @spec owners([String.t()]) :: %{String.t() => String.t() | nil}
   def owners(ids) when is_list(ids) do
-    from(t in Tournament,
-      where: t.event_id in ^ids and t.status != "hidden",
-      order_by: [desc: t.event_since, desc: t.id],
-      select: {t.event_id, t.installation_id}
-    )
+    from(c in EventClaim, where: c.event_id in ^ids, select: {c.event_id, c.installation_id})
     |> Repo.all()
-    # Newest first, so the earliest claim is the one left in the map.
     |> Map.new()
   end
+
+  @doc """
+  Moves event claims along with a tournament the operator transferred from
+  `from` to `to` (`OpenResults.Tournaments.transfer/2`, inside its
+  transaction): each claim `from` holds on `event_id` goes to `to` once `from`
+  has no tournament left claiming it. A claim held by someone else stays
+  where it is - a transfer is about the tournament, not a way to win an
+  event.
+  """
+  @spec follow_transfer(String.t() | nil, String.t() | nil, String.t() | nil) :: :ok
+  def follow_transfer(nil, _from, _to), do: :ok
+
+  def follow_transfer(event_id, from, to) do
+    still_held? =
+      from(t in Tournament, where: t.event_id == ^event_id)
+      |> same_publisher(from)
+      |> Repo.exists?()
+
+    unless still_held? do
+      from(c in EventClaim, where: c.event_id == ^event_id)
+      |> claimed_by(from)
+      |> Repo.update_all(set: [installation_id: to])
+    end
+
+    :ok
+  end
+
+  defp claim(id, owner, now) do
+    Repo.insert_all(
+      EventClaim,
+      [%{event_id: id, installation_id: owner, claimed_at: now}],
+      on_conflict: :nothing,
+      conflict_target: :event_id
+    )
+  end
+
+  # `nil` is the operator token's publisher, and SQL's `=` never matches it.
+  defp same_publisher(query, nil), do: where(query, [t], is_nil(t.installation_id))
+  defp same_publisher(query, owner), do: where(query, [t], t.installation_id == ^owner)
+
+  defp claimed_by(query, nil), do: where(query, [c], is_nil(c.installation_id))
+  defp claimed_by(query, owner), do: where(query, [c], c.installation_id == ^owner)
 
   defp slugs_claiming(id) do
     Repo.all(from t in Tournament, where: t.event_id == ^id, select: t.slug)

@@ -384,12 +384,21 @@ defmodule OpenResults.Tournaments do
   def transfer(slug, installation_id) when is_binary(slug) do
     {:ok, result} =
       Repo.transaction(fn ->
+        before = get(slug)
+
         case from(t in Tournament, where: t.slug == ^slug)
              |> Repo.update_all(
                set: [installation_id: installation_id, updated_at: DateTime.utc_now()]
              ) do
           {1, _} ->
             TournamentKeys.release(slug)
+
+            OpenResults.TournamentGroups.follow_transfer(
+              before.event_id,
+              before.installation_id,
+              installation_id
+            )
+
             :ok
 
           {0, _} ->
