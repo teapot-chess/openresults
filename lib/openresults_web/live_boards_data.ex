@@ -296,6 +296,60 @@ defmodule OpenResultsWeb.LiveBoardsData do
     }
   end
 
+  @doc """
+  What a clock reads before anyone has moved, in ms, or `nil` when the
+  snapshot does not say.
+
+  The snapshot has no structured time control today: OpenPairings publishes
+  `tournament.time_control`, the prose an arbiter typed ("90 min + 30 s per
+  move"). A structured `time_control_minutes` (positive integer) on the round
+  or on `tournament` wins when it arrives; until then the prose is read for
+  its base time, and a text that does not start with one yields `nil` rather
+  than a guess.
+  """
+  def start_ms(payload, round_number) do
+    this = Tournament.round(payload, round_number) || %{}
+    info = Tournament.info(payload)
+
+    base =
+      Enum.find(
+        [
+          minutes(Map.get(this, "time_control_minutes")),
+          minutes(Map.get(info, "time_control_minutes")),
+          base_minutes(string(this, "time_control")),
+          base_minutes(string(info, "time_control"))
+        ],
+        & &1
+      )
+
+    base && round(base * 60_000)
+  end
+
+  defp minutes(n) when is_number(n) and n > 0, do: n
+  defp minutes(_other), do: nil
+
+  # The base time at the head of "90 min + 30 s", "90'+30", "15+10", "1h30",
+  # "1 hour". Only a number with a unit, or one followed by an increment,
+  # counts: "40 moves in 90 minutes" is not a base time this will invent.
+  defp base_minutes(nil), do: nil
+
+  defp base_minutes(text) do
+    text = String.downcase(text)
+
+    cond do
+      m = Regex.run(~r/^\s*(\d{1,2})\s*(?:hours?|hrs?|uur|h|u)\s*(\d{1,2})?/u, text) ->
+        [_, hours | rest] = m
+        extra = if rest in [[], [""]], do: 0, else: String.to_integer(hd(rest))
+        minutes(String.to_integer(hours) * 60 + extra)
+
+      m = Regex.run(~r/^\s*(\d{1,3})\s*(?:minutes?|minuten|mins?|m\b|'|\x{2019}|\+)/u, text) ->
+        minutes(String.to_integer(Enum.at(m, 1)))
+
+      true ->
+        nil
+    end
+  end
+
   @doc "The PGN tags for a tile's game, honouring the same ticks as the page."
   def pgn_tags(payload, tile) do
     round = Tournament.round(payload, tile.round) || %{}

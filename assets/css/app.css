@@ -5459,7 +5459,7 @@ tr.is-followed > :first-child {
 }
 
 .lb-board-column {
-  --lb-bar-h: 3.8rem;
+  --lb-bar-h: 4.9rem;
   --lb-gap: 0.5rem;
   flex: 1 1 auto;
   min-height: 0;
@@ -5482,6 +5482,8 @@ tr.is-followed > :first-child {
   box-sizing: border-box;
 }
 
+/* Room for a surname and a first name, wrapping to a second line before
+   anything is cut; the clock takes what its digits need and no more. */
 .lb-bar {
   gap: 0.75rem;
   padding: 0.55rem 0.75rem;
@@ -5510,12 +5512,20 @@ tr.is-followed > :first-child {
   margin: 0;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.lb-bar-meta {
   white-space: nowrap;
 }
 
 .lb-bar-name {
-  font-size: clamp(1.05rem, 0.8rem + 0.8vw, 1.5rem);
-  line-height: 1.2;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow-wrap: anywhere;
+  font-size: clamp(1rem, 0.8rem + 0.55vw, 1.3rem);
+  line-height: 1.15;
 }
 
 .lb-bar-name .lb-person {
@@ -5600,12 +5610,24 @@ tr.is-followed > :first-child {
 }
 
 .lb-clock.lb-clock-big {
-  min-width: 6.5rem;
-  padding: 0.3rem 0.75rem;
+  min-width: 0;
+  padding: 0.25rem 0.6rem;
   border-width: 2px;
   border-radius: 8px;
-  font-size: clamp(1.25rem, 0.9rem + 1vw, 1.9rem);
+  font-size: clamp(1.15rem, 0.85rem + 0.9vw, 1.75rem);
   line-height: 1.15;
+  white-space: nowrap;
+}
+
+/* Not started: the time control's base time, standing still. */
+.lb-clock.is-idle {
+  border-style: dashed;
+  color: var(--quiet);
+}
+
+/* The hall display shows the clock from the back of the room. */
+.lb-stage:fullscreen .lb-clock.lb-clock-big {
+  font-size: clamp(1.75rem, 4.5vh, 3rem);
 }
 
 .lb-bar-score {
@@ -5628,6 +5650,15 @@ tr.is-followed > :first-child {
   justify-content: center;
   gap: 0.4rem;
   margin-top: 0.75rem;
+}
+
+/* The "Follow live" row: the space is kept whether the button is there or
+   not, so stepping back never moves the buttons above it. */
+.lb-follow-slot {
+  display: flex;
+  flex-basis: 100%;
+  justify-content: center;
+  min-height: 2.75rem;
 }
 
 .lb-btn {
@@ -5956,8 +5987,7 @@ button.lb-move:hover {
   }
 
   .lb-clock.lb-clock-big {
-    min-width: 5rem;
-    padding: 0.2rem 0.5rem;
+    padding: 0.2rem 0.45rem;
   }
 
   .lb-moves-scroll {
