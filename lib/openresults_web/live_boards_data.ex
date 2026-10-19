@@ -140,6 +140,16 @@ defmodule OpenResultsWeb.LiveBoardsData do
     do: {view.ply, view.fen, view.status, view.result, view.clocks.running}
 
   @doc """
+  When a tile has to be sent again: its `signature` moved, or the relay
+  reported its clocks afresh (`view.clock_at`) - a correction the browser
+  cannot work out by counting down. A message about a board whose stamp is
+  unchanged is a repeat, and sending the tile again is wasted bytes on every
+  open page (the 2026-10-19 sweep: the pages forced every one through).
+  """
+  @spec stamp(map()) :: term()
+  def stamp(%{signature: signature, view: view}), do: {signature, view && view.clock_at}
+
+  @doc """
   The result to print on a tile: the published one, else - once the game is
   over and the round's results are public - the relay's suggestion, marked
   `provisional`.

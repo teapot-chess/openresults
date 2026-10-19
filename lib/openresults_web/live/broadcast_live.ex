@@ -182,7 +182,7 @@ defmodule OpenResultsWeb.BroadcastLive do
           team?: Tournament.team_event?(payload),
           delay: LiveBoards.delay_minutes(slug),
           unknown_round?: socket.assigns.round_param != nil and round == nil,
-          sigs: Map.new(tiles, &{&1.board, &1.signature}),
+          sigs: Map.new(tiles, &{&1.board, LiveBoardsData.stamp(&1)}),
           game_count: length(tiles),
           default_board: default,
           board: board
@@ -277,13 +277,13 @@ defmodule OpenResultsWeb.BroadcastLive do
     end
   end
 
-  # A board that changed: its row when its picture did (or `force?`, a
-  # message about that board, whose clocks may have moved alone), and the
-  # featured game when it is this one.
-  defp refresh_board(%{assigns: %{payload: nil}} = socket, _board, _force?), do: socket
-  defp refresh_board(%{assigns: %{round: nil}} = socket, _board, _force?), do: socket
+  # A board that changed: its row when its stamp moved - the picture, or a
+  # fresh clock report (`LiveBoardsData.stamp/1`) - and the featured game when
+  # it is this one. A repeat sends no row.
+  defp refresh_board(%{assigns: %{payload: nil}} = socket, _board), do: socket
+  defp refresh_board(%{assigns: %{round: nil}} = socket, _board), do: socket
 
-  defp refresh_board(socket, board, force?) do
+  defp refresh_board(socket, board) do
     %{payload: payload, slug: slug, round: round, sigs: sigs} = socket.assigns
 
     socket =
@@ -292,13 +292,14 @@ defmodule OpenResultsWeb.BroadcastLive do
           socket
 
         tile ->
-          if (force? or Map.get(sigs, board) != tile.signature) and
-               matches?(tile, socket.assigns.query) do
+          stamp = LiveBoardsData.stamp(tile)
+
+          if Map.get(sigs, board) != stamp and matches?(tile, socket.assigns.query) do
             socket
             |> stream_insert(:pairings, row(tile, socket.assigns.board))
-            |> assign(sigs: Map.put(sigs, board, tile.signature))
+            |> assign(sigs: Map.put(sigs, board, stamp))
           else
-            assign(socket, sigs: Map.put(sigs, board, tile.signature))
+            assign(socket, sigs: Map.put(sigs, board, stamp))
           end
       end
 
@@ -313,10 +314,10 @@ defmodule OpenResultsWeb.BroadcastLive do
     tiles = LiveBoardsData.tiles(payload, slug, round, plies: false)
 
     tiles
-    |> Enum.filter(&(Map.get(sigs, &1.board) != &1.signature and matches?(&1, query)))
+    |> Enum.filter(&(Map.get(sigs, &1.board) != LiveBoardsData.stamp(&1) and matches?(&1, query)))
     |> Enum.reduce(socket, &stream_insert(&2, :pairings, row(&1, socket.assigns.board)))
     |> assign(
-      sigs: Map.new(tiles, &{&1.board, &1.signature}),
+      sigs: Map.new(tiles, &{&1.board, LiveBoardsData.stamp(&1)}),
       delay: LiveBoards.delay_minutes(slug)
     )
     |> read_featured()
@@ -379,7 +380,7 @@ defmodule OpenResultsWeb.BroadcastLive do
     delay_ms = :timer.minutes(LiveBoards.delay_minutes(slug))
 
     if delay_ms == 0 do
-      {:noreply, refresh_board(socket, board, true)}
+      {:noreply, refresh_board(socket, board)}
     else
       Process.send_after(self(), {:refresh_board, board}, delay_ms + 50)
       {:noreply, socket}
@@ -389,7 +390,7 @@ defmodule OpenResultsWeb.BroadcastLive do
   def handle_info({:live_board, _slug, _other_round, _board}, socket), do: {:noreply, socket}
 
   def handle_info({:refresh_board, board}, socket),
-    do: {:noreply, refresh_board(socket, board, true)}
+    do: {:noreply, refresh_board(socket, board)}
 
   def handle_info({:live_delay, _slug}, socket),
     do: {:noreply, load(socket, socket.assigns.board)}

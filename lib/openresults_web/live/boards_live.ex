@@ -128,14 +128,14 @@ defmodule OpenResultsWeb.BoardsLive do
     end
   end
 
-  defp signatures(tiles), do: Map.new(tiles, &{&1.board, &1.signature})
+  defp signatures(tiles), do: Map.new(tiles, &{&1.board, LiveBoardsData.stamp(&1)})
 
-  # Re-reads one board. `force?` is a message about that board: its clocks may
-  # have changed with nothing else, and the tile is sent regardless.
-  defp refresh_board(%{assigns: %{payload: nil}} = socket, _board, _force?), do: socket
-  defp refresh_board(%{assigns: %{round: nil}} = socket, _board, _force?), do: socket
+  # Re-reads one board, and sends it when its stamp moved: the picture, or a
+  # fresh clock report (`LiveBoardsData.stamp/1`). A repeat sends nothing.
+  defp refresh_board(%{assigns: %{payload: nil}} = socket, _board), do: socket
+  defp refresh_board(%{assigns: %{round: nil}} = socket, _board), do: socket
 
-  defp refresh_board(socket, board, force?) do
+  defp refresh_board(socket, board) do
     %{payload: payload, slug: slug, round: round, sigs: sigs} = socket.assigns
 
     case LiveBoardsData.tile(payload, slug, round, board, plies: false) do
@@ -143,10 +143,12 @@ defmodule OpenResultsWeb.BoardsLive do
         socket
 
       tile ->
-        if force? or Map.get(sigs, board) != tile.signature do
+        stamp = LiveBoardsData.stamp(tile)
+
+        if Map.get(sigs, board) != stamp do
           socket
           |> stream_insert(:tiles, tile)
-          |> assign(sigs: Map.put(sigs, board, tile.signature), empty?: false)
+          |> assign(sigs: Map.put(sigs, board, stamp), empty?: false)
         else
           socket
         end
@@ -160,7 +162,7 @@ defmodule OpenResultsWeb.BoardsLive do
     %{payload: payload, slug: slug, round: round, sigs: sigs} = socket.assigns
     tiles = LiveBoardsData.tiles(payload, slug, round, plies: false)
 
-    changed = Enum.filter(tiles, &(Map.get(sigs, &1.board) != &1.signature))
+    changed = Enum.filter(tiles, &(Map.get(sigs, &1.board) != LiveBoardsData.stamp(&1)))
 
     Enum.reduce(changed, socket, fn tile, socket -> stream_insert(socket, :tiles, tile) end)
     |> assign(sigs: signatures(tiles), delay: LiveBoards.delay_minutes(slug))
@@ -193,7 +195,7 @@ defmodule OpenResultsWeb.BoardsLive do
     delay_ms = :timer.minutes(LiveBoards.delay_minutes(slug))
 
     if delay_ms == 0 do
-      {:noreply, refresh_board(socket, board, true)}
+      {:noreply, refresh_board(socket, board)}
     else
       Process.send_after(self(), {:refresh_board, board}, delay_ms + 50)
       {:noreply, socket}
@@ -203,7 +205,7 @@ defmodule OpenResultsWeb.BoardsLive do
   def handle_info({:live_board, _slug, _other_round, _board}, socket), do: {:noreply, socket}
 
   def handle_info({:refresh_board, board}, socket),
-    do: {:noreply, refresh_board(socket, board, true)}
+    do: {:noreply, refresh_board(socket, board)}
 
   def handle_info({:live_delay, _slug}, socket), do: {:noreply, socket |> load()}
 
