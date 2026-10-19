@@ -25,6 +25,11 @@ defmodule OpenResultsWeb.ApiError do
     installation_revoked:
       {403,
        "this installation's key has been revoked; it may delete its own tournaments and nothing else"},
+    owner_suspended:
+      {403,
+       "the installation that publishes this tournament is suspended; its relay keys are refused until it is not"},
+    owner_revoked:
+      {403, "the installation that published this tournament has been revoked; so has this relay"},
     installation_key_required:
       {403, "tournaments are minted for an installation; call this with an installation key"},
     not_owner: {403, "this tournament was not minted for this installation"},

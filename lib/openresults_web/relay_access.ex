@@ -12,10 +12,17 @@ defmodule OpenResultsWeb.RelayAccess do
   ## Order
 
   Revoked, then the key's own budget, then address block, then the operator's
-  pause, then whether the path's slug is the key's. Cheap first, as for an
-  installation key. The slug check comes last and answers
+  pause, then whether the path's slug is the key's, then whether the
+  installation that owns the tournament may still publish. Cheap first, as
+  for an installation key. The slug check answers
   `relay_key_wrong_tournament`: the key's holder learns it is pointed at the
   wrong place, a stranger learns nothing, because a stranger has no key.
+
+  The owner check (the 2026-10-19 sweep) closes a side door: suspending an
+  installation stopped its publishes and left its hall boxes posting, since
+  nothing about a relay key asked after the installation behind it.
+  `owner_suspended` / `owner_revoked`. An operator-published tournament has
+  no installation and nothing to ask.
 
   The budget is per KEY, not per tournament or address: two boxes in one hall
   must not spend each other's allowance, and a runaway one must not be able
@@ -25,10 +32,12 @@ defmodule OpenResultsWeb.RelayAccess do
   import Plug.Conn
 
   alias OpenResults.AddressBlocks
+  alias OpenResults.Installations
   alias OpenResults.RateLimit
   alias OpenResults.RelayKeys
   alias OpenResults.RelayKeys.RelayKey
   alias OpenResults.Settings
+  alias OpenResults.Tournaments
   alias OpenResultsWeb.ApiError
   alias OpenResultsWeb.ClientAddress
 
@@ -42,7 +51,8 @@ defmodule OpenResultsWeb.RelayAccess do
          :ok <- budget(relay_key),
          :ok <- address_block(conn),
          :ok <- pause(),
-         :ok <- tournament(conn, relay_key) do
+         :ok <- tournament(conn, relay_key),
+         :ok <- owner(relay_key) do
       # Only a key that got this far counts as used: a refused one is not the
       # box doing its job, and "last used" should answer that question.
       RelayKeys.touch(relay_key)
@@ -72,6 +82,19 @@ defmodule OpenResultsWeb.RelayAccess do
 
   defp pause do
     if Settings.get(:public_publishing_paused), do: {:error, :publishing_paused}, else: :ok
+  end
+
+  defp owner(%RelayKey{tournament_slug: slug}) do
+    with %{installation_id: id} when is_binary(id) <- Tournaments.get(slug),
+         %{status: status} <- Installations.get(id) do
+      case status do
+        "suspended" -> {:error, :owner_suspended}
+        "revoked" -> {:error, :owner_revoked}
+        _active -> :ok
+      end
+    else
+      _no_installation -> :ok
+    end
   end
 
   defp tournament(conn, %RelayKey{tournament_slug: slug}) do

@@ -98,6 +98,7 @@ different things to an arbiter. Existing codes keep their spelling:
 | `unauthorized` | 401 | any token-gated route, for a missing, malformed or unknown credential - one body for all of them, as today | |
 | `installation_suspended` | 403 | mint, publish, history, registrations | |
 | `installation_revoked` | 403 | every installation-key route except delete | |
+| `owner_suspended`, `owner_revoked` | 403 | a relay key's live update, when the installation that owns its tournament is suspended / revoked - a box may not go on writing for a publisher that may not **(settled in the 2026-10-19 sweep)** | |
 | `installation_key_required` | 403 | `POST /api/tournaments` called with the operator token | |
 | `not_owner` | 403 | any installation-key write or read of a slug not minted for that installation | |
 | `tournament_hidden` | 403 | publish with an installation key to its own tournament that moderation hid **(settled in the build)** | |

@@ -42,7 +42,10 @@ the tournament; a relay is a box in a playing hall that can be lost or stolen.
   else** - not another slug (`403 relay_key_wrong_tournament`), not a publish,
   history, registrations, delete or the admin panel (the anonymous
   `401 unauthorized`, as for any credential the route does not take). A
-  revoked key is `403 relay_key_revoked`. It stands in for the tournament key:
+  revoked key is `403 relay_key_revoked`. A key whose tournament belongs to an
+  installation the operator has suspended or revoked is `403 owner_suspended` /
+  `403 owner_revoked`: the box is refused for as long as its publisher would
+  be (a revoke also revokes the key, so that one is final). It stands in for the tournament key:
   send no `X-OpenResults-Key` with it. Budget: 1200 requests a minute per key,
   `429 rate_limited` with `Retry-After` beyond it; a paused server
   (`publishing_paused`) and a blocked address are refused as for a publish.
@@ -259,6 +262,8 @@ dispatch on `error`).
 | 401 | `unauthorized` | no or wrong credential |
 | 403 | `key_required`, `key_mismatch` | the tournament has been claimed; send its key / it is the wrong one |
 | 403 | `not_owner`, `tournament_hidden`, `installation_suspended`, `installation_revoked`, `address_blocked` | as for a publish |
+| 403 | `relay_key_revoked`, `relay_key_wrong_tournament` | a relay key that was revoked / is for another tournament |
+| 403 | `owner_suspended`, `owner_revoked` | a relay key whose tournament's installation is suspended / revoked |
 | 404 | `tournament_not_published` | the slug has published nothing (or is hidden) |
 | 409 | `moves_conflict` | the moves disagree with those held; send `replace: true` to replace the game |
 | 422 | `invalid_request` | a field missing, mistyped or out of range |
