@@ -4,7 +4,9 @@ defmodule OpenResultsWeb.Framing do
 
   Phoenix's `put_secure_browser_headers/2` sets
   `content-security-policy: base-uri 'self'; frame-ancestors 'self'`, which is
-  the right default for an application with a login. This site has neither a
+  the right default for an application with a login. Since the 2026-10-19
+  sweep `OpenResultsWeb.Plugs.ContentSecurityPolicy` replaces that with the
+  full policy, keeping `frame-ancestors 'self'` for this plug to rewrite. This site has neither a
   login nor a session, and being embeddable is one of the things it is for -
   a club front page showing its own tournament's standings is the ordinary
   case, not an edge one.
@@ -34,8 +36,8 @@ defmodule OpenResultsWeb.Framing do
   list to restrict embedding to particular sites, or to `'none'` to switch it
   off entirely without touching the router.
 
-  `base-uri 'self'` is left exactly as Phoenix set it. Only the one directive
-  changes, so this cannot loosen anything else by accident.
+  Every other directive is left exactly as the policy plug set it. Only the
+  one changes, so this cannot loosen anything else by accident.
   """
   import Plug.Conn
 

@@ -30,6 +30,8 @@ defmodule OpenResultsWeb.Router do
     # `Revalidate`, which keys the ETag and the page cache on its version.
     plug OpenResultsWeb.Plugs.PublicNotice
     plug :put_secure_browser_headers
+    # The whole Content-Security-Policy: scripts allowed by hash only.
+    plug OpenResultsWeb.Plugs.ContentSecurityPolicy
     # Runs AFTER, because it rewrites the header the line above just set.
     # See `OpenResultsWeb.Framing` for why every page here is safe to embed
     # and why that is a property of the site rather than a list of routes.
