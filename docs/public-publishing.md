@@ -108,7 +108,9 @@ different things to an arbiter. Existing codes keep their spelling:
 | `snapshot_too_large` | 413 | publish with an installation key | `limit_bytes` |
 | `registration_closed` | 503 | `POST /api/installations` | |
 | `publishing_paused` | 503 | mint, publish | |
-| `storage_low` | 503 | mint, publish; also sets `Retry-After` **(settled in the storage bounds, 2026-09-13)** - see "Storage bounds" | `retry_after` (seconds, 300) |
+| `storage_low` | 503 | mint, publish; also sets `Retry-After` **(settled in the storage bounds, 2026-09-13)** - see "Storage bounds". Also a live update that would start a NEW board, with an installation or relay key **(settled in the 2026-10-19 sweep)** | `retry_after` (seconds, 300) |
+| `board_not_published` | 409 | a live update for a `(round, board)` the current snapshot does not have **(settled in the 2026-10-19 sweep)** - see "Storage bounds" | |
+| `live_game_limit` | 409 | a live update that would start a board past the tournament's cap **(settled in the 2026-10-19 sweep)** | `limit` |
 | `rate_limited` | 429 | registration, mint, publish; also sets `Retry-After` | `retry_after` (seconds) |
 
 A key that exists but is suspended or revoked gets its own 403 rather than the
@@ -436,6 +438,29 @@ keys are refused on mint and publish with 503 `storage_low`, `retry_after`
   succeeds.
 - The admin dashboard shows the free space against the floor, and a warning
   at the top of the page while it is below it.
+
+**Live boards (settled in the 2026-10-19 sweep).** The version cap and the
+floor bounded snapshots and nothing else, and a live game is not a
+snapshot: one installation key could post any `(round, board)` from 1-999 by
+1-9999, each up to 700 plies, and every one was stored. Three rules now:
+
+- A live update for a `(round, board)` that is not in the current snapshot
+  (`rounds[].boards[].board`, and in a team event `rounds[].matches[].boards`)
+  is refused, `409 board_not_published`, whoever sends it. A relay reports
+  boards the arbiter has paired and published; anything else had nowhere to
+  be shown anyway.
+- A tournament holds at most **500 live games per round in its current
+  snapshot** (at least one round's worth). An update that would start a new
+  one past that is `409 live_game_limit` with `limit`. Updates to games
+  already held are not counted again.
+- Below the free-disk floor, an update that would start a NEW game with an
+  installation key or a relay key is `503 storage_low`, `retry_after` 300.
+  Updates to games already held go on - a game in progress is a few hundred
+  bytes a move and stopping it halfway helps nobody. The operator token is
+  unaffected, as for a publish.
+
+So one tournament's live storage is bounded by its snapshot: rounds x 500
+games x 700 plies, and in practice by the boards actually paired.
 
 The admin panel shows the figures behind both rules: stored snapshot bytes
 server-wide, the database file, the free space, the floor and the cap on the

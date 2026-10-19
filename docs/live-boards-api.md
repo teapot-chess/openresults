@@ -266,6 +266,8 @@ dispatch on `error`).
 | 403 | `owner_suspended`, `owner_revoked` | a relay key whose tournament's installation is suspended / revoked |
 | 404 | `tournament_not_published` | the slug has published nothing (or is hidden) |
 | 409 | `moves_conflict` | the moves disagree with those held; send `replace: true` to replace the game |
+| 409 | `board_not_published` | the `(round, board)` is not in the current snapshot; publish the round first |
+| 409 | `live_game_limit` | a new board past the tournament's cap; `limit` says how many |
 | 422 | `invalid_request` | a field missing, mistyped or out of range |
 | 422 | `invalid_fen` | `fen` or `start_fen` is not a position with one king a side and no pawn on a back rank |
 | 422 | `invalid_moves` | a move is illegal or ambiguous; `ply` names it |
@@ -273,6 +275,7 @@ dispatch on `error`).
 | 422 | `fen_mismatch` | `fen` is not where `moves` lead (compared on piece placement and side to move) |
 | 429 | `rate_limited` | over the installation's budget; wait `retry_after` seconds |
 | 503 | `publishing_paused` | the operator has paused writes |
+| 503 | `storage_low` | the server is low on disk: no NEW board with an installation or relay key; wait `retry_after` seconds |
 
 A relay should treat 4xx other than 429 as "this message is wrong, do not
 retry it unchanged", and 429 / 5xx / network errors as "retry the same
@@ -293,8 +296,16 @@ message": it is safe, that is the point of the keying.
 - Names, titles and ratings follow the arbiter's display ticks, exactly as
   on the round page. A tournament whose pairings are switched off
   (`display.pairings: false`) shows no live boards at all.
-- A game on a board that is not in the published snapshot is stored and not
-  shown, until the arbiter publishes that round.
+- A board that is not in the published snapshot is refused,
+  `409 board_not_published` **(changed in the 2026-10-19 sweep; it used to
+  be stored and not shown)**: publish the round's pairings before the relay
+  reports it. In a team event the board numbers are the round-wide ones in
+  `rounds[].boards[].board` or `rounds[].matches[].boards`.
+- A tournament holds at most 500 live games per round of its current snapshot;
+  a new board past that is `409 live_game_limit` (with `limit`). Below the
+  server's free-disk floor a NEW board from an installation or relay key is
+  `503 storage_low` (`retry_after` 300); games already held keep updating.
+  See `docs/public-publishing.md`, "Storage bounds".
 
 ## The broadcast delay
 

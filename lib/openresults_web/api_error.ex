@@ -56,6 +56,9 @@ defmodule OpenResultsWeb.ApiError do
     tournament_not_published:
       {404, "nothing has been published under this slug yet; publish the tournament first"},
     invalid_request: {422, "the board update is malformed"},
+    board_not_published:
+      {409, "this round and board are not in the published snapshot; publish the round first"},
+    live_game_limit: {409, "this tournament holds as many live games as it may"},
     invalid_fen: {422, "a FEN in the board update is not a legal position"},
     invalid_moves: {422, "a move in the board update is not legal"},
     ply_mismatch: {422, "`ply` does not match the number of `moves`"},
