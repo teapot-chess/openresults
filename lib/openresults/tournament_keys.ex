@@ -197,6 +197,30 @@ defmodule OpenResults.TournamentKeys do
     do: slug |> authorize(presented, :read, opts) |> plain()
 
   @doc """
+  Is `slug` claimed with exactly `presented`? A read, for
+  `GET /api/tournaments/:slug/claim`: never claims, never logs, and the
+  operator token in the key position is only a key that does not match -
+  this answers what a file's key proves, and break-glass proves nothing about
+  a file.
+  """
+  @spec verify(String.t(), String.t() | nil) ::
+          :tournament_key | :unclaimed | {:error, error()}
+  def verify(slug, presented) do
+    case {fetch(slug), normalize(presented)} do
+      {nil, _any} ->
+        :unclaimed
+
+      {%TournamentKey{}, nil} ->
+        {:error, :key_required}
+
+      {%TournamentKey{key_hash: stored}, key} ->
+        if Plug.Crypto.secure_compare(stored, hash(key)),
+          do: :tournament_key,
+          else: {:error, :key_mismatch}
+    end
+  end
+
+  @doc """
   Has `slug` been claimed?
 
   Diagnostic. It says nothing about whether the tournament has published.

@@ -540,6 +540,32 @@ way a publish does.
   `listed` with no owner; to a slug that already has one - an installation's
   pending tournament - it changes neither status nor owner.
 
+## Checking a tournament key
+
+**(settled in the 2026-10-19 sweep)** `GET /api/tournaments/:slug/claim`,
+operator token only (an installation key is the anonymous `401`; it has the
+ownership check instead), with the key to check in `x-openresults-key`.
+It answers whether the slug is claimed with exactly that key, and changes
+nothing - it never claims, and the operator token in the key position is
+just a wrong key here, never break-glass.
+
+| Answer | Meaning |
+|---|---|
+| `200 {"claim": "tournament_key"}` | claimed, with this key |
+| `200 {"claim": "unclaimed"}` | nobody has claimed the slug (it may not exist) |
+| `403 key_required` | claimed, and no key was sent |
+| `403 key_mismatch` | claimed with another key |
+| `410 tournament_deleted` | the operator deleted it |
+
+What it is for: a hosted OpenPairings serves many arbiters with one operator
+token, so the tournament key is all that tells one arbiter's tournament from
+another's. A backup carries a tournament's key and slug in a file the arbiter
+can edit, and taking it over (`adopt_claim`) used to believe the file. With
+an unclaimed slug the next publish would then claim somebody else's legacy
+tournament with a key of the file's choosing. Hosted, OpenPairings now asks
+this route first and adopts only on `tournament_key`. A server without the
+route answers 404, and the takeover is refused - the safe way round.
+
 ## Deleted tournaments
 
 **(settled in the 2026-10-19 sweep)** A delete from the admin panel

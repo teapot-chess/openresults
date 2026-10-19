@@ -324,6 +324,13 @@ defmodule OpenResultsWeb.Router do
     get "/tournaments/:slug/history", SnapshotController, :history,
       private: %{installation_access: :history}
 
+    # Whether the slug is claimed with the key in `x-openresults-key` - what a
+    # hosted OpenPairings asks before adopting a key from a backup file
+    # (docs/public-publishing.md, "Checking a tournament key"). Operator
+    # token only: no `installation_access`, so an installation key is the
+    # anonymous 401. A read; it never claims.
+    get "/tournaments/:slug/claim", ClaimController, :show
+
     # Takedown. On the write pipeline because it is a write - the most
     # destructive one here - and gated a second time by the tournament key,
     # like publishing.
