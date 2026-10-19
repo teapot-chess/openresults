@@ -95,7 +95,9 @@ defmodule OpenResultsWeb.FinishedRefreshTest do
   end
 
   test "the refresher script stops on the mark and keeps its intervals" do
-    {:ok, layout} = File.read("lib/openresults_web/components/layouts/root.html.heex")
+    # The script left the layout for its own file when the pages got a
+    # Content-Security-Policy (the 2026-10-19 sweep); the layout includes it.
+    {:ok, layout} = File.read("lib/openresults_web/inline_scripts/page.js")
 
     assert layout =~ "data-results-finished"
     # No back-off: the two paces are what they were.
