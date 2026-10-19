@@ -1069,7 +1069,8 @@
     "start_date": "2026-03-01",
     "system": "swiss",
     "tempo": "standard",
-    "time_control": null
+    "time_control": null,
+    "time_control_minutes": null
   },
   "version": 1
 }

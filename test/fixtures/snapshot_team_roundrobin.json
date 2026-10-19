@@ -776,7 +776,8 @@
     "team_boards": 2,
     "team_event": true,
     "tempo": "standard",
-    "time_control": null
+    "time_control": null,
+    "time_control_minutes": null
   },
   "version": 1
 }
