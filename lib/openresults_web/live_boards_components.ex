@@ -133,7 +133,7 @@ defmodule OpenResultsWeb.LiveBoardsComponents do
   attr :id, :string, required: true
   attr :ms, :any, required: true, doc: "what it reads now, in ms, or nil when unknown"
   attr :running, :boolean, default: false
-  attr :class, :string, default: nil
+  attr :class, :any, default: nil
 
   def clock(assigns) do
     ~H"""
@@ -372,6 +372,11 @@ defmodule OpenResultsWeb.LiveBoardsComponents do
   attr :tile, :map, required: true
   attr :colour, :string, required: true
   attr :clocks, :any, default: nil
+
+  attr :idle_ms, :any,
+    default: nil,
+    doc: "the starting time to show, standing and unstarted, when no clock reports one"
+
   attr :score, :string, default: nil
 
   def player_bar(assigns) do
@@ -380,12 +385,18 @@ defmodule OpenResultsWeb.LiveBoardsComponents do
     ms = assigns.clocks && Map.get(assigns.clocks, String.to_existing_atom(colour))
     running = (assigns.clocks && assigns.clocks.running == colour) || false
 
+    # A clock that is reporting wins; the starting time stands in only where
+    # none is, and then it is idle - never running, never highlighted.
+    idle? = is_nil(ms) and is_integer(assigns.idle_ms)
+    ms = ms || assigns.idle_ms
+
     assigns =
       assign(assigns,
         person: person,
         ms: ms,
+        idle?: idle?,
         running: running,
-        has_clock: assigns.clocks != nil and ms != nil
+        has_clock: is_integer(ms)
       )
 
     ~H"""
@@ -417,7 +428,7 @@ defmodule OpenResultsWeb.LiveBoardsComponents do
         id={"lb-game-clock-#{@colour}"}
         ms={@ms}
         running={@running}
-        class="lb-clock-big"
+        class={["lb-clock-big", @idle? && "is-idle"]}
       />
       <span :if={@score} id={"lb-score-#{@colour}"} class="lb-bar-score">
         <span class="visually-hidden">{gettext("Score")}:</span>

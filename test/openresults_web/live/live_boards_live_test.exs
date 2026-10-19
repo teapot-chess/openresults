@@ -297,6 +297,70 @@ defmodule OpenResultsWeb.LiveBoardsLiveTest do
     end
   end
 
+  describe "the player bars" do
+    defp with_time_control(text) do
+      fn payload -> put_in(payload, ["tournament", "time_control"], text) end
+    end
+
+    test "carry the whole name, and the same facts for both colours", %{conn: conn} do
+      slug = publish!()
+      report(slug, 1, ~w(e4))
+      {:ok, view, _html} = live(conn, "/t/#{slug}/live/5/1")
+
+      for colour <- ~w(white black) do
+        name = view |> element("#lb-bar-#{colour} .lb-person") |> render()
+        assert name =~ ~r/\p{L}+, \p{L}+/u
+        refute name =~ "..."
+      end
+    end
+
+    test "show the time control's base time, idle, before the first move", %{conn: conn} do
+      slug = publish!(with_time_control("90 min + 30 s per move"))
+      {:ok, view, _html} = live(conn, "/t/#{slug}/live/5/1")
+
+      assert has_element?(view, "#lb-game-clock-white.is-idle", "1:30:00")
+      assert has_element?(view, "#lb-game-clock-black.is-idle", "1:30:00")
+      refute has_element?(view, "#lb-game-clock-white.is-running")
+      refute has_element?(view, "#lb-bar-white.is-to-move")
+    end
+
+    test "show nothing when the time control gives no base time", %{conn: conn} do
+      slug = publish!(with_time_control("40 moves in 90 minutes"))
+      {:ok, view, _html} = live(conn, "/t/#{slug}/live/5/1")
+      refute has_element?(view, "#lb-game-clock-white")
+
+      slug = publish!(with_time_control(""))
+      {:ok, view, _html} = live(conn, "/t/#{slug}/live/5/1")
+      refute has_element?(view, "#lb-game-clock-white")
+    end
+
+    test "prefer a structured base time, and the clock's own reading over both", %{conn: conn} do
+      slug = publish!(&put_in(&1, ["tournament", "time_control_minutes"], 15))
+      {:ok, view, _html} = live(conn, "/t/#{slug}/live/5/1")
+      assert has_element?(view, "#lb-game-clock-white.is-idle", "15:00")
+
+      report(slug, 1, [], %{"white_ms" => 600_000, "black_ms" => 601_000})
+      assert render(view) =~ "10:00"
+      refute has_element?(view, "#lb-game-clock-white.is-idle")
+      assert has_element?(view, "#lb-game-clock-black", "10:01")
+    end
+
+    test "leave the step buttons where they are when you step back", %{conn: conn} do
+      slug = publish!()
+      report(slug, 1, ~w(e4 e5 Nf3), %{"white_ms" => 1, "black_ms" => 1, "running" => "black"})
+      {:ok, view, _html} = live(conn, "/t/#{slug}/live/5/1")
+
+      assert has_element?(view, ".lb-controls #lb-follow-slot")
+      refute has_element?(view, "#lb-follow")
+
+      view |> element("#lb-prev") |> render_click()
+
+      assert has_element?(view, ".lb-controls #lb-follow-slot #lb-follow")
+      assert has_element?(view, ".lb-controls > #lb-prev")
+      assert has_element?(view, ".lb-controls > #lb-flip")
+    end
+  end
+
   describe "one game" do
     setup %{conn: conn} do
       slug = publish!()

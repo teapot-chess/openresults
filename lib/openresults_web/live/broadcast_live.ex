@@ -525,6 +525,7 @@ defmodule OpenResultsWeb.BroadcastLive do
       result: nil,
       scores: nil,
       clocks: nil,
+      idle_ms: nil,
       fen: Chess.start_fen(),
       marked: nil,
       rows: [],
@@ -556,6 +557,12 @@ defmodule OpenResultsWeb.BroadcastLive do
       result: LiveBoardsData.result(tile),
       scores: LiveBoardsData.scores(tile),
       clocks: view && view.clocks,
+      # Before the first move, with no clock reporting, the time control's
+      # base time stands in; once anything has been played it never does.
+      idle_ms:
+        if((status(tile) == :waiting and assigns.payload) && assigns.round,
+          do: LiveBoardsData.start_ms(assigns.payload, assigns.round)
+        ),
       fen: fen,
       marked: marked,
       rows: if(view && steps > 0, do: rows(view), else: []),
@@ -760,6 +767,7 @@ defmodule OpenResultsWeb.BroadcastLive do
                   tile={@featured}
                   colour={@top}
                   clocks={@clocks}
+                  idle_ms={@idle_ms}
                   score={@scores && side_score(@scores, @top)}
                 />
                 <div class="lb-board-frame">
@@ -783,6 +791,7 @@ defmodule OpenResultsWeb.BroadcastLive do
                   tile={@featured}
                   colour={@bottom}
                   clocks={@clocks}
+                  idle_ms={@idle_ms}
                   score={@scores && side_score(@scores, @bottom)}
                 />
               </div>
@@ -845,15 +854,19 @@ defmodule OpenResultsWeb.BroadcastLive do
                   {gettext("Flip board")}
                 </button>
 
-                <button
-                  :if={not @following? and @status == :live}
-                  type="button"
-                  id="lb-follow"
-                  phx-click="live"
-                  class="lb-btn lb-btn-text lb-btn-live"
-                >
-                  {gettext("Follow live")}
-                </button>
+                <%!-- Its own row, always there: the button comes and goes, the
+                     buttons above it never move under the cursor. --%>
+                <div id="lb-follow-slot" class="lb-follow-slot">
+                  <button
+                    :if={not @following? and @status == :live}
+                    type="button"
+                    id="lb-follow"
+                    phx-click="live"
+                    class="lb-btn lb-btn-text lb-btn-live"
+                  >
+                    {gettext("Follow live")}
+                  </button>
+                </div>
               </div>
             </div>
           </section>
