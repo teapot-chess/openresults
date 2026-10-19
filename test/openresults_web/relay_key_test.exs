@@ -122,6 +122,43 @@ defmodule OpenResultsWeb.RelayKeyTest do
     assert Enum.map(LiveBoards.games(slug), & &1.round) == [5]
   end
 
+  describe "a key whose tournament an installation owns" do
+    setup do
+      {installation, ikey} = installation!({198, 51, 100, 41})
+      slug = mint!(installation)
+      assert json_response(publish(payload(slug), ikey, random_key()), 200)
+      {:ok, %{key: key}} = Moderation.create_relay_key(slug, "box", @admin)
+      {:ok, installation: installation, slug: slug, key: key}
+    end
+
+    test "is refused while the installation is suspended, and works again after", %{
+      installation: installation,
+      slug: slug,
+      key: key
+    } do
+      {:ok, _} = Moderation.suspend(installation.id, @admin)
+
+      assert %{"error" => "owner_suspended"} = slug |> post_live(key) |> json_response(403)
+      assert LiveBoards.games(slug) == []
+
+      {:ok, _} = Moderation.unsuspend(installation.id, @admin)
+      assert slug |> post_live(key) |> json_response(200)
+    end
+
+    test "is refused once the installation is revoked, even if the key itself was not", %{
+      installation: installation,
+      slug: slug,
+      key: key
+    } do
+      # A revoke revokes the keys too; this is the state a revoke without that
+      # leaves behind - what a restore used to.
+      {:ok, _} = OpenResults.Installations.transition(installation.id, ["active"], "revoked")
+
+      assert %{"error" => "owner_revoked"} = slug |> post_live(key) |> json_response(403)
+      assert LiveBoards.games(slug) == []
+    end
+  end
+
   test "a made-up key, a truncated key and another tournament's key are the anonymous 401", %{
     slug: slug,
     key: key

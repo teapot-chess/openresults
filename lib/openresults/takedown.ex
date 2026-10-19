@@ -31,6 +31,14 @@ defmodule OpenResults.Takedown do
   follows. The slug returns to unclaimed and the next publish claims it again,
   by the same trust-on-first-use path as any other new slug.
 
+  ## Unless the operator did it
+
+  `tombstone: actor` - the admin panel's delete, and its replay - also
+  leaves an `OpenResults.Tombstones` row, in the same transaction, so the
+  slug stays gone: an unclaimed slug was otherwise exactly what a hosted
+  OpenPairings' next automatic publish needed to put the page back. The
+  arbiter's own withdrawal leaves none, for the reason above.
+
   ## What it leaves
 
   Reports about the tournament (`OpenResults.Reports`) and the moderation
@@ -49,6 +57,7 @@ defmodule OpenResults.Takedown do
   alias OpenResults.RelayKeys
   alias OpenResults.Repo
   alias OpenResults.Snapshots
+  alias OpenResults.Tombstones
   alias OpenResults.TournamentKeys
   alias OpenResults.Tournaments
 
@@ -67,14 +76,20 @@ defmodule OpenResults.Takedown do
   call that did the work, while a caller who mistyped the slug can still see
   from the counts that it removed nothing.
   """
-  @spec purge(String.t()) :: counts()
-  def purge(slug) do
+  @spec purge(String.t(), keyword()) :: counts()
+  def purge(slug, opts \\ []) do
     # Asked before the row goes: the row is where the claim is stored, and
     # the siblings' tab strips still name this tournament.
     siblings = OpenResults.TournamentGroups.sibling_slugs(slug)
 
     {:ok, counts} =
       Repo.transaction(fn ->
+        # Read before the row goes: the row is where the owner is stored.
+        with by when is_binary(by) <- Keyword.get(opts, :tombstone) do
+          owner = Tournaments.get(slug)
+          Tombstones.put(slug, owner && owner.installation_id, by)
+        end
+
         # The tournament's row goes too - its status and, for a slug minted
         # for an installation, its owner - so the slug is gone rather than
         # sealed, for the same reason as the key above. Not in the counts:

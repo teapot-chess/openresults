@@ -12,12 +12,20 @@ defmodule OpenResultsWeb.Plugs.CanonicalHost do
   into a page view and lose its body. Those keep being answered on the old
   host, so a desktop copy that still publishes to it keeps working.
 
+  Nothing under `/api` is redirected, whatever the method (the 2026-10-19
+  sweep): OpenPairings no longer follows redirects - a followed one carries
+  its bearer token and tournament key to wherever `Location` says - so a
+  redirected `GET /api/server` would turn every desktop copy pointed at the
+  old name into "the results site moved". The API answers on any host.
+
   The policy is read from `config :openresults, :host_policy` on every request
   (a keyword list: `:canonical`, `:redirect_hosts`).
   """
   import Plug.Conn
 
   def init(opts), do: opts
+
+  def call(%Plug.Conn{path_info: ["api" | _]} = conn, _opts), do: conn
 
   def call(%Plug.Conn{method: method} = conn, _opts) when method in ["GET", "HEAD"] do
     policy = Application.get_env(:openresults, :host_policy, [])

@@ -30,6 +30,8 @@ defmodule OpenResultsWeb.Router do
     # `Revalidate`, which keys the ETag and the page cache on its version.
     plug OpenResultsWeb.Plugs.PublicNotice
     plug :put_secure_browser_headers
+    # The whole Content-Security-Policy: scripts allowed by hash only.
+    plug OpenResultsWeb.Plugs.ContentSecurityPolicy
     # Runs AFTER, because it rewrites the header the line above just set.
     # See `OpenResultsWeb.Framing` for why every page here is safe to embed
     # and why that is a property of the site rather than a list of routes.
@@ -323,6 +325,13 @@ defmodule OpenResultsWeb.Router do
     # publishing into it.
     get "/tournaments/:slug/history", SnapshotController, :history,
       private: %{installation_access: :history}
+
+    # Whether the slug is claimed with the key in `x-openresults-key` - what a
+    # hosted OpenPairings asks before adopting a key from a backup file
+    # (docs/public-publishing.md, "Checking a tournament key"). Operator
+    # token only: no `installation_access`, so an installation key is the
+    # anonymous 401. A read; it never claims.
+    get "/tournaments/:slug/claim", ClaimController, :show
 
     # Takedown. On the write pipeline because it is a write - the most
     # destructive one here - and gated a second time by the tournament key,

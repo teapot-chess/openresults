@@ -94,6 +94,7 @@ defmodule OpenResults.Snapshots do
              | TournamentKeys.error()
              | :not_owner
              | :tournament_hidden
+             | :tournament_deleted
              | Ecto.Changeset.t()}
   def ingest(payload, opts \\ []) do
     with {:ok, slug} <-
@@ -127,16 +128,31 @@ defmodule OpenResults.Snapshots do
     end
   end
 
+  # One immediate transaction, like the installation path, for the
+  # tombstone's sake: an admin delete committing between "not deleted" and
+  # the insert would otherwise be undone by the very publish it raced. See
+  # `OpenResults.Tombstones`. Break-glass is the one key that gets past a
+  # tombstone, and lifts it.
   defp ingest_as_operator(slug, payload, key, received_at) do
-    with :ok <- TournamentKeys.authorize_publish(slug, key),
-         {:ok, snapshot} <- slug |> store(payload, received_at) |> cache_inserted_id(slug) do
-      Tournaments.ensure_listed(slug)
-      # Only the operator path: an installation-key publish never carries
-      # `publisher` (see docs/snapshot-schema.md) - it already identifies its
-      # installation in the admin panel.
-      Tournaments.set_publisher(slug, payload)
-      {:ok, snapshot}
-    end
+    Repo.transaction(
+      fn ->
+        with :ok <- OpenResults.Tombstones.check_operator_publish(slug, key),
+             :ok <- TournamentKeys.authorize_publish(slug, key),
+             {:ok, snapshot} <- store(slug, payload, received_at) do
+          Tournaments.ensure_listed(slug)
+          # Only the operator path: an installation-key publish never carries
+          # `publisher` (see docs/snapshot-schema.md) - it already identifies
+          # its installation in the admin panel.
+          Tournaments.set_publisher(slug, payload)
+          snapshot
+        else
+          {:error, reason} -> Repo.rollback(reason)
+        end
+      end,
+      mode: :immediate
+    )
+    # After the commit - see `ingest_as_installation/5`.
+    |> cache_inserted_id(slug)
   end
 
   defp ingest_as_installation(slug, payload, key, received_at, installation) do

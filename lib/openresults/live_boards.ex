@@ -32,6 +32,17 @@ defmodule OpenResults.LiveBoards do
   engine - the stored ones carry their own positions - so a relay that sends
   the whole list every time costs a string comparison per old ply.
 
+  ## Bounds
+
+  A live game is not a snapshot, so the version cap and the free-disk floor
+  never reached it, and a relay could fill the disk one board at a time (the
+  2026-10-19 sweep). `bounds/2` turns the current snapshot into the three
+  rules `ingest/3` applies when given them - the controller always does:
+  only a `(round, board)` the snapshot has (`board_not_published`), at most
+  `#{500}` games per round it has (`live_game_limit`), and, for a credential
+  the floor applies to, no NEW game while the disk is low (`storage_low`).
+  An update to a game already held is never counted or floored.
+
   ## The broadcast delay
 
   Organisers may be required to delay what spectators see. Ingest always
@@ -53,6 +64,8 @@ defmodule OpenResults.LiveBoards do
   @max_plies 700
   @max_clock_ms :timer.hours(24) * 10
   @max_delay_minutes 24 * 60
+  @games_per_round 500
+  @storage_retry_after 300
 
   # --- change notices ----------------------------------------------------------
 
@@ -198,12 +211,15 @@ defmodule OpenResults.LiveBoards do
   `false` for an update older than what is held - a success, not an error.
   Broadcasts only when something changed.
 
-  Option `:now_ms` is for tests.
+  Options: `:boards`, `:max_games` and `:floor?` from `bounds/2` (absent,
+  nothing is bounded - only tests and the seed task call it so); `:now_ms`
+  is for tests.
   """
   def ingest(slug, params, opts \\ []) when is_binary(slug) do
     now = Keyword.get_lazy(opts, :now_ms, fn -> System.os_time(:millisecond) end)
 
-    with {:ok, req} <- parse(params) do
+    with {:ok, req} <- parse(params),
+         :ok <- published_board(req, Keyword.get(opts, :boards)) do
       # Immediate, like every other read-then-write here: a deferred
       # transaction that read and then tried to write is refused with
       # "database busy" the moment another board's update has committed in
@@ -211,7 +227,7 @@ defmodule OpenResults.LiveBoards do
       result =
         Repo.transaction(
           fn ->
-            case apply_update(slug, req, now) do
+            case apply_update(slug, req, now, opts) do
               {:ok, outcome} -> outcome
               {:error, _code, _detail} = error -> Repo.rollback(error)
               {:error, _code, _detail, _extra} = error -> Repo.rollback(error)
@@ -231,18 +247,90 @@ defmodule OpenResults.LiveBoards do
     end
   end
 
-  defp apply_update(slug, req, now) do
+  defp apply_update(slug, req, now, opts) do
     game =
       Repo.get_by(Game, tournament_slug: slug, round: req.round, board: req.board)
 
     if game && ignorable?(game, req) do
       {:ok, %{applied?: false, ply: game.ply_count, game: game}}
     else
-      with {:ok, change} <- plan(game, req, now) do
+      with :ok <- room_for(game, slug, opts),
+           {:ok, change} <- plan(game, req, now) do
         {:ok, save(game, slug, req, change, now)}
       end
     end
   end
+
+  @doc """
+  What the current snapshot allows a relay to store, as `ingest/3` options:
+  the `(round, board)` pairs it publishes - `rounds[].boards[].board`, and
+  a team event's `rounds[].matches[].boards` - and a cap of #{500} games per
+  round in it (at least one round's worth). `floor?` says whether the
+  free-disk floor applies to the credential: everyone but the operator.
+  """
+  @spec bounds(map(), keyword()) :: keyword()
+  def bounds(payload, opts \\ []) when is_map(payload) do
+    rounds = List.wrap(payload["rounds"]) |> Enum.filter(&is_map/1)
+
+    boards =
+      for round <- rounds,
+          is_integer(round["number"]),
+          board <- round_boards(round),
+          into: MapSet.new(),
+          do: {round["number"], board}
+
+    [
+      boards: boards,
+      max_games: @games_per_round * max(length(rounds), 1),
+      floor?: Keyword.get(opts, :floor?, true)
+    ]
+  end
+
+  defp round_boards(round) do
+    paired = for %{"board" => n} when is_integer(n) <- List.wrap(round["boards"]), do: n
+
+    in_matches =
+      for %{"boards" => list} when is_list(list) <- List.wrap(round["matches"]),
+          n when is_integer(n) <- list,
+          do: n
+
+    paired ++ in_matches
+  end
+
+  defp published_board(_req, nil), do: :ok
+
+  defp published_board(req, boards) do
+    if MapSet.member?(boards, {req.round, req.board}),
+      do: :ok,
+      else:
+        {:error, :board_not_published,
+         "round #{req.round} board #{req.board} is not in the published snapshot; publish the round first"}
+  end
+
+  # Only a NEW game takes room: one already held may always be updated.
+  defp room_for(%Game{}, _slug, _opts), do: :ok
+
+  defp room_for(nil, slug, opts) do
+    max = Keyword.get(opts, :max_games)
+
+    cond do
+      Keyword.get(opts, :floor?, false) and OpenResults.DiskSpace.low?() ->
+        {:error, :storage_low,
+         "this server is low on disk space; games already being followed still update, new boards wait",
+         %{retry_after: @storage_retry_after}}
+
+      is_integer(max) and game_count(slug) >= max ->
+        {:error, :live_game_limit,
+         "this tournament already holds #{max} live games, the most its published rounds allow",
+         %{limit: max}}
+
+      true ->
+        :ok
+    end
+  end
+
+  defp game_count(slug),
+    do: Repo.aggregate(from(g in Game, where: g.tournament_slug == ^slug), :count)
 
   # Older than what is held, or a "still live" repeat for a game already
   # finished at that ply. `replace` is the one way back.

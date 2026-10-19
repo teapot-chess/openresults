@@ -214,4 +214,81 @@ defmodule OpenResultsWeb.LiveBoardControllerTest do
       assert %{"status" => "ok"} = json_response(conn, 200)
     end
   end
+
+  describe "storage bounds (2026-10-19 sweep)" do
+    import OpenResults.DiskSpaceHelpers
+
+    test "a board the snapshot does not have is refused, and nothing is stored", %{slug: slug} do
+      # The fixture publishes rounds 1, 2, 3 and 5; round 5 has five boards.
+      for body <- [
+            %{"round" => 4, "board" => 1, "moves" => ["e4"]},
+            %{"round" => 5, "board" => 6, "moves" => ["e4"]},
+            %{"round" => 999, "board" => 9999, "moves" => ["e4"]}
+          ] do
+        assert %{"error" => "board_not_published"} = slug |> post_live(body) |> json_response(409)
+      end
+
+      assert LiveBoards.games(slug) == []
+    end
+
+    test "a batch refuses only the unpublished board", %{slug: slug} do
+      body = %{
+        "boards" => [
+          %{"round" => 5, "board" => 1, "moves" => ["e4"]},
+          %{"round" => 6, "board" => 1, "moves" => ["e4"]}
+        ]
+      }
+
+      assert %{"results" => [%{"status" => "ok"}, %{"error" => "board_not_published"}]} =
+               slug |> post_live(body) |> json_response(200)
+
+      assert [%{round: 5}] = LiveBoards.games(slug)
+    end
+
+    test "the cap is 500 games per published round" do
+      bounds = LiveBoards.bounds(payload("any"))
+      assert bounds[:max_games] == 500 * 4
+      assert MapSet.member?(bounds[:boards], {5, 5})
+      refute MapSet.member?(bounds[:boards], {4, 1})
+      assert LiveBoards.bounds(%{"rounds" => []})[:max_games] == 500
+    end
+
+    test "past the cap a new board is refused and a held one still updates", %{slug: slug} do
+      bounds = LiveBoards.bounds(payload(slug)) |> Keyword.put(:max_games, 1)
+
+      assert {:ok, _} = LiveBoards.ingest(slug, board(%{"moves" => ["e4"]}), bounds)
+
+      assert {:error, :live_game_limit, _detail, %{limit: 1}} =
+               LiveBoards.ingest(slug, %{"round" => 5, "board" => 2, "moves" => ["d4"]}, bounds)
+
+      assert {:ok, %{applied?: true, ply: 2}} =
+               LiveBoards.ingest(slug, board(%{"moves" => ["e4", "e5"]}), bounds)
+    end
+
+    test "below the disk floor an installation key starts no new board, but keeps the old ones" do
+      {installation, key} = installation!({198, 51, 100, 51})
+      slug = mint!(installation)
+      tkey = random_key()
+      assert json_response(publish(payload(slug), key, tkey), 200)
+      assert slug |> post_live(board(%{"moves" => ["e4"]}), key, tkey) |> json_response(200)
+
+      disk_reads(free(3))
+
+      conn = post_live(slug, %{"round" => 5, "board" => 2, "moves" => ["d4"]}, key, tkey)
+      assert %{"error" => "storage_low", "retry_after" => 300} = json_response(conn, 503)
+      assert get_resp_header(conn, "retry-after") == ["300"]
+
+      assert %{"applied" => true} =
+               slug
+               |> post_live(board(%{"moves" => ["e4", "e5"]}), key, tkey)
+               |> json_response(200)
+
+      assert [%{board: 1}] = LiveBoards.games(slug)
+    end
+
+    test "below the disk floor the operator token is not refused", %{slug: slug} do
+      disk_reads(free(3))
+      assert slug |> post_live(board(%{"moves" => ["e4"]})) |> json_response(200)
+    end
+  end
 end

@@ -347,6 +347,45 @@ defmodule OpenResultsWeb.AccessibilityTest do
       end)
     end
 
+    # The 2026-10-19 sweep: the public pages had no script policy at all.
+    # Walked from the same router as the audit, so a page added later, or a
+    # script edited without the hash following it, fails here and not in a
+    # reader's console.
+    test "runs only scripts its Content-Security-Policy allows", %{world: world} do
+      with_fide_search(fn ->
+        checked =
+          for route <- browser_routes(), path <- pages(route, world) do
+            conn = get(build_conn(), path)
+            [policy] = get_resp_header(conn, "content-security-policy")
+            html = conn.resp_body
+
+            for directive <- [
+                  "object-src 'none'",
+                  "base-uri 'self'",
+                  "frame-ancestors *",
+                  "default-src 'self'"
+                ],
+                do: assert(policy =~ directive, "#{path}: no #{directive} in #{policy}")
+
+            for [attrs, body] <- Regex.scan(~r{<script([^>]*)>(.*?)</script>}s, html) do
+              if attrs =~ "src=" do
+                assert body == "", "#{path}: a script with both src and a body"
+              else
+                hash = "'sha256-" <> Base.encode64(:crypto.hash(:sha256, body)) <> "'"
+                assert policy =~ hash, "#{path}: an inline script the policy does not allow"
+              end
+            end
+
+            # The policy has no 'unsafe-hashes', so these would not run.
+            refute html =~ ~r/<[^>]+\son[a-z]+\s*=/i, "#{path}: an inline event handler"
+            refute html =~ ~r/href\s*=\s*"javascript:/i, "#{path}: a javascript: link"
+            path
+          end
+
+        assert length(checked) >= 30
+      end)
+    end
+
     test "the entry form, sent back with its errors, in every language", %{world: world} do
       for lang <- ["en", "nl", "fr"] do
         path = "/t/#{world.swiss}/register?lang=#{lang}"

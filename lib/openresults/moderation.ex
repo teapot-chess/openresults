@@ -258,7 +258,10 @@ defmodule OpenResults.Moderation do
     email = actor!(actor)
 
     transaction(fn ->
-      counts = Takedown.purge(slug)
+      # With a tombstone: an operator's delete is the one a later publish -
+      # a hosted OpenPairings' automatic one above all - must not undo. See
+      # `OpenResults.Tombstones`.
+      counts = Takedown.purge(slug, tombstone: email)
       row = log!(email, "delete", "tournament", slug, counts)
       {counts, row}
     end)
@@ -366,11 +369,15 @@ defmodule OpenResults.Moderation do
             replaced: Enum.map(replaced, & &1.id)
           })
 
-          Map.put(made, :replaced, Enum.map(replaced, & &1.id))
+          {Map.put(made, :replaced, Enum.map(replaced, & &1.id)), replaced}
 
         {:error, reason} ->
           Repo.rollback(reason)
       end
+    end)
+    |> committed(fn {made, replaced} ->
+      ModerationJournal.record_relay_key_revoke(slug, replaced, DateTime.utc_now())
+      made
     end)
   end
 
@@ -399,6 +406,10 @@ defmodule OpenResults.Moderation do
         })
       end
 
+      revoked
+    end)
+    |> committed(fn revoked ->
+      ModerationJournal.record_relay_key_revoke(slug, revoked, DateTime.utc_now())
       length(revoked)
     end)
   end
@@ -423,6 +434,10 @@ defmodule OpenResults.Moderation do
         {:error, reason} ->
           Repo.rollback(reason)
       end
+    end)
+    |> committed(fn relay_key ->
+      ModerationJournal.record_relay_key_revoke(slug, [relay_key], DateTime.utc_now())
+      relay_key
     end)
   end
 
@@ -468,14 +483,18 @@ defmodule OpenResults.Moderation do
               log!(email, "transfer", "tournament", slug, %{
                 from: previous && previous.installation_id,
                 to: target,
-                relay_keys_revoked: revoked
+                relay_keys_revoked: length(revoked)
               })
 
-              tournament
+              {tournament, revoked}
 
             {:error, reason} ->
               Repo.rollback(reason)
           end
+        end)
+        |> committed(fn {tournament, revoked} ->
+          ModerationJournal.record_relay_key_revoke(slug, revoked, DateTime.utc_now())
+          tournament
         end)
     end
   end
@@ -1328,6 +1347,24 @@ defmodule OpenResults.Moderation do
     error ->
       Logger.error(
         "could not write the break-glass action log entry: #{Exception.message(error)}"
+      )
+
+      :ok
+  end
+
+  @doc false
+  # For `OpenResults.Tombstones`: break-glass lifting a deleted tournament's
+  # tombstone. Its own action, before the `break_glass_publish` row the same
+  # request writes, so the log says the delete was undone and not merely that
+  # something was published. Never raises, like `log_break_glass/3`.
+  @spec log_break_glass_lift(String.t(), String.t()) :: :ok
+  def log_break_glass_lift(slug, detail) do
+    log!(@break_glass, "lift_tombstone", "tournament", slug, %{detail: detail})
+    :ok
+  rescue
+    error ->
+      Logger.error(
+        "could not write the lift_tombstone action log entry: #{Exception.message(error)}"
       )
 
       :ok

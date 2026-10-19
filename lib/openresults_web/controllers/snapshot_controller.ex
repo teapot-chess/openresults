@@ -99,6 +99,10 @@ defmodule OpenResultsWeb.SnapshotController do
       {:error, reason} when reason in [:not_owner, :tournament_hidden] ->
         ApiError.send(conn, reason)
 
+      # The operator deleted this tournament; see `OpenResults.Tombstones`.
+      {:error, :tournament_deleted} ->
+        ApiError.send(conn, :tournament_deleted)
+
       {:error, reason} when is_atom(reason) ->
         reject(conn, reason)
 

@@ -27,9 +27,12 @@ defmodule OpenResultsWeb.InstallationAccess do
 
   `:live` is a write, but not a publish: a hall relay posts a board every few
   seconds, so it has its own generous per-minute budget (`@live_per_minute`
-  per installation) instead of the publish budget, and it skips the storage
-  floor and size cap - a board update is a few hundred bytes. The operator's
-  pause and an address block still stop it.
+  per installation) instead of the publish budget, and it skips the size cap
+  and, here, the storage floor - a board update is a few hundred bytes. The
+  floor applies to `:live` for a NEW game only, which only
+  `OpenResults.LiveBoards.ingest/3` can tell (the 2026-10-19 sweep), along
+  with the board-must-be-published rule and the per-tournament cap. The
+  operator's pause and an address block still stop it here.
 
   An action this module does not know is the anonymous 401 - a typo in the
   router must fail closed, not open.

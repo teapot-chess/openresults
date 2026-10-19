@@ -194,7 +194,7 @@ defmodule OpenResults.Tournaments do
   tournament that moderation hid.
   """
   @spec authorize_owner(String.t(), Installation.t(), :publish | :read | :delete) ::
-          :ok | {:error, :not_owner | :tournament_hidden}
+          :ok | {:error, :not_owner | :tournament_hidden | :tournament_deleted}
   def authorize_owner(slug, %Installation{id: id}, action) when is_binary(slug) do
     case get(slug) do
       %Tournament{installation_id: ^id, status: "hidden"} when action == :publish ->
@@ -203,8 +203,16 @@ defmodule OpenResults.Tournaments do
       %Tournament{installation_id: ^id} ->
         :ok
 
+      # No row, or someone else's. A slug the operator deleted while this
+      # installation owned it is told so - `not_owner` would send its arbiter
+      # to ask for a transfer of a tournament that no longer exists. Deleting
+      # it again is allowed and removes nothing. See `OpenResults.Tombstones`.
       _someone_elses_or_none ->
-        {:error, :not_owner}
+        cond do
+          not OpenResults.Tombstones.deleted_from?(slug, id) -> {:error, :not_owner}
+          action == :delete -> :ok
+          true -> {:error, :tournament_deleted}
+        end
     end
   end
 
@@ -321,7 +329,8 @@ defmodule OpenResults.Tournaments do
     taken? =
       Repo.exists?(from t in Tournament, where: t.slug == ^slug) or
         Repo.exists?(from s in Snapshot, where: s.tournament_slug == ^slug) or
-        TournamentKeys.claimed?(slug)
+        TournamentKeys.claimed?(slug) or
+        OpenResults.Tombstones.tombstoned?(slug)
 
     if taken?, do: unused_slug(attempts - 1), else: slug
   end
@@ -375,12 +384,21 @@ defmodule OpenResults.Tournaments do
   def transfer(slug, installation_id) when is_binary(slug) do
     {:ok, result} =
       Repo.transaction(fn ->
+        before = get(slug)
+
         case from(t in Tournament, where: t.slug == ^slug)
              |> Repo.update_all(
                set: [installation_id: installation_id, updated_at: DateTime.utc_now()]
              ) do
           {1, _} ->
             TournamentKeys.release(slug)
+
+            OpenResults.TournamentGroups.follow_transfer(
+              before.event_id,
+              before.installation_id,
+              installation_id
+            )
+
             :ok
 
           {0, _} ->

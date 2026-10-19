@@ -197,12 +197,49 @@ defmodule OpenResults.TournamentKeys do
     do: slug |> authorize(presented, :read, opts) |> plain()
 
   @doc """
+  Is `slug` claimed with exactly `presented`? A read, for
+  `GET /api/tournaments/:slug/claim`: never claims, never logs, and the
+  operator token in the key position is only a key that does not match -
+  this answers what a file's key proves, and break-glass proves nothing about
+  a file.
+  """
+  @spec verify(String.t(), String.t() | nil) ::
+          :tournament_key | :unclaimed | {:error, error()}
+  def verify(slug, presented) do
+    case {fetch(slug), normalize(presented)} do
+      {nil, _any} ->
+        :unclaimed
+
+      {%TournamentKey{}, nil} ->
+        {:error, :key_required}
+
+      {%TournamentKey{key_hash: stored}, key} ->
+        if Plug.Crypto.secure_compare(stored, hash(key)),
+          do: :tournament_key,
+          else: {:error, :key_mismatch}
+    end
+  end
+
+  @doc """
   Has `slug` been claimed?
 
   Diagnostic. It says nothing about whether the tournament has published.
   """
   @spec claimed?(String.t()) :: boolean()
   def claimed?(slug), do: not is_nil(fetch(slug))
+
+  @doc """
+  Is `presented` - a value from the tournament-key header - the operator
+  token? What break-glass is. For `OpenResults.Tombstones`, which lets
+  exactly that through a deleted tournament and nothing else.
+  """
+  @spec break_glass_key?(term()) :: boolean()
+  def break_glass_key?(presented) do
+    case normalize(presented) do
+      nil -> false
+      key -> master_token?(key)
+    end
+  end
 
   @doc """
   Forgets the claim on `slug`, returning how many rows went.

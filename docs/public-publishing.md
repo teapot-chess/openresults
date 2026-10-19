@@ -93,20 +93,33 @@ different things to an arbiter. Existing codes keep their spelling:
 `unauthorized`, `key_required`, `key_mismatch`, `not_found`,
 `history_requires_auth`, `bad_at`.
 
+**No redirects under `/api` (settled in the 2026-10-19 sweep).** The
+old-hostname redirect (`PHX_REDIRECT_HOSTS`) never applies to `/api/...`:
+an API request is answered on whichever host it arrived. A client following
+a redirect re-sends its bearer token and tournament key to wherever the
+`Location` points, so OpenPairings does not follow one at all; it reports
+"the results site moved to <Location>" and lets the arbiter change the
+address. A server that redirected its own API would only turn working
+clients into that message.
+
 | Code | Status | Returned by | Extra fields |
 |---|---|---|---|
 | `unauthorized` | 401 | any token-gated route, for a missing, malformed or unknown credential - one body for all of them, as today | |
 | `installation_suspended` | 403 | mint, publish, history, registrations | |
 | `installation_revoked` | 403 | every installation-key route except delete | |
+| `owner_suspended`, `owner_revoked` | 403 | a relay key's live update, when the installation that owns its tournament is suspended / revoked - a box may not go on writing for a publisher that may not **(settled in the 2026-10-19 sweep)** | |
 | `installation_key_required` | 403 | `POST /api/tournaments` called with the operator token | |
 | `not_owner` | 403 | any installation-key write or read of a slug not minted for that installation | |
 | `tournament_hidden` | 403 | publish with an installation key to its own tournament that moderation hid **(settled in the build)** | |
+| `tournament_deleted` | 410 | publish, with either credential, to a slug the operator deleted - see "Deleted tournaments" **(settled in the 2026-10-19 sweep)**; to its former owner's installation key also history, registrations, live boards and relay keys | |
 | `tournament_limit` | 403 | mint | `limit` |
 | `address_blocked` | 403 | registration, mint, publish | |
 | `snapshot_too_large` | 413 | publish with an installation key | `limit_bytes` |
 | `registration_closed` | 503 | `POST /api/installations` | |
 | `publishing_paused` | 503 | mint, publish | |
-| `storage_low` | 503 | mint, publish; also sets `Retry-After` **(settled in the storage bounds, 2026-09-13)** - see "Storage bounds" | `retry_after` (seconds, 300) |
+| `storage_low` | 503 | mint, publish; also sets `Retry-After` **(settled in the storage bounds, 2026-09-13)** - see "Storage bounds". Also a live update that would start a NEW board, with an installation or relay key **(settled in the 2026-10-19 sweep)** | `retry_after` (seconds, 300) |
+| `board_not_published` | 409 | a live update for a `(round, board)` the current snapshot does not have **(settled in the 2026-10-19 sweep)** - see "Storage bounds" | |
+| `live_game_limit` | 409 | a live update that would start a board past the tournament's cap **(settled in the 2026-10-19 sweep)** | `limit` |
 | `rate_limited` | 429 | registration, mint, publish; also sets `Retry-After` | `retry_after` (seconds) |
 
 A key that exists but is suspended or revoked gets its own 403 rather than the
@@ -133,7 +146,8 @@ receive it.
   shape.
 - When several refusals apply, an installation-key request gets the first of:
   suspended/revoked, `rate_limited`, `address_blocked`, `publishing_paused`,
-  `storage_low`, `snapshot_too_large`, `not_owner`/`tournament_hidden`, then
+  `storage_low`, `snapshot_too_large`,
+  `not_owner`/`tournament_hidden`/`tournament_deleted`, then
   the tournament key's own `key_required`/`key_mismatch`, then
   `tournament_limit` (mint). Cheap checks first, so a flood costs an ETS
   counter before a query.
@@ -222,7 +236,9 @@ Mints a slug bound to this installation. Request body `{}`.
 
 - 9 random bytes, base64url: exactly the shape OpenPairings' own `public_slug`
   already has, so a public-mode link looks like every link arbiters already
-  share.
+  share. **(settled in the 2026-10-19 sweep)** Never a slug the operator
+  deleted: a tombstoned slug counts as taken, like one with a row, a
+  snapshot or a key claim.
 - **Why the server mints it.** The agreed rule was "random suffix and refuse
   existing slugs", aimed at a hostile client claiming a readable name such as
   `gent-open-2026`. OpenPairings never chooses readable slugs, so the stronger
@@ -432,6 +448,29 @@ keys are refused on mint and publish with 503 `storage_low`, `retry_after`
 - The admin dashboard shows the free space against the floor, and a warning
   at the top of the page while it is below it.
 
+**Live boards (settled in the 2026-10-19 sweep).** The version cap and the
+floor bounded snapshots and nothing else, and a live game is not a
+snapshot: one installation key could post any `(round, board)` from 1-999 by
+1-9999, each up to 700 plies, and every one was stored. Three rules now:
+
+- A live update for a `(round, board)` that is not in the current snapshot
+  (`rounds[].boards[].board`, and in a team event `rounds[].matches[].boards`)
+  is refused, `409 board_not_published`, whoever sends it. A relay reports
+  boards the arbiter has paired and published; anything else had nowhere to
+  be shown anyway.
+- A tournament holds at most **500 live games per round in its current
+  snapshot** (at least one round's worth). An update that would start a new
+  one past that is `409 live_game_limit` with `limit`. Updates to games
+  already held are not counted again.
+- Below the free-disk floor, an update that would start a NEW game with an
+  installation key or a relay key is `503 storage_low`, `retry_after` 300.
+  Updates to games already held go on - a game in progress is a few hundred
+  bytes a move and stopping it halfway helps nobody. The operator token is
+  unaffected, as for a publish.
+
+So one tournament's live storage is bounded by its snapshot: rounds x 500
+games x 700 plies, and in practice by the boards actually paired.
+
 The admin panel shows the figures behind both rules: stored snapshot bytes
 server-wide, the database file, the free space, the floor and the cap on the
 dashboard; per installation on its page; and per tournament (current snapshot
@@ -500,6 +539,77 @@ way a publish does.
 - A publish with the operator token to a slug with no status yet makes it
   `listed` with no owner; to a slug that already has one - an installation's
   pending tournament - it changes neither status nor owner.
+
+## Checking a tournament key
+
+**(settled in the 2026-10-19 sweep)** `GET /api/tournaments/:slug/claim`,
+operator token only (an installation key is the anonymous `401`; it has the
+ownership check instead), with the key to check in `x-openresults-key`.
+It answers whether the slug is claimed with exactly that key, and changes
+nothing - it never claims, and the operator token in the key position is
+just a wrong key here, never break-glass.
+
+| Answer | Meaning |
+|---|---|
+| `200 {"claim": "tournament_key"}` | claimed, with this key |
+| `200 {"claim": "unclaimed"}` | nobody has claimed the slug (it may not exist) |
+| `403 key_required` | claimed, and no key was sent |
+| `403 key_mismatch` | claimed with another key |
+| `410 tournament_deleted` | the operator deleted it |
+
+What it is for: a hosted OpenPairings serves many arbiters with one operator
+token, so the tournament key is all that tells one arbiter's tournament from
+another's. A backup carries a tournament's key and slug in a file the arbiter
+can edit, and taking it over (`adopt_claim`) used to believe the file. With
+an unclaimed slug the next publish would then claim somebody else's legacy
+tournament with a key of the file's choosing. Hosted, OpenPairings now asks
+this route first and adopts only on `tournament_key`. A server without the
+route answers 404, and the takeover is refused - the safe way round.
+
+## Deleted tournaments
+
+**(settled in the 2026-10-19 sweep)** A delete from the admin panel
+(`delete/2`, and its replay from the moderation journal) leaves a
+**tombstone**: one row per slug in `tournament_tombstones`, with when, by
+whom, and the installation that owned it (none for an operator-published
+tournament), written in the same transaction as the takedown.
+
+Why: the takedown releases the tournament key and drops the status row, so
+the slug is unclaimed afterwards. A hosted OpenPairings publishes with the
+operator token and was never told about the delete, so its next automatic
+publish re-claimed the slug with the same key and put the page back, listed,
+with every player on it. A delete that lasts until the next result is typed
+is not a delete.
+
+- **Every publish refuses a tombstoned slug** with 410 `tournament_deleted`:
+  the operator token and an installation key alike. Nothing is stored or
+  claimed. The check runs inside the publish's own immediate transaction, so
+  a delete landing mid-publish cannot be raced.
+- **Break-glass is the one way to lift it, and lifting is explicit**: a
+  publish with the operator token as bearer AND in `X-OpenResults-Key`
+  removes the tombstone and publishes, writing a `lift_tombstone` row (actor
+  `break-glass`) before the usual `break_glass_publish` one. An installation
+  key never lifts one; the admin panel has no button for it.
+- **To an installation key** the code is `tournament_deleted` only for the
+  installation that owned the slug when it was deleted - on publish, history,
+  registrations, live boards and relay keys - so its arbiter is told what
+  happened rather than `not_owner`. Any other installation gets `not_owner`
+  as before. Its delete of a tombstoned slug succeeds and removes nothing.
+- **Mint never hands out a tombstoned slug.**
+- Not tombstoned: an owner's or the operator's `DELETE /api/tournaments/:slug`
+  (the arbiter withdrawing their own page, or rotating its address), a
+  retention release of a minted slug that never published, and a takedown
+  the journal replays for an owner's delete. Those may be published again
+  under the same slug, as before.
+- **A restore keeps it.** The journal's `delete` line from the admin panel is
+  replayed as before; the replay also writes the tombstone back when the
+  restored database lacks it, unless the action log shows it was lifted at or
+  after the line. Lifting is not journalled (the less safe direction), so a
+  restore of a backup older than the lift brings the tombstone back and the
+  operator lifts it again deliberately.
+- OpenPairings, on `tournament_deleted`: stops retrying, switches publishing
+  off for that tournament and tells the arbiter the results site removed it -
+  in every mode, hosted included (see "OpenPairings desktop").
 
 ## Reports
 
@@ -614,7 +724,9 @@ get_tournament(slug)
 approve(slug, actor)               # pending -> listed
 hide(slug, actor)                  # -> hidden
 unhide(slug, actor)                # hidden -> listed
-delete(slug, actor)                # Takedown.purge/1
+delete(slug, actor)                # Takedown.purge/1, plus a tombstone
+                                   # (settled in the 2026-10-19 sweep; see
+                                   # "Deleted tournaments")
 transfer(slug, installation_id, actor)
   # rebinds ownership and clears the stored tournament key, so the target
   # installation's next keyed publish claims it - what break-glass is used for
@@ -790,6 +902,17 @@ clear_public_notice(actor) :: {:ok, notice} | {:error, :not_set}
   raising an installation's limit are never journalled
   and never replayed. Each re-applied action writes one action log row with
   the actor `restore-replay`.
+- **(settled in the 2026-10-19 sweep)** Relay keys are credentials too, and a
+  restore used to bring revoked ones back. A `revoke` replayed from the
+  journal now revokes the installation's relay keys with it
+  (`RelayKeys.revoke_all_for_installation/2`), as the live revoke does. Every
+  other relay-key revocation - the panel's, the publisher's
+  `DELETE .../relay-keys`, a key replaced under the same label, and the ones
+  a `transfer/3` takes away - is journalled as `revoke_relay_keys` with the
+  slug and the keys' SHA-256 fingerprints (never a key), and replayed by
+  revoking any of those keys the restored database still holds unrevoked.
+  Revoked is final, so there is nothing to ask the action log first. An admin
+  delete's replay keeps its tombstone - see "Deleted tournaments".
 
 **(settled in the build)** What the panel gets back:
 
@@ -831,7 +954,8 @@ clear_public_notice(actor) :: {:ok, notice} | {:error, :not_set}
   `transfer_all` **(settled in the build)**, `suspend`, `unsuspend`, `revoke`,
   `resolve_report`, `block_address`,
   `unblock`, `break_glass_publish`, `break_glass_delete`, `break_glass_read`,
-  `retention`; **(settled in the admin upgrade, 2026-09-13)** `trust`,
+  `retention`; **(settled in the 2026-10-19 sweep)** `lift_tombstone`;
+  **(settled in the admin upgrade, 2026-09-13)** `trust`,
   `untrust`, `set_installation_limits`, `put_server_setting`,
   `reset_server_setting`, `set_notice`, `clear_notice`), `target_type` (`setting`, `tournament`, `installation`,
   `report`, `address_block`), `target`, `details` (a map with string keys),
@@ -1019,6 +1143,7 @@ own server, keep today's behaviour exactly.
 | `snapshot_too_large` | red, with the limit | stop for that tournament |
 | `not_owner` | red: a different installation owns this tournament | stop for that tournament |
 | `tournament_hidden` | red: the results site has hidden this tournament | stop for that tournament **(settled in the build)** |
+| `tournament_deleted` | plain: the results site removed this tournament; publishing has been switched off | drop the queued row, switch publishing off for that tournament - in operator (hosted) mode too **(settled in the 2026-10-19 sweep)** |
 | `registration_closed` | the results site is not accepting new installations right now | nothing sent |
 | `address_blocked` | red: contact the operator | stop |
 
