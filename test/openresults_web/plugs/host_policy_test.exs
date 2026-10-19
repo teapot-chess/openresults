@@ -140,6 +140,9 @@ defmodule OpenResultsWeb.Plugs.HostPolicyTest do
       refute run(CanonicalHost, :post, "openresults.zerotwo.cloud", "/api/tournaments/x").halted
       refute run(CanonicalHost, :put, "openresults.zerotwo.cloud", "/api/tournaments/x").halted
       refute run(CanonicalHost, :get, "openresults.cloud", "/t/x").halted
+      # The API answers on any host, GET included (2026-10-19 sweep).
+      refute run(CanonicalHost, :get, "openresults.zerotwo.cloud", "/api/server").halted
+      refute run(CanonicalHost, :head, "openresults.zerotwo.cloud", "/api/tournaments/x").halted
       refute run(CanonicalHost, :get, "127.0.0.1", "/t/x").halted
     end
 

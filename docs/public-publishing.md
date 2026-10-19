@@ -93,6 +93,15 @@ different things to an arbiter. Existing codes keep their spelling:
 `unauthorized`, `key_required`, `key_mismatch`, `not_found`,
 `history_requires_auth`, `bad_at`.
 
+**No redirects under `/api` (settled in the 2026-10-19 sweep).** The
+old-hostname redirect (`PHX_REDIRECT_HOSTS`) never applies to `/api/...`:
+an API request is answered on whichever host it arrived. A client following
+a redirect re-sends its bearer token and tournament key to wherever the
+`Location` points, so OpenPairings does not follow one at all; it reports
+"the results site moved to <Location>" and lets the arbiter change the
+address. A server that redirected its own API would only turn working
+clients into that message.
+
 | Code | Status | Returned by | Extra fields |
 |---|---|---|---|
 | `unauthorized` | 401 | any token-gated route, for a missing, malformed or unknown credential - one body for all of them, as today | |
