@@ -345,6 +345,50 @@ defmodule OpenResultsWeb.LiveBoardsLiveTest do
       assert has_element?(view, "#lb-game-clock-black", "10:01")
     end
 
+    test "a zero on the side that is not running is an unknown clock, not a flag fall", %{
+      conn: conn
+    } do
+      slug = publish!()
+
+      report(slug, 1, ~w(e4 e5), %{
+        "white_ms" => 0,
+        "black_ms" => 5_538_000,
+        "running" => "white"
+      })
+
+      report(slug, 2, ~w(e4 e5 Nf3), %{
+        "white_ms" => 0,
+        "black_ms" => 5_538_000,
+        "running" => "black"
+      })
+
+      {:ok, view, _html} = live(conn, "/t/#{slug}/live/5/2")
+
+      # Board 2: white's clock runs out only while it is running; black is the
+      # one running here, so white's 0 is no reading at all.
+      assert has_element?(view, "#lb-game-clock-white", "-:--")
+      refute has_element?(view, "#lb-game-clock-white", "0:00")
+      assert has_element?(view, "#lb-game-clock-black", ~r/1:32:1[78]/)
+
+      # Board 1: the running side may truly be at zero - that one stays.
+      {:ok, view, _html} = live(conn, "/t/#{slug}/live/5/1")
+      assert has_element?(view, "#lb-game-clock-white", "0:00")
+      assert has_element?(view, "#lb-game-clock-black", ~r/1:32:1[78]/)
+    end
+
+    test "the name is whole text with a tooltip, so a cut-off one can still be read", %{
+      conn: conn
+    } do
+      slug = publish!()
+      report(slug, 1, ~w(e4))
+      {:ok, view, _html} = live(conn, "/t/#{slug}/live/5/1")
+
+      for colour <- ~w(white black) do
+        assert has_element?(view, "#lb-bar-#{colour} .lb-bar-name[title*=\",\"]")
+        assert has_element?(view, "#lb-bar-#{colour} .lb-bar-meta .lb-rating")
+      end
+    end
+
     test "leave the step buttons where they are when you step back", %{conn: conn} do
       slug = publish!()
       report(slug, 1, ~w(e4 e5 Nf3), %{"white_ms" => 1, "black_ms" => 1, "running" => "black"})

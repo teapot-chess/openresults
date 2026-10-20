@@ -35,6 +35,7 @@ defmodule OpenResultsWeb.IndexTest do
     |> put_in(["tournament", "name"], "Finished Open")
     |> put_in(["tournament", "rounds_count"], 3)
     |> put_in(["tournament", "end_date"], "2099-01-01")
+    |> SnapshotPayloads.decided()
   end
 
   # Nothing published, start_date safely in the future on any real calendar.
