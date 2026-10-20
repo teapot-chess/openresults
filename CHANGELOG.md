@@ -27,6 +27,13 @@ Each entry is tagged so a version can be skimmed:
 
 ## [Unreleased]
 
+- **[Fix]** Round robins no longer read "Finished" from the moment they are
+  published, right beside "Results coming in". A round robin publishes its
+  whole schedule on day one, and "every round is out" was taken to mean
+  "every round is over". Finished now also needs every game of those rounds
+  decided (a postponed game does not count against it). A schedule published
+  ahead of the start date, with nothing played, sits under "Upcoming".
+
 ## [0.27.0] - 2026-10-19
 
 - [Fix] **The live board shows who is playing, and what time they start with.** The clock boxes beside the players took more than their share of the bar, so a name read "Burssens, ..." and nobody learnt the first name. A name now wraps to a second line before anything is cut, the clock is only as wide as its digits (and larger again in full screen), and the bar is a little taller to make room. Before the first move the bars used to show no clock at all; they now show the tournament's starting time, dashed and standing still, until the board's own clock reports, which takes over at once. The time is read from the published time control (`time_control`, or a `time_control_minutes` when OpenPairings sends one); a text with no base time in it shows nothing, as before. The top bar having no flag or rating line was the data, not the page: both bars draw it for anyone who has one.
