@@ -25,6 +25,21 @@ defmodule OpenResults.SnapshotPayloads do
   def swiss, do: load!("snapshot_swiss.json")
 
   @doc """
+  `payload` with every board that has no result given "1-0". The swiss
+  fixture leaves one board of round 3 undecided, which keeps it live; a test
+  that means "every round is in" needs that game played.
+  """
+  def decided(payload) do
+    update_in(payload, ["rounds"], fn rounds ->
+      Enum.map(rounds, fn round ->
+        Map.update(round, "boards", [], fn boards ->
+          Enum.map(boards, &Map.update(&1, "result", "1-0", fn result -> result || "1-0" end))
+        end)
+      end)
+    end)
+  end
+
+  @doc """
   The swiss fixture as one section of an event: the same tournament under
   another slug and name ("Gent Spring U20 2026"), with the `tournament.group`
   block an arbiter's app sends once a sibling is published too - it names

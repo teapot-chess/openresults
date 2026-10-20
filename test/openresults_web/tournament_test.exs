@@ -433,6 +433,7 @@ defmodule OpenResultsWeb.TournamentTest do
           ["tournament"],
           &Map.merge(&1, %{"rounds_count" => 3, "end_date" => "2099-01-01"})
         )
+        |> OpenResults.SnapshotPayloads.decided()
 
       assert Tournament.status(payload, ~D[2026-06-15]) == :finished
       assert Tournament.status(flag(payload, 3, false), ~D[2026-06-15]) == :live

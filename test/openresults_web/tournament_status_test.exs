@@ -25,7 +25,9 @@ defmodule OpenResultsWeb.TournamentStatusTest do
       # `end_date` is pushed into the future so this is the rounds rule
       # alone, not the fixture's own (otherwise past) end_date agreeing by
       # coincidence.
-      payload = payload(%{"rounds_count" => 3, "end_date" => "2099-01-01"})
+      payload =
+        payload(%{"rounds_count" => 3, "end_date" => "2099-01-01"}) |> SnapshotPayloads.decided()
+
       assert Tournament.status(payload, @today) == :finished
     end
 
@@ -40,6 +42,26 @@ defmodule OpenResultsWeb.TournamentStatusTest do
       refute Tournament.status(payload, @today) == :finished
     end
 
+    test "every round published is not finished while a board still waits for its result" do
+      # A round robin's shape: the whole schedule is out on day one.
+      payload =
+        payload(%{"rounds_count" => 3, "end_date" => "2099-01-01"})
+        |> SnapshotPayloads.decided()
+        |> clear_one_result(3)
+
+      assert Tournament.live?(payload)
+      assert Tournament.status(payload, @today) == :live
+    end
+
+    test "a postponed board does not keep it open" do
+      payload =
+        payload(%{"rounds_count" => 3, "end_date" => "2099-01-01"})
+        |> SnapshotPayloads.decided()
+        |> clear_one_result(3, %{"postponed" => true})
+
+      assert Tournament.status(payload, @today) == :finished
+    end
+
     test "an end_date already in the past finishes it even mid-event" do
       payload = payload(%{"rounds_count" => 20, "end_date" => "2026-01-01"})
       assert Tournament.status(payload, @today) == :finished
@@ -51,7 +73,36 @@ defmodule OpenResultsWeb.TournamentStatusTest do
     end
   end
 
+  # Takes the result off round `number`'s first board, merging `extra` in.
+  defp clear_one_result(payload, number, extra \\ %{}) do
+    update_in(payload, ["rounds"], fn rounds ->
+      Enum.map(rounds, fn
+        %{"number" => ^number, "boards" => [first | rest]} = round ->
+          %{round | "boards" => [first |> Map.delete("result") |> Map.merge(extra) | rest]}
+
+        round ->
+          round
+      end)
+    end)
+  end
+
   describe ":upcoming" do
+    test "a round robin's schedule published in advance, nothing played, start_date ahead" do
+      payload =
+        SnapshotPayloads.swiss()
+        |> update_in(["rounds"], fn rounds ->
+          Enum.map(rounds, fn round ->
+            Map.update(round, "boards", [], fn boards ->
+              Enum.map(boards, &Map.delete(&1, "result"))
+            end)
+          end)
+        end)
+        |> update_in(["tournament"], &Map.merge(&1, %{"start_date" => "2026-12-01"}))
+        |> update_in(["tournament"], &Map.delete(&1, "end_date"))
+
+      assert Tournament.status(payload, @today) == :upcoming
+    end
+
     test "nothing published and a start_date in the future" do
       payload =
         SnapshotPayloads.swiss()

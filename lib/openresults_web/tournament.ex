@@ -536,8 +536,14 @@ defmodule OpenResultsWeb.Tournament do
   # left alone: an event whose end date has passed is finished even with a
   # round still withheld, for the reason the doc above gives for dates
   # outranking a `rounds_count` nobody kept current.
+  #
+  # And every board of them decided (or postponed, which is decided later and
+  # elsewhere). A round robin publishes all its rounds on day one, so
+  # "everything is published" alone called a tournament finished before its
+  # first move, while the same page announced results coming in.
   defp all_rounds_in?(payload) do
-    all_rounds_published?(payload) and withheld_result_rounds(payload) == []
+    all_rounds_published?(payload) and withheld_result_rounds(payload) == [] and
+      not Enum.any?(live_rounds(payload), &(number_of(&1) <= rounds_count(payload)))
   end
 
   # Every round from 1 to `rounds_count`, published - not merely a published
@@ -559,8 +565,16 @@ defmodule OpenResultsWeb.Tournament do
     end
   end
 
+  # Nothing published, or - a round robin's whole schedule out in advance -
+  # published without a single result yet.
   defp upcoming?(payload, today) do
-    round_numbers(payload) == [] and not started_by?(payload, today)
+    (round_numbers(payload) == [] or no_results?(payload)) and not started_by?(payload, today)
+  end
+
+  defp no_results?(payload) do
+    not Enum.any?(rounds(payload), fn round ->
+      Enum.any?(boards(round), &is_binary(Map.get(&1, "result")))
+    end)
   end
 
   # Absent means NOT known to have started - the safe reading for
