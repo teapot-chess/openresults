@@ -27,6 +27,8 @@ Each entry is tagged so a version can be skimmed:
 
 ## [Unreleased]
 
+## [0.28.0] - 2026-10-20
+
 - [Fix] **The FIDE search finds people the way they type themselves.** First name first while the surname is still half typed ("oswald de"), a surname from its middle ("berghe"), a compound surname run together ("vandenberghe"), any word order, and one misspelt word out of three. It used to accept a half-typed word only at the very end, so somebody typing "Firstname De" was told, letter by letter, that they were not on the FIDE list, and believed it. Results are ranked by how well they fit before rating. Built on a word index beside the list, which the next daily check builds by itself (about 120 MB more on disk); until then the old search answers.
 - [Change] **The entry form no longer assumes everybody running a tournament is an arbiter.** The button says "Send entry", and the form, the confirmation page, the "full" page and the link preview speak of the organisers. Whoever runs the pairings collects the entries, whatever their licence says.
 - [Fix] **The live board is a board again, not a postage stamp.** On a screen that is not very tall, the board got what the two name strips, the step buttons and a button row of their own left over, which was not much. The strips are slimmer, "Follow live" now shares the row with the step buttons (its place is still kept, so nothing moves under the cursor), and the board is about a fifth larger for it: 405 px became 511 on a 1440 by 900 window. A name is one line, "Surname, Given", cut with an ellipsis as a whole text only when it truly does not fit, with the full name on hover; it is never broken in the middle of a word, and no longer wrapped to a second line either.
