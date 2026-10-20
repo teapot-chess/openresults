@@ -26,24 +26,36 @@ defmodule OpenResults.FideList do
 
   ## The search
 
-  Names are matched by prefix on a normalised key (see
-  `OpenResults.FideList.Parser.search_key/1`), through an index, once for
-  each rotation of the words typed. FIDE stores "Burssens, Jorian"; a person
-  types "jorian burss". The rotation "burss jorian" is not a prefix of
-  anything, "jorian burss" is not either, but "jorian burssens" rotates to
-  "burssens jorian", and that is. A surname or the start of one finds the
-  player on its own. A first name on its own finds nobody - it would find
+  All digits is a FIDE id. Anything else is words, in
+  `OpenResults.FideList.Parser.search_key/1` form, asked two ways:
+
+    * **The key, by prefix**, once for each rotation of the words: "jorian
+      burssens" rotates to "burssens jorian", which starts FIDE's "Burssens,
+      Jorian". Exact and cheap, but only the last word may be half typed.
+    * **The word index** (`OpenResults.FideList.Store.words/3`): every word
+      typed is the start of some word of the name, in any order. This is the
+      one that finds "oswald de" while its owner is still typing "winne",
+      "winne" on its own, and "dewinne", which is how a fair share of
+      Flanders writes a surname FIDE keeps in two words.
+
+  One word is asked of surnames only. A first name on its own would find
   thousands, and forty strangers called Jan is not an answer to "which of
   these is me".
-  All digits is a FIDE id.
+
+  Nothing found and more than one word typed: each word is left out in turn,
+  once, so one misspelt name ("Oswalt De Winne") still finds the other two.
+
+  Ranked by how well the words fit - whole words over halves, the surname
+  typed first over not - and then by rating, so the fifteen shown are the
+  likeliest rather than the first fifteen alphabetically.
   """
 
   alias OpenResults.FideList.{Parser, Store, Sync}
 
   @limit 15
-  # Per rotation. Ranked by rating afterwards, so the fifteen shown are the
-  # strongest of these rather than the first fifteen alphabetically.
+  # Per rotation, and from the word index. Ranked afterwards.
   @candidates 50
+  @word_candidates 200
   @max_words 5
 
   @doc "Whether the daily check is switched on (`:fide_list_sync`)."
@@ -104,16 +116,92 @@ defmodule OpenResults.FideList do
         |> String.split(" ", trim: true)
         |> Enum.take(@max_words)
 
-      words
-      |> rotations()
-      |> Enum.flat_map(&Store.prefix(Enum.join(&1, " "), @candidates))
-      |> Enum.uniq_by(& &1.fide_id)
-      |> Enum.sort_by(&{is_nil(&1.standard_rating), -(&1.standard_rating || 0), &1.name})
-      |> Enum.take(@limit)
+      case matches(words) do
+        [] -> near_misses(words)
+        found -> found
+      end
     end
   end
 
-  defp rotations([]), do: []
+  defp matches([]), do: []
+
+  defp matches(words) do
+    by_key =
+      words
+      |> rotations()
+      |> Enum.flat_map(&Store.prefix(Enum.join(&1, " "), @candidates))
+
+    (by_key ++ by_words(words))
+    |> Enum.uniq_by(& &1.fide_id)
+    |> Enum.filter(&fits?(&1, words))
+    |> rank(words)
+  end
+
+  defp by_words(words) do
+    if Store.words_available?() do
+      Store.words(words, @word_candidates, surname_only: match?([_], words))
+    else
+      # A list imported before the word index existed. The next check
+      # rebuilds it; until then, the key alone, as before.
+      []
+    end
+  end
+
+  # One misspelt word should not cost the other two. Two words at least must
+  # remain - one would be a lone surname or first name standing in for a
+  # whole name, and the list is too big for that to mean anything.
+  defp near_misses(words) when length(words) >= 3 do
+    words
+    |> Enum.with_index()
+    |> Enum.flat_map(fn {word, i} ->
+      words |> List.delete_at(i) |> matches() |> Enum.map(&{&1, closeness(word, &1)})
+    end)
+    # Nearest spelling first: "ilze de vos" is Ilse, whatever Jan's rating.
+    |> Enum.sort_by(fn {player, close} -> {-close, -(player.standard_rating || 0)} end)
+    |> Enum.uniq_by(fn {player, _close} -> player.fide_id end)
+    |> Enum.map(fn {player, _close} -> player end)
+    |> Enum.take(@limit)
+  end
+
+  defp near_misses(_words), do: []
+
+  # How near the word left out is to the nearest word of the name.
+  defp closeness(word, player) do
+    player |> name_words() |> Enum.map(&String.jaro_distance(word, &1)) |> Enum.max(fn -> 0.0 end)
+  end
+
+  # The word index answers per word; this is the check that each typed word
+  # found a word of its own, so "de de" is not satisfied by one "De".
+  defp fits?(player, words) do
+    name_words = name_words(player)
+
+    Enum.reduce_while(words, name_words, fn word, left ->
+      case Enum.find_index(left, &String.starts_with?(&1, word)) do
+        nil -> {:halt, false}
+        i -> {:cont, List.delete_at(left, i)}
+      end
+    end) != false
+  end
+
+  defp rank(players, words) do
+    players
+    |> Enum.sort_by(fn player ->
+      name_words = name_words(player)
+      whole = Enum.count(words, &(&1 in name_words))
+      surname_first = String.starts_with?(player.search_key, hd(words))
+
+      {-whole, not surname_first, is_nil(player.standard_rating), -(player.standard_rating || 0),
+       player.name}
+    end)
+    |> Enum.take(@limit)
+  end
+
+  # The key's words, plus the surname and the given names run together, so
+  # "dewinne" counts as a whole word for "De Winne, Oswald".
+  defp name_words(player) do
+    %{surname_terms: surname, given_terms: given} = Parser.name_terms(player.name)
+    String.split(surname <> " " <> given, " ", trim: true)
+  end
 
   defp rotations(words) do
     for i <- 0..(length(words) - 1) do

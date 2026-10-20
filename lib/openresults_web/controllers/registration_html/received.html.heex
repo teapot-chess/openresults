@@ -5,7 +5,7 @@
 
   <p>
     {raw(
-      gettext("The details for %{name} are in the queue for the arbiter of %{tournament}.",
+      gettext("The details for %{name} are in the queue for the organisers of %{tournament}.",
         name: "<strong>" <> escaped(@name) <> "</strong>",
         tournament: escaped(Tournament.name(@payload))
       )
@@ -16,7 +16,7 @@
     <strong>{gettext("This is not a place in the tournament.")}</strong>
     {raw(
       gettext(
-        "The arbiter reads this queue on their own machine and decides who plays. You will not appear on the %{standings}, in a pairing, or anywhere else on this site until they have entered you and published a round - and if they need to ask you something first, they will use the address you gave.",
+        "The organisers read this queue on their own machine and decide who plays. You will not appear on the %{standings}, in a pairing, or anywhere else on this site until they have entered you and published a round - and if they need to ask you something first, they will use the address you gave.",
         standings: anchor(~p"/t/#{@slug}", gettext("standings"))
       )
     )}
@@ -30,7 +30,7 @@
 
   <p class="footnote">
     {gettext(
-      "Sent it twice, or spotted a mistake? Send it again and say so in the name field, or write to the organisers. Nothing on this page can edit or delete an entry: sorting out two entries for the same player is the arbiter's job, the same as it is with a paper form."
+      "Sent it twice, or spotted a mistake? Send it again and say so in the name field, or write to the organisers. Nothing on this page can edit or delete an entry: sorting out two entries for the same player is the organisers' job, the same as it is with a paper form."
     )}
   </p>
 

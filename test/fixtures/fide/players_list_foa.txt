@@ -7,6 +7,8 @@ ID Number      Name                                                         Fed 
 901006         Peeters, Marc                                                BEL M                                1720      40                           0
 901007         Janssens, Lucas                                              NED M                                1880      20 1810                      2001
 901008         Dubois, Élodie                                               FRA F   WFM  WFM                     2050      20                           1999  w
+901009         Van den Berghe, Pieter-Jan                                   BEL M                                1810      40                           0
+901010         Vandenberghe, Koen                                           BEL M                                1655      40                           0
 
    
 Truncated

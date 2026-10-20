@@ -189,7 +189,7 @@ defmodule OpenResultsWeb.LocaleTest do
       html = "fr" |> asking() |> get(~p"/t/#{slug}/register") |> html_response(200)
 
       assert html =~ "Nom"
-      assert html =~ "Envoyer à l"
+      assert html =~ "Envoyer l&#39;inscription"
     end
 
     test "a validation failure is answered in the reader's language", %{slug: slug} do

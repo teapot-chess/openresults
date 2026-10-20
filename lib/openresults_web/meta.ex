@@ -242,14 +242,14 @@ defmodule OpenResultsWeb.Meta do
   @doc "The entry form."
   def register(payload) do
     gettext(
-      "Send your details to the arbiter of %{tournament}. They decide who plays; this form only carries the message.",
+      "Send your details to the organisers of %{tournament}. They decide who plays; this form only carries the message.",
       tournament: Tournament.name(payload)
     )
   end
 
   @doc "The page after an entry has been queued."
   def received(payload) do
-    gettext("Your entry for %{tournament} is with the arbiter.",
+    gettext("Your entry for %{tournament} is with the organisers.",
       tournament: Tournament.name(payload)
     )
   end

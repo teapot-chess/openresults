@@ -186,7 +186,10 @@ defmodule OpenResults.FideList.Run do
 
   defp stored_fingerprint do
     meta = Store.meta()
-    if Map.has_key?(meta, "imported_at") and Store.available?(), do: meta
+    # A list without the word index counts as no list, so the next check
+    # downloads again instead of answering "unchanged" for a month.
+    if Map.has_key?(meta, "imported_at") and Store.available?() and Store.words_available?(),
+      do: meta
   end
 
   defp record(result) do

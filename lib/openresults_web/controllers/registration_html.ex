@@ -144,7 +144,7 @@ defmodule OpenResultsWeb.RegistrationHTML do
         label={gettext("Email")}
         hint={
           gettext(
-            "Only the arbiter sees this. It is never shown on these pages and never travels in a published tournament - it is here so they can tell you whether you are in."
+            "Only the organisers see this. It is never shown on these pages and never travels in a published tournament - it is here so they can tell you whether you are in."
           )
         }
         required
@@ -196,7 +196,7 @@ defmodule OpenResultsWeb.RegistrationHTML do
         label={gettext("Birth year")}
         hint={
           gettext(
-            "Four digits. Some tournaments have age categories, and the arbiter cannot work one out from a name. Leave it empty if you would rather not say."
+            "Four digits. Some tournaments have age categories, and nobody can work one out from a name. Leave it empty if you would rather not say."
           )
         }
         inputmode="numeric"
@@ -240,7 +240,7 @@ defmodule OpenResultsWeb.RegistrationHTML do
       </div>
 
       <div class="actions">
-        <button type="submit" id="registration-submit">{gettext("Send to the arbiter")}</button>
+        <button type="submit" id="registration-submit">{gettext("Send entry")}</button>
         <a href={~p"/t/#{@slug}"} class="cancel">{gettext("Cancel")}</a>
       </div>
 
@@ -278,7 +278,7 @@ defmodule OpenResultsWeb.RegistrationHTML do
         {gettext("Entries close on %{when}.", when: instant(@closes_at))}
       </li>
       <li :if={@places} id="entry-places">
-        {gettext("%{taken} of %{max} places taken, counting entries the arbiter has not decided yet.",
+        {gettext("%{taken} of %{max} places taken, counting entries not decided yet.",
           taken: @places.taken,
           max: @places.max
         )}
@@ -368,10 +368,10 @@ defmodule OpenResultsWeb.RegistrationHTML do
 
       <p class="footnote">
         <%= if @pending == [] do %>
-          {gettext("Players the arbiter has entered.")}
+          {gettext("Players already entered.")}
         <% else %>
           {gettext(
-            "Players the arbiter has entered, and entries still waiting for a decision, marked unconfirmed. An unconfirmed entry is a request, not a place."
+            "Players already entered, and entries still waiting for a decision, marked unconfirmed. An unconfirmed entry is a request, not a place."
           )}
         <% end %>
       </p>
@@ -564,7 +564,7 @@ defmodule OpenResultsWeb.RegistrationHTML do
       <p :if={@errors != []} class="wrong" id={"#{@field.id}_error"}>{Enum.join(@errors, ". ")}</p>
       <p class="hint" id={"#{@field.id}_hint"}>
         {gettext(
-          "Asking is not the same as getting. What a missed round is worth - a half point, nothing at all - is the arbiter's decision and their tournament's rules, not this form's."
+          "Asking is not the same as getting. What a missed round is worth - a half point, nothing at all - is up to the organisers and their tournament's rules, not this form."
         )}
       </p>
     </fieldset>

@@ -27,6 +27,22 @@ Each entry is tagged so a version can be skimmed:
 
 ## [Unreleased]
 
+- **[Fix]** The entry form's FIDE search now finds people the way they
+  actually type themselves. First name first while the surname is still half
+  typed ("oswald de"), a surname from its middle ("berghe"), a compound
+  surname run together ("vandenberghe"), any word order, and one misspelt
+  word out of three. It used to accept a half-typed word only at the very
+  end, so somebody typing "Firstname De" was told, letter by letter, that
+  they were not on the FIDE list, and believed it. Results are now ranked by
+  how well they fit before rating. Built on a word index next to the list,
+  which the next daily check builds by itself (about 120 MB more on disk);
+  until then the old search answers.
+- **[Change]** The entry form no longer pretends everybody running a
+  tournament is an arbiter. The button says "Send entry", and the form, the
+  confirmation page, the "full" page and the link preview speak of the
+  organisers. Whoever runs the pairings collects the entries, whatever their
+  licence says.
+
 ## [0.27.0] - 2026-10-19
 
 - [Fix] **The live board shows who is playing, and what time they start with.** The clock boxes beside the players took more than their share of the bar, so a name read "Burssens, ..." and nobody learnt the first name. A name now wraps to a second line before anything is cut, the clock is only as wide as its digits (and larger again in full screen), and the bar is a little taller to make room. Before the first move the bars used to show no clock at all; they now show the tournament's starting time, dashed and standing still, until the board's own clock reports, which takes over at once. The time is read from the published time control (`time_control`, or a `time_control_minutes` when OpenPairings sends one); a text with no base time in it shows nothing, as before. The top bar having no flag or rating line was the data, not the page: both bars draw it for anyone who has one.

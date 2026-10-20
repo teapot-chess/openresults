@@ -83,6 +83,45 @@ defmodule OpenResults.FideListTest do
       assert FideList.search("lucas") == {:ok, []}
     end
 
+    test "the first name first, while the surname is still half typed" do
+      for query <- ["ilse de", "ilse de v", "ilse d", "lucas jans"] do
+        assert [_ | _] = found = names(FideList.search(query)), query
+        assert hd(found) in ["De Vos, Ilse", "Janssens, Lucas"], query
+      end
+
+      assert names(FideList.search("ilse de v")) == ["De Vos, Ilse"]
+    end
+
+    test "a surname from its middle, and run together" do
+      assert names(FideList.search("berghe")) == ["Van den Berghe, Pieter-Jan"]
+      assert "Van den Berghe, Pieter-Jan" in names(FideList.search("vandenberghe"))
+      assert "Vandenberghe, Koen" in names(FideList.search("vandenberghe"))
+      assert names(FideList.search("pieterjan vandenb")) == ["Van den Berghe, Pieter-Jan"]
+      assert names(FideList.search("pieter-jan van den berghe")) == ["Van den Berghe, Pieter-Jan"]
+    end
+
+    test "whole words outrank halves, and rating breaks the tie" do
+      # Both start with "vandenberghe"; Koen's surname IS that word.
+      assert hd(names(FideList.search("vandenberghe"))) == "Vandenberghe, Koen"
+      assert names(FideList.search("peeters")) == ["Peeters, Marc", "Peeters, Anna"]
+    end
+
+    test "one misspelt word of three still finds the other two" do
+      assert hd(names(FideList.search("ilze de vos"))) == "De Vos, Ilse"
+      # Two words with one wrong is too little left to go on.
+      assert FideList.search("ilze vos") == {:ok, []}
+    end
+
+    test "each typed word needs a word of its own" do
+      assert FideList.search("vos vos") == {:ok, []}
+    end
+
+    test "a list from before the word index still answers by key" do
+      OpenResults.FideList.Repo.query!("DROP TABLE fide_names")
+      refute OpenResults.FideList.Store.words_available?()
+      assert names(FideList.search("ilse de vos")) == ["De Vos, Ilse"]
+    end
+
     test "punctuation cannot reach the query" do
       assert FideList.search("de vos%") |> names() == ["De Vos, Jan", "De Vos, Ilse"]
       assert FideList.search("'; DROP TABLE fide_players; --") == {:ok, []}
@@ -104,7 +143,7 @@ defmodule OpenResults.FideListTest do
       status = FideList.status()
 
       assert status.available?
-      assert status.player_count == 8
+      assert status.player_count == 10
       assert status.list_date == ~U[2026-11-01 06:00:00Z]
       assert %DateTime{} = status.imported_at
       assert status.last_check_result == "imported"

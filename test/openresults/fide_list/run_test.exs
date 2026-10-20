@@ -14,7 +14,7 @@ defmodule OpenResults.FideList.RunTest do
       log = serve_list(zip_of(fixture_text()))
 
       refute FideList.available?()
-      assert {:imported, 8} = run_once(context)
+      assert {:imported, 10} = run_once(context)
       assert FideList.available?()
       assert requests(log) == ["HEAD", "GET"]
 
@@ -27,7 +27,7 @@ defmodule OpenResults.FideList.RunTest do
       meta = Store.meta()
       assert meta["etag"] == ~s("v1")
       assert meta["last_modified"] == "Sat, 01 Nov 2026 06:00:00 GMT"
-      assert meta["player_count"] == "8"
+      assert meta["player_count"] == "10"
       assert meta["last_check_result"] == "imported"
       assert {:ok, _, _} = DateTime.from_iso8601(meta["last_check_at"])
       refute Map.has_key?(meta, "last_error")
@@ -57,7 +57,7 @@ defmodule OpenResults.FideList.RunTest do
       text = fixture_text() |> String.replace("De Vos, Jan   ", "De Vos, Johan ")
       log = serve_list(zip_of(text), [{"etag", ~s("v2")}])
 
-      assert {:imported, 8} = run_once(context)
+      assert {:imported, 10} = run_once(context)
       assert requests(log) == ["HEAD", "GET"]
       assert {:ok, [%{"name" => "De Vos, Johan"}]} = FideList.search("de vos johan")
       assert Store.meta()["etag"] == ~s("v2")
@@ -109,7 +109,7 @@ defmodule OpenResults.FideList.RunTest do
 
       assert {:error, reason} = run_once(context)
       assert reason =~ "truncated"
-      assert Store.live_count() == 8
+      assert Store.live_count() == 10
       assert Store.meta()["etag"] == ~s("v1")
     end
 
@@ -118,7 +118,7 @@ defmodule OpenResults.FideList.RunTest do
 
       assert {:error, reason} = run_once(context)
       assert reason =~ "not a zip"
-      assert Store.live_count() == 8
+      assert Store.live_count() == 10
     end
 
     test "one whose header is not FIDE's", context do
@@ -126,7 +126,7 @@ defmodule OpenResults.FideList.RunTest do
 
       assert {:error, reason} = run_once(context)
       assert reason =~ "column"
-      assert Store.live_count() == 8
+      assert Store.live_count() == 10
     end
 
     test "an HTTP error", context do
@@ -137,7 +137,7 @@ defmodule OpenResults.FideList.RunTest do
       end)
 
       assert {:error, "the list's server answered HTTP 503"} = run_once(context)
-      assert Store.live_count() == 8
+      assert Store.live_count() == 10
     end
   end
 
@@ -149,17 +149,20 @@ defmodule OpenResults.FideList.RunTest do
     Store.insert_chunk!([%{fide_id: 1, name: "Half, A", search_key: "half a"}])
 
     # The live list is untouched by it ...
-    assert Store.live_count() == 8
+    assert Store.live_count() == 10
     assert {:ok, []} = FideList.search("half")
 
     # ... and the next real import neither trips over it nor keeps it.
     serve_list(zip_of(fixture_text()), [{"etag", ~s("v2")}])
-    assert {:imported, 8} = run_once(context)
+    assert {:imported, 10} = run_once(context)
 
     %{rows: tables} =
       Repo.query!("SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name")
 
-    assert List.flatten(tables) == ["fide_list_meta", "fide_players"]
+    # The word index is five tables to SQLite: its own and FTS5's four.
+    assert List.flatten(tables) ==
+             ~w(fide_list_meta fide_names fide_names_config fide_names_content fide_names_data
+                fide_names_docsize fide_names_idx fide_players)
   end
 
   test "each import's index takes the name the last one is not using", context do
@@ -218,7 +221,7 @@ defmodule OpenResults.FideList.RunTest do
     serve_list(zip_of(fixture_text()))
     test_pid = self()
 
-    {:imported, 8} = run_once(context, report: fn phase, _text -> send(test_pid, phase) end)
+    {:imported, 10} = run_once(context, report: fn phase, _text -> send(test_pid, phase) end)
 
     assert_received :checking
     assert_received :downloading
