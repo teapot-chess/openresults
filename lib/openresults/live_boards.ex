@@ -793,5 +793,17 @@ defmodule OpenResults.LiveBoards do
       black: if(black && running == "black", do: max(black - elapsed, 0), else: black),
       running: running
     }
+    |> unknown_if_stopped_at_zero()
   end
+
+  # A clock that reads zero while the other side's is the one running is not a
+  # flag fall - the flag falls on the side whose clock runs. It is a relay that
+  # had no reading for that side and said 0, and "0:00" would call it lost.
+  defp unknown_if_stopped_at_zero(%{running: "white", black: 0} = clocks),
+    do: %{clocks | black: nil}
+
+  defp unknown_if_stopped_at_zero(%{running: "black", white: 0} = clocks),
+    do: %{clocks | white: nil}
+
+  defp unknown_if_stopped_at_zero(clocks), do: clocks
 end

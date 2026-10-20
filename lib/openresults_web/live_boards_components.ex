@@ -396,7 +396,9 @@ defmodule OpenResultsWeb.LiveBoardsComponents do
         ms: ms,
         idle?: idle?,
         running: running,
-        has_clock: is_integer(ms)
+        # A side whose clock is unknown still gets its box, as "-:--", while
+        # the other side's is reporting: an empty space reads as a fault.
+        has_clock: is_integer(ms) or reports_clock?(assigns.clocks)
       )
 
     ~H"""
@@ -409,7 +411,7 @@ defmodule OpenResultsWeb.LiveBoardsComponents do
         {if @colour == "white", do: gettext("White"), else: gettext("Black")}:
       </span>
       <div class="lb-bar-who">
-        <p class="lb-bar-name">
+        <p class="lb-bar-name" title={@person && @person.name}>
           <span :if={@person && @person.title} class="lb-title">{@person.title}</span>
           <span class="lb-person">{(@person && @person.name) || "-"}</span>
         </p>
@@ -437,6 +439,9 @@ defmodule OpenResultsWeb.LiveBoardsComponents do
     </div>
     """
   end
+
+  defp reports_clock?(%{white: w, black: b}), do: is_integer(w) or is_integer(b)
+  defp reports_clock?(_none), do: false
 
   @doc """
   A move in figurine notation: the piece as the chosen set draws it, then
