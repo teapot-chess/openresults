@@ -5459,7 +5459,7 @@ tr.is-followed > :first-child {
 }
 
 .lb-board-column {
-  --lb-bar-h: 4.9rem;
+  --lb-bar-h: 3.7rem;
   --lb-gap: 0.5rem;
   flex: 1 1 auto;
   min-height: 0;
@@ -5482,11 +5482,13 @@ tr.is-followed > :first-child {
   box-sizing: border-box;
 }
 
-/* Room for a surname and a first name, wrapping to a second line before
-   anything is cut; the clock takes what its digits need and no more. */
+/* The strip is as wide as the board. The name takes whatever the clock and
+   the score leave and stays on one line - cut with an ellipsis, as a whole,
+   only when it truly does not fit; never in the middle of a word. */
 .lb-bar {
+  align-items: center;
   gap: 0.75rem;
-  padding: 0.55rem 0.75rem;
+  padding: 0.3rem 0.75rem;
   border: 1px solid var(--rule);
   border-radius: 10px;
   background: var(--panel);
@@ -5519,11 +5521,7 @@ tr.is-followed > :first-child {
 }
 
 .lb-bar-name {
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  overflow-wrap: anywhere;
+  white-space: nowrap;
   font-size: clamp(1rem, 0.8rem + 0.55vw, 1.3rem);
   line-height: 1.15;
 }
@@ -5649,15 +5647,18 @@ tr.is-followed > :first-child {
   flex-wrap: wrap;
   justify-content: center;
   gap: 0.4rem;
-  margin-top: 0.75rem;
+  margin-top: 0.5rem;
 }
 
-/* The "Follow live" row: the space is kept whether the button is there or
-   not, so stepping back never moves the buttons above it. */
+/* The "Follow live" place: kept whether the button is there or not, so
+   stepping back never moves the buttons beside it - and on the same row,
+   because the row it used to own was height the board needed. It wraps
+   below the others only when the column is too narrow for all of them. */
 .lb-follow-slot {
   display: flex;
-  flex-basis: 100%;
+  flex: 0 0 auto;
   justify-content: center;
+  min-width: 7.5rem;
   min-height: 2.75rem;
 }
 
