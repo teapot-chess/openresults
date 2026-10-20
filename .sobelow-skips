@@ -9,10 +9,17 @@ DOS.StringToAtom: Unsafe `String.to_atom`,lib/openresults_web/controllers/tourna
 DOS.StringToAtom: Unsafe `String.to_atom`,lib/openresults_web/hall.ex:204,6E65F73
 DOS.StringToAtom: Unsafe `String.to_atom`,lib/openresults_web/live_boards_data.ex:269,4A38906
 DOS.StringToAtom: Unsafe `String.to_atom`,lib/openresults_web/live_boards_data.ex:279,13047ED
+SQL.Query: SQL injection,lib/openresults/fide_list/store.ex:111,55E58F2
 SQL.Query: SQL injection,lib/openresults/fide_list/store.ex:142,2BCA564
 SQL.Query: SQL injection,lib/openresults/fide_list/store.ex:162,5E2BB90
 SQL.Query: SQL injection,lib/openresults/fide_list/store.ex:174,5202130
+SQL.Query: SQL injection,lib/openresults/fide_list/store.ex:181,6947531
+SQL.Query: SQL injection,lib/openresults/fide_list/store.ex:191,EAAC1B
+SQL.Query: SQL injection,lib/openresults/fide_list/store.ex:196,1B84C95
+SQL.Query: SQL injection,lib/openresults/fide_list/store.ex:220,24C9F3F
 SQL.Query: SQL injection,lib/openresults/fide_list/store.ex:222,649A096
+SQL.Query: SQL injection,lib/openresults/fide_list/store.ex:232,20E42AC
+SQL.Query: SQL injection,lib/openresults/fide_list/store.ex:312,2122D73
 Traversal.FileModule: Directory Traversal in `File.mkdir_p!`,lib/openresults/fide_list/repo.ex:36,7430AD8
 Traversal.FileModule: Directory Traversal in `File.mkdir_p!`,lib/openresults/fide_list/source.ex:138,33A2B24
 Traversal.FileModule: Directory Traversal in `File.mkdir_p`,lib/openresults/backup.ex:90,13529B
@@ -43,8 +50,10 @@ Traversal.FileModule: Directory Traversal in `File.write`,lib/openresults/modera
 Traversal.FileModule: Directory Traversal in `File.write`,lib/openresults/moderation_journal.ex:814,6C3C096
 XSS.Raw: XSS,lib/openresults_web/controllers/changelog_controller.ex:28,7401725
 XSS.Raw: XSS,lib/openresults_web/controllers/changelog_html/show.html.heex:9,6DC7F62
+XSS.Raw: XSS,lib/openresults_web/controllers/registration_html/received.html.heex:7,37FD9F
 XSS.Raw: XSS,lib/openresults_web/controllers/registration_html/received.html.heex:7,432BECB
 XSS.Raw: XSS,lib/openresults_web/controllers/registration_html/received.html.heex:17,234C7B2
+XSS.Raw: XSS,lib/openresults_web/controllers/registration_html/received.html.heex:17,25A4B78
 XSS.Raw: XSS,lib/openresults_web/controllers/tournament_html.ex:3232,60D8844
 XSS.Raw: XSS,lib/openresults_web/controllers/tournament_html.ex:3447,4D64A2D
 XSS.Raw: XSS,lib/openresults_web/controllers/tournament_html/player.html.heex:104,31DE7E6
