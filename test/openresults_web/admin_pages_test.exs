@@ -182,7 +182,7 @@ defmodule OpenResultsWeb.AdminPagesTest do
 
       doc = admin_get("/admin") |> doc()
       assert text(doc, "#fide-list-live") =~ "published 2026-11-01"
-      assert text(doc, "#fide-list-live") =~ ~r/8\s+players/
+      assert text(doc, "#fide-list-live") =~ ~r/10\s+players/
       assert text(doc, "#fide-list-check") =~ "a new list was imported"
       refute text(doc, "#fide-list-check") =~ "stays live"
     end

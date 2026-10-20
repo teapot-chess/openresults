@@ -32,14 +32,14 @@
     <% :full -> %>
       <p class="empty">
         {gettext(
-          "All %{max} places in %{tournament} are taken or waiting for the arbiter, so this form is not taking more entries. Nothing you typed has been stored.",
+          "All %{max} places in %{tournament} are taken or waiting for a decision, so this form is not taking more entries. Nothing you typed has been stored.",
           max: Tournament.max_players(@payload),
           tournament: Tournament.name(@payload)
         )}
       </p>
       <p class="footnote">
         {gettext(
-          "Places can come free: the arbiter turns some entries down, and the form opens again by itself when they do. The organisers can also tell you whether there is a waiting list."
+          "Places can come free: some entries get turned down, and the form opens again by itself when they do. The organisers can also tell you whether there is a waiting list."
         )}
       </p>
     <% _closed -> %>

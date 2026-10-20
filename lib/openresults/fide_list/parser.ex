@@ -114,7 +114,38 @@ defmodule OpenResults.FideList.Parser do
       not is_integer(row.fide_id) -> nil
       row.fide_id < 1 or row.fide_id > @max_fide_id -> nil
       row.name == "" -> nil
-      true -> Map.put(row, :search_key, search_key(row.name))
+      true -> row |> Map.put(:search_key, search_key(row.name)) |> Map.merge(name_terms(row.name))
+    end
+  end
+
+  @doc """
+  The two halves of a name as the word index (`OpenResults.FideList.Store`)
+  holds them: the surname's words and the given names' words, each in
+  `search_key/1` form, and each followed by its words run together when it
+  has more than one - so "De Winne" is also "dewinne" and "Jean-Pierre" also
+  "jeanpierre", which is how half of Flanders types its own surname.
+
+  A name without a comma is all surname. FIDE has a few, and guessing where
+  the given name starts would be wrong more often than not saying.
+  """
+  @spec name_terms(String.t()) :: %{surname_terms: String.t(), given_terms: String.t()}
+  def name_terms(name) when is_binary(name) do
+    {surname, given} =
+      case String.split(name, ",", parts: 2) do
+        [surname, given] -> {surname, given}
+        [whole] -> {whole, ""}
+      end
+
+    %{
+      surname_terms: with_joined(search_key(surname)),
+      given_terms: with_joined(search_key(given))
+    }
+  end
+
+  defp with_joined(key) do
+    case String.split(key, " ", trim: true) do
+      [_, _ | _] = words -> key <> " " <> Enum.join(words)
+      _one_or_none -> key
     end
   end
 

@@ -35,6 +35,16 @@ defmodule OpenResults.FideList.Store do
   @retired "fide_players_old"
   @index_names ~w(fide_players_key fide_players_key_b)
 
+  # The word index: an FTS5 table beside the player table, keyed by FIDE id,
+  # renamed in step with it. Two columns so a lone word can be asked of the
+  # surnames alone. `detail=column` - which column, never where in it: nothing
+  # here asks for word positions, and `prefix` because every word typed is the
+  # start of one - without it "oswald d" costs a hundred milliseconds instead
+  # of one.
+  @words_live "fide_names"
+  @words_scratch "fide_names_new"
+  @words_retired "fide_names_old"
+
   @columns ~w(fide_id name search_key federation title birth_year standard_rating rapid_rating blitz_rating)a
 
   @doc "The meta table, created if missing. Cheap; run at boot."
@@ -97,9 +107,29 @@ defmodule OpenResults.FideList.Store do
   `begin_scratch!/0` fail.
   """
   def drop_leftovers! do
-    Repo.query!("DROP TABLE IF EXISTS #{@scratch}")
-    Repo.query!("DROP TABLE IF EXISTS #{@retired}")
+    for table <- [@scratch, @retired, @words_scratch, @words_retired] do
+      Repo.query!("DROP TABLE IF EXISTS #{table}")
+    end
+
     :ok
+  end
+
+  @doc """
+  Whether the live list has its word index. A list imported before the index
+  existed does not, and `OpenResults.FideList.Run` treats it as stale so the
+  next check rebuilds it rather than waiting a month for FIDE to change
+  something.
+  """
+  @spec words_available?() :: boolean()
+  def words_available? do
+    case Repo.query("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?", [@words_live]) do
+      {:ok, %{rows: [_ | _]}} -> true
+      _ -> false
+    end
+  rescue
+    _unopenable -> false
+  catch
+    :exit, _not_started -> false
   end
 
   @doc "An empty scratch table, replacing any leftover one."
@@ -117,6 +147,15 @@ defmodule OpenResults.FideList.Store do
       standard_rating INTEGER,
       rapid_rating INTEGER,
       blitz_rating INTEGER
+    )
+    """)
+
+    Repo.query!("""
+    CREATE VIRTUAL TABLE #{@words_scratch} USING fts5(
+      surname, given,
+      tokenize = 'unicode61 remove_diacritics 0',
+      prefix = '1 2 3',
+      detail = column
     )
     """)
 
@@ -142,6 +181,25 @@ defmodule OpenResults.FideList.Store do
     Repo.query!(
       "INSERT OR REPLACE INTO #{@scratch} (#{Enum.join(@columns, ", ")}) VALUES " <> placeholders,
       params
+    )
+
+    # FTS5 has no OR REPLACE worth trusting, so a duplicate id goes out first:
+    # the same last-line-wins as the table above.
+    rows = rows |> Enum.reverse() |> Enum.uniq_by(& &1.fide_id)
+    ids = Enum.map(rows, & &1.fide_id)
+
+    Repo.query!(
+      "DELETE FROM #{@words_scratch} WHERE rowid IN (#{Enum.map_join(ids, ", ", fn _ -> "?" end)})",
+      ids
+    )
+
+    Repo.query!(
+      "INSERT INTO #{@words_scratch} (rowid, surname, given) VALUES " <>
+        Enum.map_join(rows, ", ", fn _ -> "(?, ?, ?)" end),
+      Enum.flat_map(
+        rows,
+        &[&1.fide_id, Map.get(&1, :surname_terms, ""), Map.get(&1, :given_terms, "")]
+      )
     )
 
     :ok
@@ -188,12 +246,18 @@ defmodule OpenResults.FideList.Store do
           Repo.query!("ALTER TABLE #{@live} RENAME TO #{@retired}")
         end
 
+        if words_available?() do
+          Repo.query!("ALTER TABLE #{@words_live} RENAME TO #{@words_retired}")
+        end
+
         Repo.query!("ALTER TABLE #{@scratch} RENAME TO #{@live}")
+        Repo.query!("ALTER TABLE #{@words_scratch} RENAME TO #{@words_live}")
         put_meta!(meta)
         :ok
       end)
 
     Repo.query!("DROP TABLE IF EXISTS #{@retired}")
+    Repo.query!("DROP TABLE IF EXISTS #{@words_retired}")
     :ok
   end
 
@@ -211,16 +275,42 @@ defmodule OpenResults.FideList.Store do
     )
   end
 
+  @doc """
+  Rows whose names hold a word starting with each of `words`, in any order,
+  at most `limit`. `surname_only: true` asks the surnames alone.
+
+  The words must already be in `OpenResults.FideList.Parser.search_key/1`
+  form - letters and digits - and each goes in as a quoted prefix, so nothing
+  typed into the form can reach FTS5's own query syntax.
+  """
+  def words(words, limit, opts \\ []) when is_list(words) and words != [] do
+    column = if Keyword.get(opts, :surname_only, false), do: "surname : ", else: ""
+
+    match =
+      Enum.map_join(words, " AND ", fn word ->
+        column <> ~s(") <> String.replace(word, ~s("), "") <> ~s("*)
+      end)
+
+    rows(
+      "SELECT #{select("p.")} FROM #{@words_live} " <>
+        "JOIN #{@live} p ON p.fide_id = #{@words_live}.rowid " <>
+        "WHERE #{@words_live} MATCH ? LIMIT ?",
+      [match, limit]
+    )
+  end
+
   @doc "The player with `fide_id`, as a list of zero or one."
   def by_id(fide_id) when is_integer(fide_id) do
     rows("SELECT #{select()} FROM #{@live} WHERE fide_id = ?", [fide_id])
   end
 
-  defp select, do: Enum.map_join(@columns -- [:search_key], ", ", &Atom.to_string/1)
+  # `search_key` comes back too, for `OpenResults.FideList` to rank by; the
+  # form never sees it.
+  defp select(alias \\ ""), do: Enum.map_join(@columns, ", ", &(alias <> Atom.to_string(&1)))
 
   defp rows(sql, params) do
     %{rows: rows} = Repo.query!(sql, params)
-    fields = @columns -- [:search_key]
+    fields = @columns
     Enum.map(rows, &(fields |> Enum.zip(&1) |> Map.new()))
   end
 end

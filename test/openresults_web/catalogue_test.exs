@@ -49,8 +49,8 @@ defmodule OpenResultsWeb.CatalogueTest do
   # fourth `raw/1` site added later fails to be covered loudly (the list stops
   # matching the templates) rather than quietly.
   @rendered_raw [
-    "The details for %{name} are in the queue for the arbiter of %{tournament}.",
-    "The arbiter reads this queue on their own machine and decides who plays. You will not appear on the %{standings}, in a pairing, or anywhere else on this site until they have entered you and published a round - and if they need to ask you something first, they will use the address you gave.",
+    "The details for %{name} are in the queue for the organisers of %{tournament}.",
+    "The organisers read this queue on their own machine and decide who plays. You will not appear on the %{standings}, in a pairing, or anywhere else on this site until they have entered you and published a round - and if they need to ask you something first, they will use the address you gave.",
     "The running score stops at the first round whose result is not public - an unpublished round, a board that is not listed, or a game with no result yet. The arbiter's own total is on the %{standings}."
   ]
 

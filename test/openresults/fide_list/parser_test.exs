@@ -18,8 +18,8 @@ defmodule OpenResults.FideList.ParserTest do
   test "reads every player and nothing else", context do
     rows = parsed(context)
 
-    assert length(rows) == 8
-    assert Enum.map(rows, & &1.fide_id) == Enum.to_list(901_001..901_008)
+    assert length(rows) == 10
+    assert Enum.map(rows, & &1.fide_id) == Enum.to_list(901_001..901_010)
   end
 
   test "keeps the columns after an accented name where they belong", context do
@@ -47,8 +47,10 @@ defmodule OpenResults.FideList.ParserTest do
     row = context |> parsed() |> hd()
 
     assert Map.keys(row) |> Enum.sort() ==
-             Enum.sort(~w(fide_id name search_key federation title birth_year
-                          standard_rating rapid_rating blitz_rating)a)
+             Enum.sort(
+               ~w(fide_id name search_key surname_terms given_terms federation title birth_year
+                          standard_rating rapid_rating blitz_rating)a
+             )
   end
 
   test "a header without a column is refused, not guessed around" do

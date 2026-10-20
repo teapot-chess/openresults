@@ -255,7 +255,7 @@ defmodule OpenResultsWeb.RegistrationControllerTest do
 
       assert html =~ "Entry sent"
       assert html =~ "This is not a place in the tournament"
-      assert html =~ "decides who plays"
+      assert html =~ "decide who plays"
 
       # And the tournament is unchanged, which is the same statement in data.
       assert conn |> get(~p"/t/#{slug}") |> html_response(200) =~ "Gent Spring Open 2026"
