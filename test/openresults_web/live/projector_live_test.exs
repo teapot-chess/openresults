@@ -228,6 +228,8 @@ defmodule OpenResultsWeb.ProjectorLiveTest do
       slug = publish!()
       {:ok, view, _html} = live(conn, "/t/#{slug}/live/42/projector")
       assert has_element?(view, "#proj-unknown-round")
+      # The hall screen says when it has stopped hearing moves.
+      assert has_element?(view, "#proj-offline[hidden][phx-disconnected]")
       refute has_element?(view, ".proj-tile")
     end
 

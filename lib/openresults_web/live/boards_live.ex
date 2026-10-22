@@ -239,6 +239,7 @@ defmodule OpenResultsWeb.BoardsLive do
         <div class="lb-bc-heading">
           <p class="lb-eyebrow">
             <span class="lb-live-dot" aria-hidden="true"></span>{gettext("Live boards")}
+            <.offline_note />
           </p>
 
           <h1 id="lb-title" class="lb-bc-title">
@@ -287,6 +288,11 @@ defmodule OpenResultsWeb.BoardsLive do
 
       <p :if={@unknown_round?} id="lb-unknown-round" class="empty">
         {gettext("This round has not been published.")}
+      </p>
+      <p :if={@unknown_round? and @rounds != []} id="lb-latest-round">
+        <.link navigate={~p"/t/#{@slug}/live/#{Enum.max(@rounds)}/all"}>{gettext(
+          "Go to the latest round"
+        )}</.link>
       </p>
 
       <div id="lb-grid" class="lb-grid" phx-update="stream">

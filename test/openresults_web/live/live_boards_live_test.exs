@@ -85,6 +85,8 @@ defmodule OpenResultsWeb.LiveBoardsLiveTest do
       # Round 4 is the fixture's unpublished round.
       {:ok, view, _html} = live(conn, "/t/#{slug}/live/4/all")
       assert has_element?(view, "#lb-unknown-round")
+      # Not a dead end: the latest round is one tap away.
+      assert has_element?(view, ~s(#lb-latest-round a[href="/t/#{slug}/live/5/all"]))
       refute has_element?(view, ".lb-tile")
     end
 
@@ -497,11 +499,20 @@ defmodule OpenResultsWeb.LiveBoardsLiveTest do
       refute has_element?(view, "#lb-follow")
     end
 
+    test "a dropped connection is said out loud, and only then", %{conn: conn, slug: slug} do
+      {:ok, view, _html} = live(conn, "/t/#{slug}/live/5")
+      assert has_element?(view, "[role=status] > #lb-offline[hidden][phx-disconnected]")
+
+      {:ok, view, _html} = live(conn, "/t/#{slug}/live/5/all")
+      assert has_element?(view, "#lb-offline[hidden][phx-connected]")
+    end
+
     test "a board that is not published says so", %{conn: conn, slug: slug} do
       {:ok, view, _html} = live(conn, "/t/#{slug}/live/5/77")
       assert has_element?(view, "#lb-no-game")
       {:ok, view, _html} = live(conn, "/t/#{slug}/live/x/1")
       assert has_element?(view, "#lb-unknown-round")
+      assert has_element?(view, ~s(#lb-latest-round a[href="/t/#{slug}/live/5"]))
     end
 
     test "a game reported by position alone has a board and no move list", %{conn: conn} do

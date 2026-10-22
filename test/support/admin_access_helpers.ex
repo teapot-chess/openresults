@@ -106,6 +106,15 @@ defmodule OpenResultsWeb.AdminAccessHelpers do
 
   def b64(binary), do: Base.url_encode64(binary, padding: false)
 
+  @doc """
+  The body an unknown route answers with: the admin gate's refusal must be
+  exactly this, so a stranger cannot tell the panel is there.
+  """
+  def unknown_route_body,
+    do:
+      OpenResultsWeb.ErrorHTML.render("404.html", %{conn: Plug.Test.conn(:get, "/")})
+      |> Phoenix.HTML.safe_to_string()
+
   @doc "A valid token for `email` (the listed admin by default)."
   def token(email \\ @admin), do: sign(claims(%{"email" => email}))
 

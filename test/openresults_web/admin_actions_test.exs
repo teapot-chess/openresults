@@ -735,7 +735,7 @@ defmodule OpenResultsWeb.AdminActionsTest do
 
       for path <- posts do
         conn = admin_conn() |> post(path, %{"confirm" => path, "value" => "true"})
-        assert {conn.status, conn.resp_body} == {404, "Not Found"}, path
+        assert {conn.status, conn.resp_body} == {404, unknown_route_body()}, path
       end
 
       assert action_count() == before

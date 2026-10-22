@@ -66,6 +66,7 @@
    See docs/accessibility-2026-09-13.md for the before and after. */
 
 :root {
+  color-scheme: light dark;
   --bg: #fbfbfa;
   --panel: #ffffff;
   --ink: #1b1b1a;
@@ -88,6 +89,7 @@
 }
 
 :root[data-theme="paper"] {
+  color-scheme: light;
   --bg: #fbfbfa;
   --panel: #ffffff;
   --ink: #1b1b1a;
@@ -98,6 +100,7 @@
 }
 
 :root[data-theme="night"] {
+  color-scheme: dark;
   --bg: #16171a;
   --panel: #1d1f23;
   --ink: #e9e9e6;
@@ -108,6 +111,7 @@
 }
 
 :root[data-theme="board"] {
+  color-scheme: light;
   --bg: #f2ece0;
   --panel: #fbf7ee;
   --ink: #1f2a22;
@@ -118,6 +122,7 @@
 }
 
 :root[data-theme="slate"] {
+  color-scheme: dark;
   --bg: #12161c;
   --panel: #1a2029;
   --ink: #dde5ef;
@@ -131,6 +136,7 @@
    colour that is actually visible rather than a hairline, and an accent that
    stays legible when a projector washes the top third of the screen out. */
 :root[data-theme="contrast"] {
+  color-scheme: light;
   --bg: #ffffff;
   --panel: #ffffff;
   --ink: #000000;
@@ -144,6 +150,7 @@
    black, no grey text anywhere, a yellow accent. Every text pairing is above
    7:1 (WCAG AAA) - see ContrastTest. */
 :root[data-theme="ultra"] {
+  color-scheme: dark;
   --bg: #000000;
   --panel: #000000;
   --ink: #ffffff;
@@ -1657,12 +1664,21 @@ html[data-theme-source="user"][data-theme="contrast"] .theme-picker-item[data-th
 
 /* The FIDE search panel. Set apart from the fields it fills, because it is a
    different kind of thing - a shortcut, not an answer the form needs. */
+/* Hidden until `html.has-js` says the script that drives it ran - the
+   same contract as every other script-only control here. Without a script
+   the box took typing and answered nothing, two inches above fields that
+   work. */
 .fide-search {
+  display: none;
   margin-bottom: 1.5rem;
   padding: 0.875rem;
   border: 1px solid var(--rule);
   border-radius: 6px;
   background: var(--panel);
+}
+
+html.has-js .fide-search {
+  display: block;
 }
 
 .fide-search label {
@@ -4849,6 +4865,25 @@ tr.is-followed > :first-child {
   border-radius: 50%;
   background: currentColor;
   animation: lb-beat 1.6s ease-in-out infinite;
+}
+
+/* The live pages' "reconnecting" note (`LiveBoardsComponents.offline_note/1`),
+   and the dot that stops pretending while it shows: LiveView puts
+   `phx-disconnected` on the view's root the moment the socket drops. */
+.lb-offline {
+  color: var(--ink);
+  font-weight: 600;
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+.lb-offline[hidden] {
+  display: none;
+}
+
+.phx-disconnected .lb-live-dot {
+  animation: none;
+  opacity: 0.35;
 }
 
 @keyframes lb-beat {

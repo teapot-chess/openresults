@@ -160,12 +160,14 @@ defmodule OpenResultsWeb.RegistrationHTML do
         inputmode="numeric"
       />
 
+      <%!-- Not `autocomplete="country"`: browsers offer the two-letter ISO
+            code ("BE") there, and this field wants FIDE's three ("BEL"). --%>
       <.field
         field={@form[:federation]}
         label={gettext("Federation")}
         hint={gettext("The three-letter FIDE code, like BEL. Leave it empty if you are unsure.")}
         maxlength="3"
-        autocomplete="country"
+        autocomplete="off"
       />
 
       <.field
