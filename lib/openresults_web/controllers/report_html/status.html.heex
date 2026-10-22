@@ -1,0 +1,52 @@
+<header class="masthead">
+  <h1>{gettext("Look up a report")}</h1>
+</header>
+
+<section>
+  <form method="get" action={~p"/report/status"} id="report-lookup-form" class="entry-form">
+    <div class="field">
+      <label for="report-lookup-ref">{gettext("Reference")}</label>
+      <input
+        type="text"
+        id="report-lookup-ref"
+        name="ref"
+        value={@ref}
+        maxlength="20"
+        autocomplete="off"
+        autocapitalize="characters"
+        spellcheck="false"
+        aria-describedby="report-lookup-hint"
+        required
+      />
+      <p class="hint" id="report-lookup-hint">
+        {gettext("The eight characters you were given when you sent the report, like ABCD-EFGH.")}
+      </p>
+    </div>
+    <div class="actions">
+      <button type="submit" id="report-lookup-submit">{gettext("Look up")}</button>
+    </div>
+  </form>
+
+  <div :if={@searched?} id="report-lookup-result" role="status">
+    <%= if @report do %>
+      <h2>{Reports.format_reference(@report.reference)}</h2>
+      <p id="report-lookup-status">
+        <%= if @report.status == "resolved" do %>
+          {gettext("The operator has looked at this report and dealt with it.")}
+        <% else %>
+          {gettext("The operator has received this report and has not looked at it yet.")}
+        <% end %>
+      </p>
+      <p>{reason_label(@report.reason)}</p>
+      <p :if={@report.details} id="report-lookup-details" class="report-details">
+        {@report.details}
+      </p>
+    <% else %>
+      <p class="empty" id="report-lookup-none">
+        {gettext("No report has that reference. Check it for a typo; letters and digits only.")}
+      </p>
+    <% end %>
+  </div>
+
+  <p><a href={~p"/"}>{gettext("Back to the front page")}</a></p>
+</section>

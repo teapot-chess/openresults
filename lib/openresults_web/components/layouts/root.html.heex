@@ -66,8 +66,9 @@
       theme falls back to the device's own light/dark setting, and a player's
       name is still a link to their card. Nothing here is load-bearing, which
       is the condition under which adding it was worth it.
-    --%>
-    {OpenResultsWeb.InlineScripts.tag("theme")}
+    --%> {OpenResultsWeb.InlineScripts.tag(
+      "theme"
+    )}
   </head>
 
   <body>
@@ -202,6 +203,29 @@
           data-updated={gettext("updated just now")}
           data-offline={gettext("not updating - connection lost")}
           hidden
+        ></span>
+        <%!-- WCAG 2.2.2: a page that rewrites itself needs a way to stop.
+              Hidden until the refresher is running on this page (the script
+              unhides it), so a page that never updates offers nothing to
+              pause. The words travel as attributes for the reason above. --%>
+        <button
+          type="button"
+          id="live-pause"
+          class="live-pause"
+          data-pause={gettext("Pause live updates")}
+          data-resume={gettext("Resume live updates")}
+          hidden
+        >
+          {gettext("Pause live updates")}
+        </button>
+
+        <span
+          id="live-pause-status"
+          class="live-pause-status"
+          data-none={gettext("Paused - no updates waiting")}
+          data-one={gettext("Paused - 1 update waiting")}
+          data-many={gettext("Paused - {n} updates waiting")}
+          hidden
         ></span> <span class="spacer"></span>
         <%!-- The tournament's feed, for following it without an account -
               see `OpenResultsWeb.FeedController`. --%>
@@ -273,9 +297,7 @@
         </div>
       </div>
     </div>
-
     {OpenResultsWeb.InlineScripts.tag("page")}
-
     <%!--
       Two small things for a phone, kept apart from the script above because
       neither has anything to do with it.
@@ -292,13 +314,14 @@
       visitor gets the same bytes and the page cache stays keyed by snapshot
       alone. Re-run after every refresher swap, which replaces the region
       the pin and the strip live in.
-    --%>
-    {OpenResultsWeb.InlineScripts.tag("phone")}
-
+    --%> {OpenResultsWeb.InlineScripts.tag(
+      "phone"
+    )}
     <%!-- The "?" beside a tie-break's name (`OpenResultsWeb.TiebreakHelp`).
           Hover and keyboard focus already open it from the stylesheet; this
           adds the tap a phone needs, closes it again on Escape, a tap
-          elsewhere or a scroll, and keeps the text inside the screen. --%>
-    {OpenResultsWeb.InlineScripts.tag("tiebreak_help")}
+          elsewhere or a scroll, and keeps the text inside the screen. --%> {OpenResultsWeb.InlineScripts.tag(
+      "tiebreak_help"
+    )}
   </body>
 </html>

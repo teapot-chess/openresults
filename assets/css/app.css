@@ -1650,6 +1650,39 @@ html[data-theme-source="user"][data-theme="contrast"] .theme-picker-item[data-th
   display: none;
 }
 
+/* The pause control (WCAG 2.2.2). A text button, not an icon: it has to be
+   found by someone who cannot see it and read by someone who can. */
+.live-pause {
+  font: inherit;
+  font-size: 0.75rem;
+  color: inherit;
+  background: none;
+  border: 1px solid var(--rule, currentColor);
+  border-radius: 4px;
+  padding: 0.15rem 0.5rem;
+  cursor: pointer;
+}
+
+.live-pause[hidden],
+.live-pause-status[hidden] {
+  display: none;
+}
+
+.live-pause-status {
+  color: var(--quiet);
+  font-size: 0.75rem;
+}
+
+.report-reference {
+  font-family: ui-monospace, monospace;
+  letter-spacing: 0.08em;
+}
+
+.report-details {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
 /* Matches the text inputs beside it - a select that keeps the browser's own
    chrome next to hand-styled fields reads as a different kind of control. */
 .field select {
@@ -4445,6 +4478,8 @@ tr.is-followed > :first-child {
   .index-controls,
   .card-overlay,
   .live-status,
+  .live-pause,
+  .live-pause-status,
   .site-foot .report-link,
   .site-foot .feed-link,
   .site-foot .terms-link,

@@ -2,6 +2,7 @@ defmodule OpenResultsWeb.ReportControllerTest do
   use OpenResultsWeb.ConnCase, async: false
 
   import OpenResults.PublicPublishingFixtures
+  import OpenResultsWeb.AdminAccessHelpers
 
   alias OpenResults.RateLimit
   alias OpenResults.Reports
@@ -9,6 +10,8 @@ defmodule OpenResultsWeb.ReportControllerTest do
   alias OpenResultsWeb.CoreComponents
 
   setup do
+    reset_admin_access()
+    configure_access()
     RateLimit.reset()
     slug = unique_slug("report")
     slug |> payload() |> publish(operator_token()) |> json_response(200)
@@ -195,6 +198,91 @@ defmodule OpenResultsWeb.ReportControllerTest do
       end
     after
       Gettext.put_locale(OpenResultsWeb.Gettext, "en")
+    end
+  end
+
+  describe "references" do
+    test "sending a report shows its reference, and the same number is stored", %{slug: slug} do
+      conn = post(visitor("198.51.100.50"), "/t/#{slug}/report", report: report())
+      document = doc(conn, 200)
+
+      shown = document |> LazyHTML.query("#report-reference") |> LazyHTML.text() |> String.trim()
+      assert shown =~ ~r/\A[A-Z2-7]{4}-[A-Z2-7]{4}\z/
+
+      assert [%Report{reference: stored}] = Reports.list(slug: slug)
+      assert stored =~ ~r/\A[A-Z2-7]{8}\z/
+      assert Reports.format_reference(stored) == shown
+    end
+
+    test "two reports never share a reference", %{slug: slug} do
+      for _ <- 1..3, do: post(build_conn(), "/t/#{slug}/report", report: report())
+      references = Reports.list(slug: slug) |> Enum.map(& &1.reference)
+      assert length(Enum.uniq(references)) == 3
+    end
+
+    test "the lookup shows status and the reporter's own text, however it is typed", %{slug: slug} do
+      {:ok, report} = Reports.create(slug, report(), nil)
+      other_details = "A different reporter wrote this."
+      {:ok, _} = Reports.create(slug, report(%{"details" => other_details}), nil)
+
+      for typed <- [
+            Reports.format_reference(report.reference),
+            String.downcase(report.reference),
+            " " <> report.reference <> " "
+          ] do
+        document = doc(get(build_conn(), "/report/status", ref: typed), 200)
+        assert LazyHTML.query(document, "#report-lookup-status") |> Enum.count() == 1
+        text = LazyHTML.text(document)
+        assert text =~ "has not looked at it yet"
+        assert text =~ "My email address is in the club column"
+        refute text =~ other_details
+        refute text =~ "reporter@example.invalid"
+      end
+
+      {:ok, _} = Reports.resolve(report.id, "Hidden the club column.", "admin@example.invalid")
+      document = doc(get(build_conn(), "/report/status", ref: report.reference), 200)
+      text = LazyHTML.text(document)
+      assert text =~ "dealt with it"
+      # The operator's own note stays the operator's.
+      refute text =~ "Hidden the club column"
+    end
+
+    test "an unknown or malformed reference gets one answer, and the bare page asks for it", %{
+      slug: slug
+    } do
+      {:ok, _} = Reports.create(slug, report(), nil)
+
+      for ref <- ["AAAAAAAA", "nonsense", "1", String.duplicate("A", 500)] do
+        document = doc(get(build_conn(), "/report/status", ref: ref), 200)
+        assert LazyHTML.query(document, "#report-lookup-none") |> Enum.count() == 1
+      end
+
+      document = doc(get(build_conn(), "/report/status"), 200)
+
+      assert LazyHTML.query(document, "form#report-lookup-form input[name=ref]")
+             |> Enum.count() == 1
+
+      assert LazyHTML.query(document, "#report-lookup-result") |> Enum.empty?()
+    end
+
+    test "the lookup is rate-limited by address" do
+      for _ <- 1..20 do
+        assert html_response(get(visitor("203.0.113.30"), "/report/status", ref: "AAAAAAAA"), 200)
+      end
+
+      conn = get(visitor("203.0.113.30"), "/report/status", ref: "AAAAAAAA")
+      assert html_response(conn, 429) =~ "lookups"
+      assert [_seconds] = get_resp_header(conn, "retry-after")
+
+      assert html_response(get(visitor("203.0.113.31"), "/report/status", ref: "AAAAAAAA"), 200)
+    end
+
+    test "the arbiter's side shows the reference", %{slug: slug} do
+      {:ok, report} = Reports.create(slug, report(), nil)
+      shown = Reports.format_reference(report.reference)
+
+      assert admin_get("/admin/reports/#{report.id}") |> html_response(200) =~ shown
+      assert admin_get("/admin/reports") |> html_response(200) =~ shown
     end
   end
 end

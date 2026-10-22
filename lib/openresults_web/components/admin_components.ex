@@ -180,6 +180,7 @@ defmodule OpenResultsWeb.Admin.Components do
         <thead>
           <tr>
             <th scope="col">Received</th>
+            <th scope="col">Reference</th>
             <th :if={@show_tournament} scope="col">Tournament</th>
             <th scope="col">Reason</th>
             <th scope="col">Details</th>
@@ -189,6 +190,7 @@ defmodule OpenResultsWeb.Admin.Components do
         <tbody>
           <tr :for={report <- @reports}>
             <td><a href={~p"/admin/reports/#{report.id}"}>{at(report.inserted_at)}</a></td>
+            <td>{OpenResults.Reports.format_reference(report.reference)}</td>
             <td :if={@show_tournament}>
               <a href={~p"/admin/tournaments/#{report.tournament_slug}"}>{report.tournament_slug}</a>
             </td>

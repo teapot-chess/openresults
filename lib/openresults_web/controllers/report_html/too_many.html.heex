@@ -4,9 +4,13 @@
 
 <section>
   <p class="empty">
-    {gettext(
-      "Several reports have already arrived from this connection, so this one was not sent."
-    )}
+    <%= if @lookup? do %>
+      {gettext("Several lookups have already come from this connection, so this one was not run.")}
+    <% else %>
+      {gettext(
+        "Several reports have already arrived from this connection, so this one was not sent."
+      )}
+    <% end %>
     {ngettext(
       "Try again in about %{count} minute.",
       "Try again in about %{count} minutes.",

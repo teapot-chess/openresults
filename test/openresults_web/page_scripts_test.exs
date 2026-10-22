@@ -25,6 +25,44 @@ defmodule OpenResultsWeb.PageScriptsTest do
     |> Enum.map(&(&1 |> LazyHTML.text() |> String.trim()))
   end
 
+  describe "the pause control (WCAG 2.2.2)" do
+    test "the page carries a labelled pause button and its words, hidden until the script runs",
+         %{conn: conn} do
+      slug = publish(SnapshotPayloads.swiss())
+      document = conn |> get(~p"/t/#{slug}") |> doc()
+
+      button = document |> LazyHTML.query("button#live-pause") |> Enum.to_list() |> hd()
+      assert LazyHTML.attribute(button, "type") == ["button"]
+      assert LazyHTML.attribute(button, "hidden") != []
+      assert button |> LazyHTML.attribute("data-pause") |> hd() == "Pause live updates"
+      assert button |> LazyHTML.attribute("data-resume") |> hd() == "Resume live updates"
+      assert LazyHTML.text(button) =~ "Pause live updates"
+
+      status = document |> LazyHTML.query("#live-pause-status") |> Enum.to_list() |> hd()
+      assert status |> LazyHTML.attribute("data-many") |> hd() =~ "{n}"
+      assert status |> LazyHTML.attribute("data-one") |> hd() =~ "1 update waiting"
+    end
+
+    test "the script keeps the choice per visitor, guarded, and holds updates back" do
+      script = File.read!("lib/openresults_web/inline_scripts/page.js")
+
+      assert script =~ "openresults:paused"
+      assert script =~ "localStorage.setItem(PAUSE_KEY"
+      assert script =~ "holdBack(html)"
+    end
+
+    test "the Dutch words are in je-form", %{conn: conn} do
+      slug = publish(SnapshotPayloads.swiss())
+
+      document =
+        conn |> put_req_header("accept-language", "nl") |> get(~p"/t/#{slug}") |> doc()
+
+      button = document |> LazyHTML.query("button#live-pause") |> Enum.to_list() |> hd()
+      assert button |> LazyHTML.attribute("data-pause") |> hd() == "Live updates pauzeren"
+      assert button |> LazyHTML.attribute("data-resume") |> hd() == "Live updates hervatten"
+    end
+  end
+
   describe "the refresher's change fingerprint (F1)" do
     test "the same page twice carries the same data-version", %{conn: conn} do
       slug = publish(SnapshotPayloads.swiss())

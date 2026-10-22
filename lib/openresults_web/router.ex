@@ -248,6 +248,12 @@ defmodule OpenResultsWeb.Router do
     # address. See `OpenResultsWeb.ReportController`.
     get "/t/:slug/report", ReportController, :new
     post "/t/:slug/report", ReportController, :create
+
+    # Where a report stands, by the reference it was given on sending. Not
+    # under a tournament: the reporter holds a number, not a slug. Read-only,
+    # rate-limited by address, and it answers with the status and the
+    # reporter's own text, never the operator's notes or anybody else's report.
+    get "/report/status", ReportController, :status
   end
 
   # The two public documents that are XML, not HTML: a tournament's Atom feed

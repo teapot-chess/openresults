@@ -12,6 +12,7 @@ defmodule OpenResultsWeb.ReportHTML do
   import OpenResultsWeb.TournamentHTML, only: [masthead: 1]
   import OpenResultsWeb.RegistrationHTML, only: [field: 1]
 
+  alias OpenResults.Reports
   alias OpenResults.Reports.Report
 
   embed_templates "report_html/*"

@@ -84,6 +84,11 @@ defmodule OpenResultsWeb.Admin.ReportHTML do
         <% end %>
       </dd>
 
+      <dt>Reference</dt>
+      <dd id="report-reference">
+        {OpenResults.Reports.format_reference(@report.reference) || "none (sent before references)"}
+      </dd>
+
       <dt>Received</dt>
       <dd>{at(@report.inserted_at)}</dd>
 

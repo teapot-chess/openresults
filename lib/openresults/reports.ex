@@ -29,13 +29,65 @@ defmodule OpenResults.Reports do
   @spec create(String.t(), map(), :inet.ip_address() | nil) ::
           {:ok, Report.t()} | {:error, Ecto.Changeset.t()}
   def create(slug, attrs, address) when is_binary(slug) and is_map(attrs) do
-    attrs
-    |> Report.submission_changeset()
-    |> Ecto.Changeset.put_change(:tournament_slug, slug)
-    |> Ecto.Changeset.put_change(:client_address, CIDR.address_to_string(address))
-    |> Ecto.Changeset.put_change(:status, "open")
-    |> Repo.insert()
+    changeset =
+      attrs
+      |> Report.submission_changeset()
+      |> Ecto.Changeset.put_change(:tournament_slug, slug)
+      |> Ecto.Changeset.put_change(:client_address, CIDR.address_to_string(address))
+      |> Ecto.Changeset.put_change(:status, "open")
+
+    insert_with_reference(changeset, 5)
   end
+
+  # Forty random bits make a clash vanishingly rare, not impossible; the unique
+  # index is the arbiter and a clash simply draws another number.
+  defp insert_with_reference(changeset, attempts_left) do
+    changeset
+    |> Ecto.Changeset.put_change(:reference, new_reference())
+    |> Ecto.Changeset.unique_constraint(:reference)
+    |> Repo.insert()
+    |> case do
+      {:error, %Ecto.Changeset{errors: errors} = failed} = error ->
+        if attempts_left > 1 and Keyword.has_key?(errors, :reference),
+          do:
+            insert_with_reference(
+              Ecto.Changeset.delete_change(failed, :reference),
+              attempts_left - 1
+            ),
+          else: error
+
+      other ->
+        other
+    end
+  end
+
+  @doc """
+  A fresh reference: eight characters of base32 (`A-Z`, `2-7`), 40 random bits.
+  Not a counter, so one number says nothing about the next, and a stranger
+  walking the lookup page gets a rate limit long before a hit.
+  """
+  @spec new_reference() :: String.t()
+  def new_reference, do: Base.encode32(:crypto.strong_rand_bytes(5), padding: false)
+
+  @doc "The reference as shown to people: `ABCD-EFGH`."
+  @spec format_reference(String.t() | nil) :: String.t() | nil
+  def format_reference(<<a::binary-size(4), b::binary-size(4)>>), do: a <> "-" <> b
+  def format_reference(other), do: other
+
+  @doc """
+  Finds a report by what the reporter typed: case, spaces and hyphens do not
+  matter. `nil` for anything that is not a reference or matches no report.
+  """
+  @spec get_by_reference(term()) :: Report.t() | nil
+  def get_by_reference(input) when is_binary(input) do
+    normalised = input |> String.upcase() |> String.replace(~r/[\s-]/u, "")
+
+    if normalised =~ ~r/\A[A-Z2-7]{8}\z/,
+      do: Repo.get_by(Report, reference: normalised),
+      else: nil
+  end
+
+  def get_by_reference(_other), do: nil
 
   @doc "One report by id, or `nil`."
   @spec get(term()) :: Report.t() | nil
