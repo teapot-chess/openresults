@@ -293,6 +293,9 @@ defmodule OpenResultsWeb.AccessibilityTest do
           "/t/no-such-tournament/register"
         ]
 
+      "/report/status" ->
+        ["/report/status", "/report/status?ref=AAAAAAAA", "/report/status?lang=nl"]
+
       "/t/:slug/report" ->
         ["/t/#{world.swiss}/report", "/t/#{world.swiss}/report?lang=nl"]
 

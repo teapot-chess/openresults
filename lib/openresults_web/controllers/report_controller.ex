@@ -33,6 +33,10 @@ defmodule OpenResultsWeb.ReportController do
   # what this is for.
   @rate_limit 5
   @rate_window_ms :timer.minutes(10)
+  # Looking a number up is cheaper than sending a report, but a script
+  # guessing references is the one thing this limit is for: twenty guesses a
+  # ten-minute window against 2^40 numbers.
+  @lookup_limit 20
 
   @doc "`GET /t/:slug/report`"
   def new(conn, %{"slug" => slug}) do
@@ -52,10 +56,58 @@ defmodule OpenResultsWeb.ReportController do
     end
   end
 
+  @doc """
+  `GET /report/status` - with `?ref=` the status of that report, without it
+  the box to type the number into. A reference that matches nothing and one
+  that is not shaped like a reference get the same sentence.
+  """
+  def status(conn, params) do
+    case params do
+      %{"ref" => ref} when is_binary(ref) and ref != "" ->
+        case RateLimit.take({:report_lookup, ClientAddress.of(conn)},
+               limit: @lookup_limit,
+               window_ms: @rate_window_ms
+             ) do
+          :ok -> render_status(conn, ref, Reports.get_by_reference(ref))
+          {:denied, retry_in_ms} -> too_many_lookups(conn, retry_in_ms)
+        end
+
+      _no_reference ->
+        render_status(conn, "", :none)
+    end
+  end
+
+  defp render_status(conn, ref, report) do
+    conn
+    |> put_noindex()
+    |> put_resp_header("cache-control", "no-store")
+    |> render(:status,
+      page_title: gettext("Look up a report"),
+      page_description: nil,
+      ref: ref,
+      report: if(report == :none, do: nil, else: report),
+      searched?: report != :none
+    )
+  end
+
+  defp too_many_lookups(conn, retry_in_ms) do
+    conn
+    |> put_status(:too_many_requests)
+    |> put_resp_header("retry-after", Integer.to_string(ceil(retry_in_ms / 1000)))
+    |> put_noindex()
+    |> render(:too_many,
+      page_title: gettext("Too many reports"),
+      page_description: nil,
+      minutes: max(1, ceil(retry_in_ms / 60_000)),
+      back: ~p"/report/status",
+      lookup?: true
+    )
+  end
+
   defp store(conn, slug, attrs) do
     with_tournament(conn, slug, fn payload ->
       case Reports.create(slug, attrs, ClientAddress.of(conn)) do
-        {:ok, _report} ->
+        {:ok, report} ->
           conn
           |> put_noindex()
           |> render(:received,
@@ -63,7 +115,8 @@ defmodule OpenResultsWeb.ReportController do
               gettext("Report sent - %{tournament}", tournament: Tournament.name(payload)),
             page_description: Meta.withheld(payload),
             payload: payload,
-            slug: slug
+            slug: slug,
+            reference: Reports.format_reference(report.reference)
           )
 
         {:error, changeset} ->
@@ -120,7 +173,8 @@ defmodule OpenResultsWeb.ReportController do
       page_title: gettext("Too many reports"),
       page_description: nil,
       minutes: max(1, ceil(retry_in_ms / 60_000)),
-      back: ~p"/t/#{slug}"
+      back: ~p"/t/#{slug}",
+      lookup?: false
     )
   end
 

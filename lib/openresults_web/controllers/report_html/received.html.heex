@@ -1,10 +1,18 @@
 <.masthead payload={@payload} slug={@slug} current={:report} />
-
 <section>
   <h2>{gettext("Report sent")}</h2>
 
   <p>
     {gettext("Thank you. The operator of this site will read your report.")}
+  </p>
+
+  <p>
+    {gettext("Your reference is")} <strong id="report-reference" class="report-reference">{@reference}</strong>. {gettext(
+      "Keep it: it is the only way to ask what became of this report."
+    )}
+    <a id="report-status-link" href={~p"/report/status?#{[ref: @reference]}"}>
+      {gettext("Look up this report")}
+    </a>
   </p>
 
   <p class="footnote">

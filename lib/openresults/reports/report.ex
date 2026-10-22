@@ -24,6 +24,7 @@ defmodule OpenResults.Reports.Report do
     field :details, :string
     field :contact_email, :string
     field :client_address, :string
+    field :reference, :string
     field :status, :string, default: "open"
     field :resolution, :string
     field :resolved_by, :string

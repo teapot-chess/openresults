@@ -337,8 +337,12 @@ written to the action log with your address.
   tournament at once. Each one's tournament key is cleared, so the new
   laptop's next publish claims it. A suspended or revoked installation cannot
   receive them.
-- **Reports.** The open queue, each report with a link to its tournament,
-  and Resolve with a written resolution. Resolving does not change the
+- **Reports.** The open queue, each report with a link to its tournament
+  and the reference the reporter was given (eight base32 characters, shown
+  as `ABCD-EFGH`; reports from before references existed have none), and
+  Resolve with a written resolution. The reporter can look the reference up
+  at `/report/status` and sees only whether the report is open or dealt
+  with, and what they wrote themselves; your resolution text stays here. Resolving does not change the
   tournament; hide or delete it separately.
 - **Address blocks.** An address or CIDR range, for a number of hours or days
   (at most 30), with a reason. Before you confirm, the page shows how many

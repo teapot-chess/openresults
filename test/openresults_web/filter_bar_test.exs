@@ -185,6 +185,23 @@ defmodule OpenResultsWeb.FilterBarTest do
       assert LazyHTML.query(empty_doc, "table.standings") |> Enum.empty?()
     end
 
+    test "no fallback to the players' own categories when the publisher sends none", %{conn: conn} do
+      # Decision 2026-10-22: a missing `tournament.categories` can mean the
+      # arbiter hid them on purpose, so the control must not be rebuilt from
+      # what the players carry - even though they plainly carry some.
+      payload =
+        SnapshotPayloads.swiss()
+        |> update_in(["tournament"], &Map.delete(&1, "categories"))
+        |> update_in(["players", Access.all()], &Map.put(&1, "categories", ["A", "B"]))
+        |> update_in(["players", Access.all()], &Map.put(&1, "category", "A"))
+
+      assert OpenResultsWeb.Tournament.Filter.categories(payload) == []
+
+      slug = publish(payload)
+      document = conn |> get(~p"/t/#{slug}") |> doc()
+      assert LazyHTML.query(document, ~s([name="category"])) |> Enum.empty?()
+    end
+
     test "players[].category (no categories array) is the fallback the filter itself uses", %{
       conn: conn
     } do
