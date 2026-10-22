@@ -27,6 +27,8 @@ Each entry is tagged so a version can be skimmed:
 
 ## [Unreleased]
 
+## [0.29.0] - 2026-10-22
+
 - [Feature] **Live pages can be paused.** A page that rewrites itself every twenty seconds is, strictly, a page that moves under a screen reader's cursor and a reader's eyes, and the accessibility guidelines would like you to be able to say stop. A "Pause live updates" button now sits in the footer of every page that updates by itself. Paused, the page still listens but nothing is applied, and the footer keeps count ("Paused - 3 updates waiting"); resuming applies the latest state once, not three times. The choice is remembered in the visitor's browser, in Dutch (je) and French too.
 - [Feature] **A report gets a number.** Until now a reporter who left no email address sent a message into the dark and hoped. Each report now returns an eight-character reference (`ABCD-EFGH`), and `/report/status` says whether it is still waiting or has been dealt with, and repeats what the reporter wrote. It does not repeat the operator's resolution note or anything about anybody else's report; wrong or malformed numbers all get the same shrug, and the lookup is rate-limited so guessing is a hobby with poor prospects. The admin panel shows the reference too. Reports from before this have none.
 - [Verified] **Players still cannot edit or withdraw an entry, on purpose.** With no accounts, anyone could withdraw anyone. Recorded in the UX audit as a decision, not an oversight.
