@@ -1,0 +1,23 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://raw.githubusercontent.com/teapot-chess/openresults/main/priv/contracts/publish-v1/relay-key.response.schema.json",
+  "title": "Relay key made (POST /api/tournaments/:slug/relay-keys, 201)",
+  "description": "Reader: OpenPairings, which hands relay_key to its Alnasl box; Alnasl then sends it as the Bearer credential on live-board updates. Cache-Control: no-store; the key is in this reply and nowhere else. Refusals: 401 unauthorized; 403 key_required, key_mismatch, not_owner, tournament_hidden, installation_suspended, installation_revoked, address_blocked; 404 tournament_not_published; 409 relay_key_limit; 429 rate_limited (six a tournament per ten minutes, POST and DELETE together); 503 publishing_paused. A server from before this route answers Phoenix's own 404 with no `error` code.",
+  "type": "object",
+  "required": ["status", "slug", "relay_key", "id", "label", "hint", "replaced", "created_at"],
+  "properties": {
+    "status": { "const": "ok" },
+    "slug": { "type": "string" },
+    "relay_key": {
+      "description": "orrk_ and 43 characters (32 random bytes, base64url).",
+      "type": "string",
+      "pattern": "^orrk_[A-Za-z0-9_-]{43}$"
+    },
+    "id": { "type": "integer" },
+    "label": { "type": "string", "minLength": 1, "maxLength": 80 },
+    "hint": { "description": "The key's last four characters, what the admin panel shows.", "type": "string", "minLength": 4, "maxLength": 4 },
+    "replaced": { "description": "How many of this publisher's keys under the same label were revoked by this request.", "type": "integer", "minimum": 0 },
+    "created_at": { "type": "string", "format": "date-time" }
+  },
+  "additionalProperties": false
+}

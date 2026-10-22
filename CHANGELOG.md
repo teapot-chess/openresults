@@ -27,6 +27,9 @@ Each entry is tagged so a version can be skimmed:
 
 ## [Unreleased]
 
+- [Feature] **The publishing API is written down where a test can read it.** Every route OpenPairings and Alnasl call here - snapshot, takedown, claim check, installation and slug handshake, relay keys, entry queue, live boards - now has a JSON Schema per message in `priv/contracts/publish-v1/`, with examples and a table of routes, credentials and headers. A test sends every request example through the real router and holds every real answer to its schema; the two senders keep a copy and check it daily. Until now the agreement between three programs lived in three sets of prose and one memory, and the memory was not on call.
+- [Fix] **A team's tie-break working is read in the shape it actually arrives in.** The documentation promised `{total, parts}` per code, OpenPairings has always sent the bare list of parts, and this site read the list as "no working at all". Nothing rendered it yet, so nobody was misled, merely uninformed. The list is now read as what it is, and the documentation says what is sent, as does the note on a bye match's `board1_white_team`, which arrives as `false`.
+
 ## [0.28.0] - 2026-10-20
 
 - [Fix] **The FIDE search finds people the way they type themselves.** First name first while the surname is still half typed ("oswald de"), a surname from its middle ("berghe"), a compound surname run together ("vandenberghe"), any word order, and one misspelt word out of three. It used to accept a half-typed word only at the very end, so somebody typing "Firstname De" was told, letter by letter, that they were not on the FIDE list, and believed it. Results are ranked by how well they fit before rating. Built on a word index beside the list, which the next daily check builds by itself (about 120 MB more on disk); until then the old search answers.

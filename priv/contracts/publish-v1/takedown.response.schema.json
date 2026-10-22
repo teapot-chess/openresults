@@ -1,0 +1,23 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://raw.githubusercontent.com/teapot-chess/openresults/main/priv/contracts/publish-v1/takedown.response.schema.json",
+  "title": "Tournament deleted (DELETE /api/tournaments/:slug, 200)",
+  "description": "Reader: OpenPairings (it reads the status only). Removes every snapshot, the registration queue and the key claim (and with them the live games and relay keys). Request: no body; Authorization as for a publish; X-OpenResults-Key the tournament's key (or, operator token only, the ingest token as break-glass). Idempotent: 200 with zero counts when nothing was there. Refusals: 401 unauthorized; 403 key_required, key_mismatch, not_owner.",
+  "type": "object",
+  "required": ["status", "slug", "deleted"],
+  "properties": {
+    "status": { "const": "deleted" },
+    "slug": { "type": "string" },
+    "deleted": {
+      "type": "object",
+      "required": ["snapshots", "registrations", "key"],
+      "properties": {
+        "snapshots": { "description": "Snapshot rows removed, the whole history.", "type": "integer", "minimum": 0 },
+        "registrations": { "description": "Queued entries removed.", "type": "integer", "minimum": 0 },
+        "key": { "description": "Key claims released: 0 or 1.", "type": "integer", "minimum": 0, "maximum": 1 }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

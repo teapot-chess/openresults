@@ -1,0 +1,26 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://raw.githubusercontent.com/teapot-chess/openresults/main/priv/contracts/publish-v1/server.response.schema.json",
+  "title": "Server info (GET /api/server, 200)",
+  "description": "Readers: OpenPairings (the public-publishing consent dialog) and Alnasl (its connection test reads the status only). Open route, no credential, Cache-Control: no-store. A server too old to have the route answers Phoenix's own 404.",
+  "type": "object",
+  "required": ["name", "version", "operator", "terms_url", "public_registration", "public_publishing"],
+  "properties": {
+    "name": { "const": "OpenResults" },
+    "version": { "description": "This server's release version.", "type": "string" },
+    "operator": { "description": "Who runs the server, or null when not configured.", "type": ["string", "null"] },
+    "terms_url": {
+      "description": "The terms the arbiter is asked to read; this server's own /terms page when none is configured.",
+      "type": "string"
+    },
+    "public_registration": {
+      "description": "Whether POST /api/installations hands out keys: unavailable (public publishing not enabled on this server), open, closed.",
+      "enum": ["unavailable", "open", "closed"]
+    },
+    "public_publishing": {
+      "description": "Whether installation keys may write: unavailable, active, paused.",
+      "enum": ["unavailable", "active", "paused"]
+    }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,1 @@
+{ "status": "ok", "results": [ { "round": 3, "board": 1, "status": "ok", "applied": true, "ply": 31 }, { "round": 3, "board": 2, "status": "error", "error": "invalid_moves", "detail": "ply 14: Qxh7 is not a legal move", "ply": 14 } ] }

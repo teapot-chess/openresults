@@ -1,0 +1,12 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://raw.githubusercontent.com/teapot-chess/openresults/main/priv/contracts/publish-v1/installation.request.schema.json",
+  "title": "Register an installation (POST /api/installations body)",
+  "description": "Sender: OpenPairings in public mode, after the arbiter consented. No credential - the key is what is being asked for - and the route exists only when the server runs with public publishing enabled (else Phoenix's own 404). The body is ADVISORY: client and client_version are stored when they are strings and ignored otherwise; nothing is required and extra fields are ignored.",
+  "type": "object",
+  "additionalProperties": true,
+  "properties": {
+    "client": { "description": "The asking program, e.g. OpenPairings.", "type": "string" },
+    "client_version": { "type": "string" }
+  }
+}

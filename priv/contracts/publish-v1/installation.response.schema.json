@@ -1,0 +1,21 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://raw.githubusercontent.com/teapot-chess/openresults/main/priv/contracts/publish-v1/installation.response.schema.json",
+  "title": "Installation registered (POST /api/installations, 201)",
+  "description": "Reader: OpenPairings, which stores the key and sends it as its Bearer credential from then on. Cache-Control: no-store; the key exists nowhere else (the server keeps a digest). Refusals: 403 address_blocked; 429 rate_limited (per address or /64, and per server, each per 24 h); 503 registration_closed.",
+  "type": "object",
+  "required": ["installation_id", "key"],
+  "properties": {
+    "installation_id": {
+      "description": "The installation's id: in_ and 10 characters (7 random bytes, base64url). OpenPairings stores it as text.",
+      "type": "string",
+      "pattern": "^in_[A-Za-z0-9_-]{10}$"
+    },
+    "key": {
+      "description": "The installation key: orik_ and 43 characters (32 random bytes, base64url, no padding).",
+      "type": "string",
+      "pattern": "^orik_[A-Za-z0-9_-]{43}$"
+    }
+  },
+  "additionalProperties": false
+}

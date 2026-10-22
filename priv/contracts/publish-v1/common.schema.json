@@ -1,0 +1,107 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://raw.githubusercontent.com/teapot-chess/openresults/main/priv/contracts/publish-v1/common.schema.json",
+  "title": "publish-v1 shared definitions",
+  "description": "Definitions the other publish-v1 schemas $ref by relative file name. Not a message of its own. Resolve locally; never fetch over the network.",
+  "definitions": {
+    "slug": {
+      "description": "A tournament's public handle. The operator token publishes to any slug it likes; an installation key only to one minted for it by POST /api/tournaments.",
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S"
+    },
+    "resultToken": {
+      "description": "A game result as OpenPairings stores it, verbatim. 1-0/0-1/1/2-1/2 ordinary; ...U played but unrated; 1/2-0 and 0-1/2 the asymmetric results; 0-0 played, both nothing; ...FF forfeits (FIDE Art. 16). The legacy +-- and --+ are normalised to 1-0FF / 0-1FF by the publisher and never cross.",
+      "type": "string",
+      "enum": [
+        "1-0",
+        "0-1",
+        "1/2-1/2",
+        "1-0U",
+        "0-1U",
+        "1/2-1/2U",
+        "1/2-0",
+        "0-1/2",
+        "0-0",
+        "1-0FF",
+        "0-1FF",
+        "0-0FF"
+      ]
+    },
+    "errorCode": {
+      "description": "Every `error` value an API route of this contract can answer with. Clients dispatch on this, never on `detail` or the status alone. Most come from OpenResultsWeb.ApiError; not_an_object, wrong_schema, unknown_version, missing_slug and invalid come from the snapshot ingest, history_requires_auth / bad_at / not_found from the read routes.",
+      "type": "string",
+      "enum": [
+        "address_blocked",
+        "bad_at",
+        "board_not_published",
+        "fen_mismatch",
+        "history_requires_auth",
+        "installation_key_required",
+        "installation_revoked",
+        "installation_suspended",
+        "invalid",
+        "invalid_fen",
+        "invalid_moves",
+        "invalid_request",
+        "key_mismatch",
+        "key_required",
+        "live_game_limit",
+        "missing_slug",
+        "moves_conflict",
+        "not_an_object",
+        "not_configured",
+        "not_found",
+        "not_owner",
+        "owner_revoked",
+        "owner_suspended",
+        "ply_mismatch",
+        "publishing_paused",
+        "rate_limited",
+        "registration_closed",
+        "relay_key_limit",
+        "relay_key_revoked",
+        "relay_key_wrong_tournament",
+        "snapshot_too_large",
+        "storage_low",
+        "tournament_deleted",
+        "tournament_hidden",
+        "tournament_limit",
+        "tournament_not_published",
+        "unauthorized",
+        "unknown_version",
+        "wrong_schema"
+      ]
+    },
+    "errorExtras": {
+      "description": "Fields some error codes add beside `error` and `detail`.",
+      "type": "object",
+      "properties": {
+        "retry_after": {
+          "description": "Seconds to wait before retrying (rate_limited, storage_low). Also sent as the Retry-After header.",
+          "type": "integer",
+          "minimum": 1
+        },
+        "limit": {
+          "description": "The cap that was hit: tournaments per installation (tournament_limit) or live games per tournament (live_game_limit).",
+          "type": "integer",
+          "minimum": 0
+        },
+        "limit_bytes": {
+          "description": "snapshot_too_large: the most an installation key may publish, in bytes.",
+          "type": "integer",
+          "minimum": 0
+        },
+        "ply": {
+          "description": "invalid_moves: the 1-based ply (half-move) of the first illegal or ambiguous move.",
+          "type": "integer",
+          "minimum": 1
+        },
+        "slug": {
+          "description": "not_found: the slug asked for.",
+          "type": "string"
+        }
+      }
+    }
+  }
+}

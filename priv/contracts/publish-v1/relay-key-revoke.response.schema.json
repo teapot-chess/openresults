@@ -1,0 +1,14 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://raw.githubusercontent.com/teapot-chess/openresults/main/priv/contracts/publish-v1/relay-key-revoke.response.schema.json",
+  "title": "Relay keys revoked (DELETE /api/tournaments/:slug/relay-keys, 200)",
+  "description": "No current sender (OpenPairings only ever POSTs). No body; ?label= revokes that label only, without it every key this publisher made for the slug. 200 also when nothing was revoked. A suspended installation may still withdraw. Refusals as for the POST, minus tournament_not_published and relay_key_limit.",
+  "type": "object",
+  "required": ["status", "slug", "revoked"],
+  "properties": {
+    "status": { "const": "ok" },
+    "slug": { "type": "string" },
+    "revoked": { "type": "integer", "minimum": 0 }
+  },
+  "additionalProperties": false
+}

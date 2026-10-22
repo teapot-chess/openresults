@@ -1,0 +1,1 @@
+{ "error": "snapshot_too_large", "detail": "the snapshot is larger than an installation key may publish", "limit_bytes": 3145728 }

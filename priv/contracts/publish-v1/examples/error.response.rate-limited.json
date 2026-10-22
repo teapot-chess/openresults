@@ -1,0 +1,1 @@
+{ "error": "rate_limited", "detail": "too many requests; wait `retry_after` seconds", "retry_after": 42 }

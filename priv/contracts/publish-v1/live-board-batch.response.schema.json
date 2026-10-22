@@ -1,0 +1,35 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://raw.githubusercontent.com/teapot-chess/openresults/main/priv/contracts/publish-v1/live-board-batch.response.schema.json",
+  "title": "Live boards judged (POST /api/tournaments/:slug/live, batch, 200)",
+  "description": "Always 200 once the request itself is allowed, with one result per board in the order sent: one illegal move must not hide that the other boards were stored. Request-level refusals (credentials, tournament_not_published, too many boards) are error.response.schema.json.",
+  "type": "object",
+  "required": ["status", "results"],
+  "properties": {
+    "status": { "const": "ok" },
+    "results": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["status"],
+        "properties": {
+          "round": { "description": "Echoed as sent (absent when the item was not an object)." },
+          "board": { "description": "Echoed as sent (absent when the item was not an object)." },
+          "status": { "enum": ["ok", "error"] },
+          "applied": { "type": "boolean" },
+          "ply": { "type": "integer", "minimum": 0 },
+          "reason": { "const": "older_than_stored" },
+          "error": { "$ref": "common.schema.json#/definitions/errorCode" },
+          "detail": { "type": "string" },
+          "limit": { "$ref": "common.schema.json#/definitions/errorExtras/properties/limit" },
+          "retry_after": { "$ref": "common.schema.json#/definitions/errorExtras/properties/retry_after" }
+        },
+        "additionalProperties": false,
+        "if": { "properties": { "status": { "const": "ok" } } },
+        "then": { "required": ["applied", "ply"], "not": { "required": ["error"] } },
+        "else": { "required": ["error", "detail"], "not": { "required": ["applied"] } }
+      }
+    }
+  },
+  "additionalProperties": false
+}

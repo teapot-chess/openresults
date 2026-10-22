@@ -1,0 +1,56 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://raw.githubusercontent.com/teapot-chess/openresults/main/priv/contracts/publish-v1/routes.schema.json",
+  "title": "Route table (the HTTP envelope of every message)",
+  "description": "Not a message: the transport around them. examples/routes.json lists every publish-v1 route - method, path, who sends it, which credential and headers it takes, and which schema file the body and each answer follow. Everything is plain JSON over HTTPS: no signing, no compression, no wrapping beyond the headers named here. Every non-2xx answer with an `error` code follows error.response.schema.json. The provider test checks that each route here exists in OpenResults' router.",
+  "type": "object",
+  "required": ["routes"],
+  "additionalProperties": false,
+  "properties": {
+    "routes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["method", "path", "senders", "auth", "request", "responses"],
+        "additionalProperties": false,
+        "properties": {
+          "method": { "enum": ["GET", "POST", "DELETE"] },
+          "path": { "description": "Phoenix route pattern; :slug is the tournament slug, URL-encoded.", "type": "string", "pattern": "^/api/" },
+          "senders": {
+            "description": "Which programs call this route today. Empty: exposed, no current caller.",
+            "type": "array",
+            "items": { "enum": ["openpairings", "alnasl"] },
+            "uniqueItems": true
+          },
+          "auth": {
+            "description": "The Authorization: Bearer credentials accepted. none: an open route. operator: the server-wide ingest token. installation: an orik_ key (only with OPENRESULTS_PUBLIC_PUBLISHING=enabled; only for tournaments minted for it). relay: an orrk_ key, live route of its own tournament only.",
+            "type": "array",
+            "items": { "enum": ["none", "operator", "installation", "relay"] },
+            "minItems": 1,
+            "uniqueItems": true
+          },
+          "headers": {
+            "description": "Other request headers and what they carry.",
+            "type": "object",
+            "additionalProperties": { "type": "string" }
+          },
+          "public_publishing_only": {
+            "description": "true: the route exists only when the server runs with public publishing enabled; otherwise Phoenix's own 404.",
+            "type": "boolean"
+          },
+          "request": {
+            "description": "Schema file of the JSON body, or null for no body.",
+            "type": ["string", "null"],
+            "pattern": "\\.schema\\.json$"
+          },
+          "responses": {
+            "description": "HTTP status -> schema file (or a note when the body is not one of ours).",
+            "type": "object",
+            "propertyNames": { "pattern": "^[1-5][0-9][0-9]$|^4xx/5xx$" },
+            "additionalProperties": { "type": "string" }
+          }
+        }
+      }
+    }
+  }
+}

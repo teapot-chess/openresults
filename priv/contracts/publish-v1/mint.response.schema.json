@@ -1,0 +1,16 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://raw.githubusercontent.com/teapot-chess/openresults/main/priv/contracts/publish-v1/mint.response.schema.json",
+  "title": "Slug minted (POST /api/tournaments, 201)",
+  "description": "Reader: OpenPairings, whose snapshots for this tournament must then carry exactly this tournament.slug. Refusals: 401 unauthorized; 403 installation_key_required, installation_suspended, installation_revoked, address_blocked, tournament_limit (with limit); 429 rate_limited; 503 publishing_paused, storage_low.",
+  "type": "object",
+  "required": ["slug"],
+  "properties": {
+    "slug": {
+      "description": "Twelve characters the server chose: 9 random bytes, base64url, no padding.",
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]{12}$"
+    }
+  },
+  "additionalProperties": false
+}
