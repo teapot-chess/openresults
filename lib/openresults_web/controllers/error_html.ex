@@ -15,7 +15,7 @@ defmodule OpenResultsWeb.ErrorHTML do
   the same function, so they stay identical.
 
   The strings are computed before the template and the whole page is
-  rendered to a (safe) binary inside `Gettext.with_locale/3`, because a HEEx
+  rendered to iodata inside `Gettext.with_locale/3`, because a HEEx
   template's dynamic parts are evaluated lazily and would otherwise be
   translated after the locale was put back.
   """
@@ -42,10 +42,13 @@ defmodule OpenResultsWeb.ErrorHTML do
       }
       |> error_page()
       |> Phoenix.HTML.Safe.to_iodata()
-      |> IO.iodata_to_binary()
-      |> Phoenix.HTML.raw()
+      |> safe()
     end)
   end
+
+  # Already escaped: this is the HEEx engine's own output, rendered now
+  # rather than later so the locale above still applies.
+  defp safe(iodata), do: {:safe, iodata}
 
   defp locale(%Plug.Conn{} = conn) do
     header = conn |> Plug.Conn.get_req_header("accept-language") |> List.first()
