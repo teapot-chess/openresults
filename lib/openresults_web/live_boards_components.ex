@@ -312,6 +312,34 @@ defmodule OpenResultsWeb.LiveBoardsComponents do
     """
   end
 
+  @doc """
+  What the page says while its socket is down. The boards stop moving the
+  moment the connection goes, and until this existed nothing said so: the
+  live dot kept beating over a position that might be ten moves old. Hidden
+  until LiveView reports the disconnect, gone again on reconnect, inside a
+  status region that is always there (a live region that is itself hidden
+  announces nothing, and the accessibility test says so); the CSS
+  stills every `.lb-live-dot` on a disconnected view at the same time.
+  """
+  attr :id, :string, default: "lb-offline"
+  attr :class, :string, default: nil
+
+  def offline_note(assigns) do
+    ~H"""
+    <span role="status" class="lb-offline-region">
+      <span
+        id={@id}
+        class={["lb-offline", @class]}
+        hidden
+        phx-disconnected={JS.show()}
+        phx-connected={JS.hide()}
+      >
+        {gettext("Reconnecting - moves are paused")}
+      </span>
+    </span>
+    """
+  end
+
   @doc "Whether the published pairing says this board was never played."
   def unplayed?(tile), do: Map.get(tile, :unplayed) != nil
 

@@ -199,8 +199,8 @@ defmodule OpenResultsWeb.LocaleTest do
         |> post(~p"/t/#{slug}/register", %{"registration" => %{"name" => "", "email" => ""}})
         |> html_response(422)
 
-      assert html =~ "geef de naam op die u op de paringslijst wilt zien"
-      assert html =~ "de arbiter heeft een adres nodig om u te bereiken"
+      assert html =~ "geef de naam op die je op de paringslijst wilt zien"
+      assert html =~ "de arbiter heeft een adres nodig om je te bereiken"
     end
 
     # The two tests above pass on messages Ecto reports with no options worth

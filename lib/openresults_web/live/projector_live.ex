@@ -483,6 +483,7 @@ defmodule OpenResultsWeb.ProjectorLive do
         <span class="lb-live-dot" aria-hidden="true"></span>
         <h1 id="proj-title" class="proj-title">{@title}</h1>
         <span :if={@round_heading} id="proj-round" class="proj-round">{@round_heading}</span>
+        <.offline_note id="proj-offline" class="proj-offline" />
         <span :if={@delay > 0} id="proj-delay" class="proj-delay">
           {ngettext(
             "shown %{count} minute behind the game",

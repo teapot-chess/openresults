@@ -24,10 +24,10 @@ msgid "that is not a list of round numbers"
 msgstr "dat is geen lijst van rondenummers"
 
 msgid "please give the name you want on the pairing list"
-msgstr "geef de naam op die u op de paringslijst wilt zien"
+msgstr "geef de naam op die je op de paringslijst wilt zien"
 
 msgid "the arbiter needs an address to reach you at"
-msgstr "de arbiter heeft een adres nodig om u te bereiken"
+msgstr "de arbiter heeft een adres nodig om je te bereiken"
 
 msgid "a name is between 2 and 100 characters"
 msgstr "een naam telt tussen 2 en 100 tekens"
@@ -39,25 +39,25 @@ msgid "that does not look like an email address - check for a missing @ or a typ
 msgstr "dat lijkt geen e-mailadres - controleer op een ontbrekende @ of een typfout"
 
 msgid "a birth year is four digits between 1900 and 2030 - leave it empty if you would rather not say"
-msgstr "een geboortejaar is vier cijfers tussen 1900 en 2030 - laat het leeg als u het liever niet zegt"
+msgstr "een geboortejaar is vier cijfers tussen 1900 en 2030 - laat het leeg als je het liever niet zegt"
 
 msgid "that is not a FIDE title - leave it empty if you do not have one"
-msgstr "dat is geen FIDE-titel - laat het leeg als u er geen hebt"
+msgstr "dat is geen FIDE-titel - laat het leeg als je er geen hebt"
 
 msgid "a rating is a whole number between 0 and 3500 - leave it empty if you do not have one"
-msgstr "een rating is een geheel getal tussen 0 en 3500 - laat het leeg als u er geen hebt"
+msgstr "een rating is een geheel getal tussen 0 en 3500 - laat het leeg als je er geen hebt"
 
 msgid "a federation is a three-letter FIDE code, like BEL or NOR"
 msgstr "een federatie is een FIDE-code van drie letters, zoals BEL of NOR"
 
 msgid "a FIDE ID is the number on your FIDE profile - digits only"
-msgstr "een FIDE-ID is het nummer op uw FIDE-profiel - alleen cijfers"
+msgstr "een FIDE-ID is het nummer op je FIDE-profiel - alleen cijfers"
 
 msgid "a club name is at most 100 characters"
 msgstr "een clubnaam telt hoogstens 100 tekens"
 
 msgid "a national ID is the member number your federation gave you - digits only"
-msgstr "een nationaal ID is het lidnummer dat uw federatie u gaf - alleen cijfers"
+msgstr "een nationaal ID is het lidnummer dat je federatie je gaf - alleen cijfers"
 
 msgid "this tournament is not taking bye requests"
 msgstr "dit toernooi neemt geen byeverzoeken aan"

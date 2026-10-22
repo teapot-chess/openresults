@@ -113,7 +113,8 @@ defmodule OpenResultsWeb.AdminPanelTest do
         conn =
           build_conn() |> enforce_csrf() |> dispatch(@endpoint, method, fill(route.path, slug))
 
-        assert {conn.status, conn.resp_body} == {404, "Not Found"}, "#{method} #{route.path}"
+        assert {conn.status, conn.resp_body} == {404, unknown_route_body()},
+               "#{method} #{route.path}"
       end
     end
 
@@ -321,7 +322,7 @@ defmodule OpenResultsWeb.AdminPanelTest do
         })
 
       assert stranger.status == 404
-      assert stranger.resp_body == "Not Found"
+      assert stranger.resp_body == unknown_route_body()
       refute_received {:confirmation_probe_ran, _, _}
     end
 
