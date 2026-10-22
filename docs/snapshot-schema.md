@@ -6,6 +6,11 @@ else crosses.
 
 This file is the specification. Change it reluctantly.
 
+The same document as JSON Schema, for tests on both sides, is
+`priv/contracts/publish-v1/snapshot.request.schema.json` (see the README,
+"The machine-readable contract"). A change here changes that file in the same
+pull request.
+
 ## Why it looks like this
 
 **It describes a tournament, not a database.** TRF16 has survived twenty
@@ -750,7 +755,9 @@ robin's bye carries none). Nothing in the document tells the two apart but
 
 **`matches[].board1_white_team`** - which team has White on board 1 of the
 match (and, by the FIDE convention this app follows, on every odd board -
-see `PairingsEngine.TeamRoundRobin`'s moduledoc). Named explicitly rather than
+see `PairingsEngine.TeamRoundRobin`'s moduledoc). On a bye match, which has no
+board 1, OpenPairings sends `false`; a reader treats anything but an integer
+as absent and falls back to `team_a`. Named explicitly rather than
 left for a reader to infer from `team_a`, so a page can print "Team A (White)"
 without knowing that convention itself.
 
@@ -833,7 +840,11 @@ forfeits is not a decision unless this field says so.
 **`team_standings`** - the same shape as `standings`, one level up, for
 teams: `after_round`, `tiebreaks` (declared once, `rows[].tiebreaks`
 positional against it, exactly like the individual table) and `rows[].working`
-in the same per-round-parts shape as `standings.rows[].working` - only
+with the same per-round parts as `standings.rows[].working` - **but as a bare
+list per code, with no `total`** (`{"SB": [{"round": 1, "opponent": 2,
+"value": 0.0}]}`), which is what OpenPairings has always sent; the total is the
+row's own `tiebreaks` figure. (Settled 2026-10-22, when the contract schemas
+found this paragraph promising an object nobody sends.) Otherwise only
 `team` replaces `player` as the row's identity, and there is no `category`,
 `points` (game score already has a name here, `gp`) or Keizer-shaped fields, a
 team event never being Keizer. Gated by the same `standings_through` setting

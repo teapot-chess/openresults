@@ -1,0 +1,142 @@
+{
+  "schema": "openresults/snapshot",
+  "version": 1,
+  "published_at": "2026-03-03T18:00:00Z",
+  "source": { "app": "openpairings", "version": "0.101.3" },
+  "tournament": {
+    "slug": "contract-swiss-2026",
+    "name": "Contract Spring Open 2026",
+    "city": "Ghent",
+    "federation": "BEL",
+    "start_date": "2026-03-01",
+    "end_date": "2026-03-05",
+    "rounds_count": 5,
+    "system": "swiss",
+    "arbiter": "A. Arbiter",
+    "deputy": null,
+    "fide_rated": true,
+    "registration_open": true,
+    "listed": true,
+    "live_boards": true,
+    "match_format": false,
+    "tempo": "standard",
+    "time_control": "90 min + 30 s",
+    "time_control_minutes": 90,
+    "categories": ["U1800"],
+    "display": {
+      "arbiter": true,
+      "byes": true,
+      "category": true,
+      "club": true,
+      "federation": true,
+      "flags": true,
+      "pairings": true,
+      "rating": true,
+      "standings": true,
+      "tiebreak_working": true,
+      "tiebreaks": true,
+      "title": true
+    },
+    "hall": {
+      "pairings": true,
+      "names": true,
+      "results": true,
+      "standings": true,
+      "standings_top": 10,
+      "page_seconds": 15,
+      "hold_new_round": true,
+      "announcement": "Round 3 starts at 14:00."
+    },
+    "registration": {
+      "opens_at": "2026-02-01T08:00:00Z",
+      "closes_at": "2026-02-28T22:00:00Z",
+      "max_players": 60,
+      "taken": 4,
+      "list_public": true,
+      "fee": { "amount": "12.50", "currency": "EUR", "note": "Free for juniors" },
+      "pending": [{ "name": "Waiting, Wim" }]
+    },
+    "scoring": { "win": 1.0, "draw": 0.5, "loss": 0.0, "bye": 1.0, "forfeit_win": 1.0, "forfeit_loss": 0.0, "presence": null }
+  },
+  "players": [
+    { "no": 1, "name": "Alpha, Anna", "title": "WFM", "rating": 2150, "federation": "BEL", "fide_id": 200001, "club": "KGSRL", "category": null, "categories": [] },
+    { "no": 2, "name": "Bravo, Bart", "title": null, "rating": 1790, "federation": "BEL", "fide_id": null, "club": null, "category": "U1800", "categories": ["U1800"] },
+    { "no": 3, "name": "Charlie, Chris", "title": null, "rating": 1650, "federation": "NED", "fide_id": 200003, "club": "Schaakclub", "category": "U1800", "categories": ["U1800"] },
+    { "no": 4, "name": "Delta, Dirk", "title": null, "rating": null, "federation": null, "fide_id": null, "club": null, "category": null, "categories": [] },
+    { "no": 5, "name": "Echo, Els", "title": null, "rating": 1500, "federation": "BEL", "fide_id": null, "club": null, "category": "U1800", "categories": ["U1800"] }
+  ],
+  "rounds": [
+    {
+      "number": 1,
+      "date": "2026-03-01",
+      "results_public": true,
+      "boards": [
+        { "board": 1, "label": "1", "white": 1, "black": 3, "result": "1-0", "points": { "white": 1.0, "black": 0.0 } },
+        { "board": 2, "label": "2", "white": 4, "black": 2, "result": "0-1FF", "points": { "white": 0.0, "black": 1.0 } }
+      ],
+      "byes": [{ "player": 5, "kind": "pairing-allocated", "points": 1.0 }]
+    },
+    {
+      "number": 2,
+      "date": "2026-03-02",
+      "results_public": true,
+      "boards": [
+        { "board": 1, "label": "1", "white": 2, "black": 1, "result": "1/2-1/2", "points": { "white": 0.5, "black": 0.5 } },
+        {
+          "board": 2,
+          "label": "2",
+          "white": 5,
+          "black": 3,
+          "result": null,
+          "postponed": true,
+          "postponed_date": "2026-03-10",
+          "postponed_as": { "white": "draw", "black": "draw" },
+          "points": { "white": 0.5, "black": 0.5 }
+        }
+      ],
+      "byes": [{ "player": 4, "kind": "half-point", "points": 0.5 }]
+    },
+    {
+      "number": 3,
+      "date": "2026-03-03",
+      "results_public": false,
+      "boards": [
+        { "board": 1, "label": "1", "white": 1, "black": 5, "result": null },
+        { "board": 2, "label": "2", "white": 3, "black": 2, "result": null }
+      ],
+      "byes": [{ "player": 4, "kind": "zero-point", "points": 0.0 }]
+    }
+  ],
+  "standings": {
+    "after_round": 2,
+    "manual_order": false,
+    "provisional": true,
+    "postponed_games": 1,
+    "pending_games": 1,
+    "tiebreaks_withheld": false,
+    "tiebreaks": [{ "code": "BH", "label": "Buchholz" }],
+    "rows": [
+      {
+        "rank": 1,
+        "player": 1,
+        "points": 1.5,
+        "tiebreaks": [3.0],
+        "working": {
+          "BH": {
+            "total": 3.0,
+            "parts": [
+              { "round": 1, "opponent": 3, "value": 0.5 },
+              { "round": 2, "opponent": 2, "value": 2.0 },
+              { "round": 3, "value": 0.5, "kind": "virtual" }
+            ]
+          }
+        },
+        "category": null
+      },
+      { "rank": 2, "player": 2, "points": 1.5, "tiebreaks": [1.5], "working": {}, "category": "U1800" },
+      { "rank": 3, "player": 5, "points": 1.5, "tiebreaks": [0.5], "working": {}, "category": "U1800" },
+      { "rank": 4, "player": 3, "points": 0.5, "tiebreaks": [3.0], "working": {}, "category": "U1800" },
+      { "rank": 5, "player": 4, "points": 0.5, "tiebreaks": [1.5], "working": {}, "category": null }
+    ]
+  }
+}

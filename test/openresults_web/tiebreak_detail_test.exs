@@ -45,6 +45,16 @@ defmodule OpenResultsWeb.TiebreakDetailTest do
     test "a row with no working field reads as empty, not an error" do
       assert Tournament.working_for_row(%{"player" => 1}) == %{}
     end
+
+    test "a team row's working - a bare list of parts, as OpenPairings sends it - keeps its parts" do
+      payload = SnapshotPayloads.team_round_robin()
+      [row | _] = Tournament.team_standings_rows(payload)
+      [{code, parts} | _] = Map.to_list(row["working"])
+      assert is_list(parts) and parts != []
+
+      assert %{^code => %{"total" => nil, "parts" => ^parts}} =
+               Tournament.team_working(payload, row["team"])
+    end
   end
 
   describe "a tiebreak this tournament published working for" do

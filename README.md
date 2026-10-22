@@ -76,6 +76,30 @@ field was added meant. A payload with no `display` map shows everything. Read
 either the other way and a change here would silently alter tournaments
 nobody touched.
 
+### The machine-readable contract: `priv/contracts/publish-v1/`
+
+Every route OpenPairings and Alnasl call on this server - the snapshot, the
+takedown, the claim check, the installation and slug handshake, relay keys,
+the entry queue and the live boards - is also written down as JSON Schema
+(draft-07), one file per message (`snapshot.request`, `live-board.request`,
+`error.response`, ...), with examples under `examples/` and the routes,
+credentials and headers in `examples/routes.json`. `index.json` lists every
+file. The prose in `docs/` stays the explanation; the schemas are what a test
+can hold both sides to.
+
+- `test/openresults_web/contracts/publish_v1_contract_test.exs` sends every
+  request example through the real router and requires it to be accepted,
+  checks every answer the controllers actually give against its schema, and
+  checks OpenPairings' own snapshot fixtures (`test/fixtures/`) against the
+  snapshot schema.
+- **A change to one of these routes updates the schema and the examples in
+  the same pull request.** Adding an optional field edits `publish-v1` in
+  place; anything a current sender would fail on is a new `publish-v2`
+  directory, kept beside v1 for as long as anybody still sends v1.
+- OpenPairings and Alnasl keep a byte-identical copy of this directory and
+  check it against `main` every day, so a change here turns their CI red
+  until they have looked at it. That is the point.
+
 ## The JavaScript
 
 There is no bundle, no socket and no request on load. Two inline scripts,

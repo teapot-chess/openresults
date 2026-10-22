@@ -1,0 +1,454 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://raw.githubusercontent.com/teapot-chess/openresults/main/priv/contracts/publish-v1/snapshot.request.schema.json",
+  "title": "Snapshot (POST /api/snapshots body)",
+  "description": "Sender: OpenPairings. The whole tournament as known at one moment, built by PairingsEngine.Snapshot.build/1 and sent as the JSON body of POST /api/snapshots. Headers: `Authorization: Bearer <operator ingest token | installation key orik_...>`, `X-OpenResults-Key: <the tournament's own key>` (optional until the slug is claimed; never inside the body, because the body is stored and served verbatim), `Content-Type: application/json`. OpenResults is LENIENT: it checks only the envelope (`schema`, `version`, `tournament.slug`) and stores everything else uninterpreted, so unknown fields are accepted anywhere (additionalProperties true throughout) and only the envelope is required. The other properties listed here are the ones OpenResults reads when it renders; when present they must have the type and vocabulary given. The prose specification is docs/snapshot-schema.md. Absent and null mean the same thing (not known) unless a description says otherwise. The same document, minus `publisher`, is what GET /api/tournaments/:slug and GET /api/tournaments/:slug/history answer.",
+  "type": "object",
+  "required": ["schema", "version", "tournament"],
+  "additionalProperties": true,
+  "properties": {
+    "schema": { "const": "openresults/snapshot" },
+    "version": {
+      "description": "Envelope version. Changes only for a break that cannot be expressed additively. Anything else is 422 unknown_version.",
+      "enum": [1]
+    },
+    "published_at": {
+      "description": "The publisher's clock, ISO 8601. Advisory: unparseable is ignored, the server stamps its own received_at.",
+      "type": ["string", "null"]
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "app": { "type": ["string", "null"] },
+        "version": { "type": ["string", "null"] }
+      }
+    },
+    "publisher": {
+      "description": "Hosted OpenPairings only, operator-token publishes only: the account that owns the tournament. A moderation contact; never served back on a public route.",
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "email": { "type": ["string", "null"] },
+        "host": { "type": ["string", "null"] }
+      }
+    },
+    "tournament": { "$ref": "#/definitions/tournament" },
+    "players": { "type": "array", "items": { "$ref": "#/definitions/player" } },
+    "rounds": {
+      "description": "PUBLISHED rounds only; an unpublished round is absent, not flagged.",
+      "type": "array",
+      "items": { "$ref": "#/definitions/round" }
+    },
+    "standings": { "$ref": "#/definitions/standings" },
+    "teams": { "type": "array", "items": { "$ref": "#/definitions/team" } },
+    "team_standings": { "$ref": "#/definitions/teamStandings" },
+    "board_stats": { "type": "array", "items": { "$ref": "#/definitions/boardStat" } }
+  },
+  "definitions": {
+    "nullableString": { "type": ["string", "null"] },
+    "nullableInteger": { "type": ["integer", "null"] },
+    "no": {
+      "description": "A tournament pairing number (TRF start number) - the only handle that identifies a player or a team anywhere in the document.",
+      "type": "integer"
+    },
+    "tournament": {
+      "type": "object",
+      "required": ["slug"],
+      "additionalProperties": true,
+      "properties": {
+        "slug": {
+          "description": "Required: what the snapshot is stored under. An installation key may only publish to a slug minted for it. Surrounding whitespace is trimmed; blank is 422 missing_slug.",
+          "$ref": "common.schema.json#/definitions/slug"
+        },
+        "name": { "$ref": "#/definitions/nullableString" },
+        "city": { "$ref": "#/definitions/nullableString" },
+        "federation": { "$ref": "#/definitions/nullableString" },
+        "start_date": { "description": "YYYY-MM-DD", "$ref": "#/definitions/nullableString" },
+        "end_date": { "description": "YYYY-MM-DD", "$ref": "#/definitions/nullableString" },
+        "rounds_count": { "$ref": "#/definitions/nullableInteger" },
+        "system": {
+          "description": "Keizer standings carry different columns; the renderer keys off this. A team Swiss is `swiss` with `team_event: true`.",
+          "enum": ["swiss", "roundrobin", "keizer"]
+        },
+        "arbiter": { "$ref": "#/definitions/nullableString" },
+        "deputy": { "$ref": "#/definitions/nullableString" },
+        "fide_rated": { "type": "boolean" },
+        "registration_open": { "description": "Absent means open.", "type": "boolean" },
+        "listed": { "description": "Absent means listed.", "type": "boolean" },
+        "live_boards": { "description": "Only an explicit true links the live boards.", "type": "boolean" },
+        "team_event": { "description": "Absent means an individual tournament.", "type": "boolean" },
+        "team_boards": { "description": "Boards per match, team events only.", "$ref": "#/definitions/nullableInteger" },
+        "match_format": { "type": "boolean" },
+        "tempo": { "$ref": "#/definitions/nullableString" },
+        "time_control": { "description": "The rate of play as the arbiter typed it.", "$ref": "#/definitions/nullableString" },
+        "time_control_minutes": {
+          "description": "Minutes on each clock at the start (first period), for the live boards' starting clock; null when unreadable.",
+          "$ref": "#/definitions/nullableInteger"
+        },
+        "categories": {
+          "description": "The category vocabulary, in the arbiter's order. Present only while categories are shown; never sent as [].",
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "display": {
+          "description": "The arbiter's public-display ticks, resolved: every key a boolean. `flags` reads absent as off; every other key absent as on (`rounds_played`, `performance`, `sex` start off on the arbiter's side).",
+          "type": "object",
+          "additionalProperties": { "type": "boolean" }
+        },
+        "hall": {
+          "description": "Hall display settings. Any key absent, out of range or of the wrong shape reads as its default.",
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "pairings": { "type": "boolean" },
+            "names": { "type": "boolean" },
+            "results": { "type": "boolean" },
+            "standings": { "type": "boolean" },
+            "live": { "type": "boolean" },
+            "standings_top": { "type": "integer" },
+            "page_seconds": { "type": "integer" },
+            "hold_new_round": { "type": "boolean" },
+            "announcement": { "type": "string" }
+          }
+        },
+        "registration": {
+          "description": "The entry form's own settings. For the restricting keys absent means no restriction; `list_public` absent means not listed.",
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "opens_at": { "description": "ISO 8601 instant, UTC.", "$ref": "#/definitions/nullableString" },
+            "closes_at": { "description": "ISO 8601 instant, UTC.", "$ref": "#/definitions/nullableString" },
+            "max_players": { "$ref": "#/definitions/nullableInteger" },
+            "taken": { "$ref": "#/definitions/nullableInteger" },
+            "list_public": { "type": "boolean" },
+            "fee": {
+              "type": "object",
+              "additionalProperties": true,
+              "properties": {
+                "amount": { "description": "Decimal string, at most two decimals.", "type": "string" },
+                "currency": { "description": "Three capital letters.", "type": "string" },
+                "note": { "type": "string" }
+              }
+            },
+            "pending": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["name"],
+                "additionalProperties": true,
+                "properties": { "name": { "type": "string" } }
+              }
+            }
+          }
+        },
+        "scoring": {
+          "description": "The point system, for explaining a figure only; nothing is added up from it.",
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "win": { "type": "number" },
+            "draw": { "type": "number" },
+            "loss": { "type": "number" },
+            "bye": { "type": "number" },
+            "forfeit_win": { "type": "number" },
+            "forfeit_loss": { "type": "number" },
+            "presence": { "type": ["number", "null"] }
+          }
+        },
+        "group": {
+          "description": "The event this tournament is one section of. A block not of this shape is read as absent, whole.",
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "id": { "type": "string", "pattern": "^[A-Za-z0-9_-]{6,64}$" },
+            "name": { "type": "string" },
+            "label": { "type": "string" },
+            "position": { "type": "integer", "minimum": 1 },
+            "siblings": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": true,
+                "properties": {
+                  "slug": { "type": "string" },
+                  "label": { "type": "string" },
+                  "name": { "type": "string" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "player": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "no": { "$ref": "#/definitions/no" },
+        "name": { "type": "string" },
+        "title": { "$ref": "#/definitions/nullableString" },
+        "rating": { "$ref": "#/definitions/nullableInteger" },
+        "federation": { "$ref": "#/definitions/nullableString" },
+        "fide_id": { "$ref": "#/definitions/nullableInteger" },
+        "club": { "$ref": "#/definitions/nullableString" },
+        "category": { "description": "The one category this player was paired by.", "$ref": "#/definitions/nullableString" },
+        "categories": { "type": "array", "items": { "type": "string" } },
+        "sex": { "enum": ["M", "F"] }
+      }
+    },
+    "round": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "number": { "type": "integer", "minimum": 1 },
+        "date": { "$ref": "#/definitions/nullableString" },
+        "results_public": {
+          "description": "Absent means true. false: the pairings are published and every result (and points, postponed flags) is withheld as null/absent.",
+          "type": "boolean"
+        },
+        "boards": { "type": "array", "items": { "$ref": "#/definitions/board" } },
+        "byes": { "type": "array", "items": { "$ref": "#/definitions/bye" } },
+        "matches": {
+          "description": "Team events only: one entry per match.",
+          "type": "array",
+          "items": { "$ref": "#/definitions/match" }
+        }
+      }
+    },
+    "board": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "board": {
+          "description": "The round-wide board number - also the key Alnasl's live updates use (`round`, `board`).",
+          "type": "integer",
+          "minimum": 1
+        },
+        "label": { "description": "The printed board label (team events: e.g. \"1.2\").", "type": "string" },
+        "white": { "$ref": "#/definitions/no" },
+        "black": { "$ref": "#/definitions/no" },
+        "result": {
+          "description": "null: not yet reported, postponed, or withheld (results_public false).",
+          "anyOf": [{ "$ref": "common.schema.json#/definitions/resultToken" }, { "type": "null" }]
+        },
+        "postponed": { "description": "Only ever true; absent means not postponed.", "const": true },
+        "pending": { "description": "Only ever true, beside result null; never with postponed.", "const": true },
+        "postponed_date": { "description": "YYYY-MM-DD, the agreed date.", "type": "string" },
+        "points": {
+          "description": "What each seat scored, in the tournament's own point system. Absent: no result and not postponed, withheld, or an older publisher.",
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "white": { "type": "number" },
+            "black": { "type": "number" }
+          }
+        },
+        "postponed_as": {
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "white": { "enum": ["win", "draw", "loss"] },
+            "black": { "enum": ["win", "draw", "loss"] }
+          }
+        }
+      }
+    },
+    "bye": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "player": { "$ref": "#/definitions/no" },
+        "kind": {
+          "description": "OPEN vocabulary, rendered verbatim when unknown: pairing-allocated, half-point, zero-point, full-point, absent, vacated-seat, not-joined, not-paired.",
+          "type": "string"
+        },
+        "points": { "type": "number" },
+        "result": {
+          "description": "vacated-seat rows only.",
+          "$ref": "common.schema.json#/definitions/resultToken"
+        }
+      }
+    },
+    "pair": {
+      "type": ["object", "null"],
+      "additionalProperties": true,
+      "properties": {
+        "a": { "type": ["number", "null"] },
+        "b": { "type": ["number", "null"] }
+      }
+    },
+    "match": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "number": { "type": "integer" },
+        "team_a": { "$ref": "#/definitions/no" },
+        "team_b": { "description": "null on a bye.", "$ref": "#/definitions/nullableInteger" },
+        "bye": { "type": "boolean" },
+        "board1_white_team": {
+          "description": "The team `no` with White on board 1 (and every odd board). On a bye match OpenPairings sends `false` (no board 1 to have White on); OpenResults reads any non-integer as absent and falls back to team_a.",
+          "anyOf": [{ "type": "integer" }, { "const": false }, { "type": "null" }]
+        },
+        "boards": { "type": "array", "items": { "type": "integer" } },
+        "board_positions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true,
+            "properties": {
+              "board": { "type": "integer" },
+              "k": { "type": "integer", "minimum": 1 }
+            }
+          }
+        },
+        "game_points": { "$ref": "#/definitions/pair" },
+        "match_points": { "$ref": "#/definitions/pair" },
+        "forfeit_decision": {
+          "type": ["object", "null"],
+          "additionalProperties": true,
+          "properties": { "to": { "$ref": "#/definitions/no" } }
+        },
+        "postponed_boards": { "type": "integer", "minimum": 1 },
+        "double_forfeit": { "const": true }
+      }
+    },
+    "tiebreakDecl": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "code": { "type": "string" },
+        "label": { "type": "string" }
+      }
+    },
+    "workingPart": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "round": { "type": "integer" },
+        "opponent": { "description": "Absent when there is nobody to name.", "$ref": "#/definitions/no" },
+        "value": { "type": "number" },
+        "kind": {
+          "description": "Absent means played. cut and excluded are sent but not counted in the total.",
+          "enum": ["played", "virtual", "cut", "excluded"]
+        }
+      }
+    },
+    "working": {
+      "description": "Individual standings: per tie-break code, a total and its per-round parts.",
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "total": { "type": ["number", "null"] },
+          "parts": { "type": "array", "items": { "$ref": "#/definitions/workingPart" } }
+        }
+      }
+    },
+    "standings": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "after_round": { "$ref": "#/definitions/nullableInteger" },
+        "manual_order": { "type": "boolean" },
+        "manual_incomplete": { "type": "boolean" },
+        "manual_stale": { "type": "boolean" },
+        "provisional": { "type": "boolean" },
+        "postponed_games": { "type": "integer" },
+        "pending_games": { "type": "integer" },
+        "tiebreaks_withheld": { "type": "boolean" },
+        "tiebreaks": { "type": "array", "items": { "$ref": "#/definitions/tiebreakDecl" } },
+        "rows": {
+          "description": "In the arbiter's order, rendered as sent; this server never ranks.",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true,
+            "properties": {
+              "rank": { "$ref": "#/definitions/nullableInteger" },
+              "player": { "$ref": "#/definitions/no" },
+              "points": { "type": "number" },
+              "tiebreaks": {
+                "description": "Positional against standings.tiebreaks.",
+                "type": "array",
+                "items": { "type": ["number", "null"] }
+              },
+              "working": { "$ref": "#/definitions/working" },
+              "category": { "$ref": "#/definitions/nullableString" },
+              "uncounted": { "const": true },
+              "rounds_played": { "type": "integer" },
+              "performance": { "type": "integer" },
+              "value": { "description": "Keizer only.", "type": "number" },
+              "score": { "description": "Keizer only: the game score.", "type": "number" }
+            }
+          }
+        }
+      }
+    },
+    "team": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "no": { "$ref": "#/definitions/no" },
+        "name": { "type": "string" },
+        "short_name": { "$ref": "#/definitions/nullableString" },
+        "captain": { "$ref": "#/definitions/nullableString" },
+        "players": { "type": "array", "items": { "$ref": "#/definitions/no" } },
+        "rating": { "$ref": "#/definitions/nullableInteger" }
+      }
+    },
+    "teamStandings": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "after_round": { "$ref": "#/definitions/nullableInteger" },
+        "tiebreaks": { "type": "array", "items": { "$ref": "#/definitions/tiebreakDecl" } },
+        "rows": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true,
+            "properties": {
+              "rank": { "$ref": "#/definitions/nullableInteger" },
+              "team": { "$ref": "#/definitions/no" },
+              "mp": { "type": "number" },
+              "gp": { "type": "number" },
+              "tiebreaks": { "type": "array", "items": { "type": ["number", "null"] } },
+              "working": {
+                "description": "UNLIKE the individual table: per tie-break code, a bare LIST of parts with no total - that is what OpenPairings sends. The {total, parts} object is accepted too.",
+                "type": "object",
+                "additionalProperties": {
+                  "anyOf": [
+                    { "type": "array", "items": { "$ref": "#/definitions/workingPart" } },
+                    {
+                      "type": "object",
+                      "additionalProperties": true,
+                      "properties": {
+                        "total": { "type": ["number", "null"] },
+                        "parts": { "type": "array", "items": { "$ref": "#/definitions/workingPart" } }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "boardStat": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "player": { "$ref": "#/definitions/no" },
+        "team": { "$ref": "#/definitions/no" },
+        "board": { "type": "integer" },
+        "games": { "type": "integer" },
+        "points": { "type": "number" },
+        "percentage": { "type": ["number", "null"] },
+        "performance": { "$ref": "#/definitions/nullableInteger" }
+      }
+    }
+  }
+}

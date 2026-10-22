@@ -1,0 +1,16 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://raw.githubusercontent.com/teapot-chess/openresults/main/priv/contracts/publish-v1/live-board-batch.request.schema.json",
+  "title": "Several live boards (POST /api/tournaments/:slug/live body, batch form)",
+  "description": "No current sender (Alnasl sends one board per request; mix openresults.live_sim may batch). Same route and headers as live-board.request.schema.json. A body with a `boards` key is a batch: at most 64 items, else 422 invalid_request for the whole request. Each item is judged on its own and answered in order (live-board-batch.response.schema.json).",
+  "type": "object",
+  "required": ["boards"],
+  "additionalProperties": true,
+  "properties": {
+    "boards": {
+      "type": "array",
+      "maxItems": 64,
+      "items": { "$ref": "live-board.request.schema.json" }
+    }
+  }
+}

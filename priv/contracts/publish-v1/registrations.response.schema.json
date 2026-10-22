@@ -1,0 +1,58 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://raw.githubusercontent.com/teapot-chess/openresults/main/priv/contracts/publish-v1/registrations.response.schema.json",
+  "title": "Entry queue (GET /api/tournaments/:slug/registrations, 200)",
+  "description": "Reader: OpenPairings, pulling what the public entry form collected - the one payload that travels back. Request: no body; Authorization as for a publish (an installation key only for its own tournament); X-OpenResults-Key the tournament's key once claimed. The only route that returns email addresses. Oldest first. Refusals: 401 unauthorized; 403 key_required, key_mismatch, not_owner.",
+  "type": "object",
+  "required": ["schema", "version", "tournament_slug", "registrations"],
+  "properties": {
+    "schema": { "const": "openresults/registration-list" },
+    "version": { "const": 1 },
+    "tournament_slug": { "type": "string" },
+    "registrations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "received_at", "payload"],
+        "properties": {
+          "id": { "description": "Stable per entry; what the puller de-duplicates on.", "type": "integer" },
+          "received_at": { "description": "This server's clock (the payload's own received_at is the submitter's claim).", "type": "string", "format": "date-time" },
+          "payload": { "$ref": "#/definitions/registration" }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false,
+  "definitions": {
+    "registration": {
+      "description": "One entry as the form stored it (OpenResults.Registrations.Entry.to_payload/3). Empty fields are left out rather than sent as null or [].",
+      "type": "object",
+      "required": ["schema", "version", "received_at", "tournament_slug", "player"],
+      "properties": {
+        "schema": { "const": "openresults/registration" },
+        "version": { "const": 1 },
+        "received_at": { "type": "string", "format": "date-time" },
+        "tournament_slug": { "type": "string" },
+        "player": {
+          "type": "object",
+          "required": ["name"],
+          "properties": {
+            "name": { "type": "string" },
+            "email": { "type": "string" },
+            "rating": { "type": "integer" },
+            "federation": { "type": "string" },
+            "fide_id": { "type": "integer" },
+            "club": { "type": "string" },
+            "title": { "type": "string" },
+            "birth_year": { "type": "integer" },
+            "national_id": { "description": "A STRING: an identifier, not a quantity (KBSB G licences are negative, other federations use letters).", "type": "string" },
+            "requested_byes": { "description": "Round numbers.", "type": "array", "items": { "type": "integer" }, "minItems": 1 }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

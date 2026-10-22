@@ -1,0 +1,18 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://raw.githubusercontent.com/teapot-chess/openresults/main/priv/contracts/publish-v1/snapshot.response.schema.json",
+  "title": "Snapshot accepted (POST /api/snapshots, 200)",
+  "description": "Reader: OpenPairings. The answer to an accepted publish, including a byte-identical repeat (which stores nothing new and answers with the existing row). Refusals are error.response.schema.json: 401 unauthorized; 403 key_required, key_mismatch, not_owner, tournament_hidden, installation_suspended, installation_revoked, address_blocked; 410 tournament_deleted; 413 snapshot_too_large (with limit_bytes); 422 not_an_object, wrong_schema, unknown_version, missing_slug, invalid; 429 rate_limited; 503 publishing_paused, storage_low.",
+  "type": "object",
+  "required": ["status", "slug", "received_at"],
+  "properties": {
+    "status": { "const": "ok" },
+    "slug": { "$ref": "common.schema.json#/definitions/slug" },
+    "received_at": {
+      "description": "The server's clock when the stored row was received, ISO 8601 UTC (microseconds).",
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "additionalProperties": false
+}

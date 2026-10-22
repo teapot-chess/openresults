@@ -1,0 +1,18 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://raw.githubusercontent.com/teapot-chess/openresults/main/priv/contracts/publish-v1/error.response.schema.json",
+  "title": "Error body",
+  "description": "The body of every non-2xx answer from a publish-v1 route (OpenPairings and Alnasl both read it). Dispatch on `error`; `detail` is an English sentence for logs and may be reworded at any time. The HTTP status for each code is fixed (see docs/public-publishing.md, \"Error bodies\"). Two answers are NOT this shape: a route this server does not have (Phoenix's own 404, no `error` code - an OpenResults too old for the route), and a body over the parser's size limit (413 from Plug.Parsers). A 429 and storage_low also carry a Retry-After header.",
+  "type": "object",
+  "required": ["error", "detail"],
+  "properties": {
+    "error": { "$ref": "common.schema.json#/definitions/errorCode" },
+    "detail": { "type": "string" },
+    "retry_after": { "$ref": "common.schema.json#/definitions/errorExtras/properties/retry_after" },
+    "limit": { "$ref": "common.schema.json#/definitions/errorExtras/properties/limit" },
+    "limit_bytes": { "$ref": "common.schema.json#/definitions/errorExtras/properties/limit_bytes" },
+    "ply": { "$ref": "common.schema.json#/definitions/errorExtras/properties/ply" },
+    "slug": { "$ref": "common.schema.json#/definitions/errorExtras/properties/slug" }
+  },
+  "additionalProperties": false
+}

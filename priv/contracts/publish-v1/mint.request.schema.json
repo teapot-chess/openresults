@@ -1,0 +1,8 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://raw.githubusercontent.com/teapot-chess/openresults/main/priv/contracts/publish-v1/mint.request.schema.json",
+  "title": "Mint a tournament slug (POST /api/tournaments body)",
+  "description": "Sender: OpenPairings in public mode. Authorization: Bearer <installation key>; the operator token is 403 installation_key_required. The body is {} and nothing in it is read - there is deliberately no way to ask for a name.",
+  "type": "object",
+  "additionalProperties": true
+}

@@ -1,0 +1,15 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://raw.githubusercontent.com/teapot-chess/openresults/main/priv/contracts/publish-v1/claim.response.schema.json",
+  "title": "Claim check (GET /api/tournaments/:slug/claim, 200)",
+  "description": "Reader: hosted OpenPairings, before adopting a tournament key from a backup file. Request: no body; Authorization: Bearer <operator ingest token> (an installation key gets the anonymous 401); X-OpenResults-Key: the key to check. A read; it never claims. Refusals: 401 unauthorized; 403 key_required (claimed, no key sent), key_mismatch (claimed with another key); 410 tournament_deleted.",
+  "type": "object",
+  "required": ["claim"],
+  "properties": {
+    "claim": {
+      "description": "tournament_key: the slug is claimed with exactly the presented key. unclaimed: nobody has claimed the slug, whatever was presented.",
+      "enum": ["tournament_key", "unclaimed"]
+    }
+  },
+  "additionalProperties": false
+}

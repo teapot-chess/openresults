@@ -1,0 +1,85 @@
+{
+  "schema": "openresults/snapshot",
+  "version": 1,
+  "published_at": "2026-03-01T20:00:00Z",
+  "source": { "app": "openpairings", "version": "0.101.3" },
+  "tournament": {
+    "slug": "contract-team-swiss-2026",
+    "name": "Contract Team Swiss 2026",
+    "city": "Antwerp",
+    "federation": "BEL",
+    "start_date": "2026-03-01",
+    "end_date": "2026-03-01",
+    "rounds_count": 3,
+    "system": "swiss",
+    "team_event": true,
+    "team_boards": 2,
+    "fide_rated": false,
+    "registration_open": false,
+    "listed": true
+  },
+  "players": [
+    { "no": 1, "name": "Alpha, Anna", "rating": 2000 },
+    { "no": 2, "name": "Bravo, Bart", "rating": 1900 },
+    { "no": 3, "name": "Charlie, Chris", "rating": 1800 },
+    { "no": 4, "name": "Delta, Dirk", "rating": 1700 }
+  ],
+  "teams": [
+    { "no": 1, "name": "Antwerp Knights", "short_name": null, "captain": "A. Captain", "players": [1, 2], "rating": 1950 },
+    { "no": 2, "name": "Ghent Rooks", "short_name": "GR", "captain": null, "players": [3, 4], "rating": 1750 },
+    { "no": 3, "name": "Bruges Bishops", "short_name": null, "captain": null, "players": [], "rating": null }
+  ],
+  "rounds": [
+    {
+      "number": 1,
+      "date": "2026-03-01",
+      "results_public": true,
+      "boards": [
+        { "board": 1, "label": "1.1", "white": 1, "black": 3, "result": "1-0", "points": { "white": 1.0, "black": 0.0 } },
+        { "board": 2, "label": "1.2", "white": 4, "black": 2, "result": "1/2-1/2", "points": { "white": 0.5, "black": 0.5 } }
+      ],
+      "byes": [],
+      "matches": [
+        {
+          "number": 1,
+          "team_a": 1,
+          "team_b": 2,
+          "bye": false,
+          "board1_white_team": 1,
+          "boards": [1, 2],
+          "board_positions": [{ "board": 1, "k": 1 }, { "board": 2, "k": 2 }],
+          "game_points": { "a": 1.5, "b": 0.5 },
+          "match_points": { "a": 2.0, "b": 0.0 },
+          "forfeit_decision": null
+        },
+        {
+          "number": 2,
+          "team_a": 3,
+          "team_b": null,
+          "bye": true,
+          "board1_white_team": false,
+          "boards": [],
+          "board_positions": [],
+          "game_points": { "a": 1.0, "b": null },
+          "match_points": { "a": 1.0, "b": null },
+          "forfeit_decision": null
+        }
+      ]
+    }
+  ],
+  "team_standings": {
+    "after_round": 1,
+    "tiebreaks": [{ "code": "SB", "label": "Sonneborn-Berger" }],
+    "rows": [
+      { "rank": 1, "team": 1, "mp": 2.0, "gp": 1.5, "tiebreaks": [0.0], "working": { "SB": [{ "round": 1, "opponent": 2, "value": 0.0 }] } },
+      { "rank": 2, "team": 3, "mp": 1.0, "gp": 1.0, "tiebreaks": [0.0], "working": { "SB": [{ "round": 1, "value": 0.0, "kind": "virtual" }] } },
+      { "rank": 3, "team": 2, "mp": 0.0, "gp": 0.5, "tiebreaks": [0.0], "working": { "SB": [{ "round": 1, "opponent": 1, "value": 0.0 }] } }
+    ]
+  },
+  "board_stats": [
+    { "player": 1, "team": 1, "board": 1, "games": 1, "points": 1.0, "percentage": 100.0, "performance": null },
+    { "player": 2, "team": 1, "board": 2, "games": 1, "points": 0.5, "percentage": 50.0, "performance": null },
+    { "player": 3, "team": 2, "board": 1, "games": 1, "points": 0.0, "percentage": 0.0, "performance": null },
+    { "player": 4, "team": 2, "board": 2, "games": 1, "points": 0.5, "percentage": 50.0, "performance": null }
+  ]
+}

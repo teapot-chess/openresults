@@ -1,0 +1,5 @@
+{
+  "schema": "openresults/snapshot",
+  "version": 1,
+  "tournament": { "slug": "contract-minimal-2026" }
+}

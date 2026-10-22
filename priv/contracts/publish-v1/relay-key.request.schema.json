@@ -1,0 +1,14 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://raw.githubusercontent.com/teapot-chess/openresults/main/priv/contracts/publish-v1/relay-key.request.schema.json",
+  "title": "Ask for a relay key (POST /api/tournaments/:slug/relay-keys body)",
+  "description": "Sender: OpenPairings, for its hall box (Alnasl). Same credentials as a publish: Authorization: Bearer <operator ingest token | owning installation key> (a relay key is the anonymous 401), X-OpenResults-Key: the tournament's key once claimed. Asking again under the same label ROTATES: the publisher's earlier key under that label is revoked. Extra fields are ignored. DELETE on the same path (optional ?label=) revokes the publisher's keys; see relay-key-revoke.response.schema.json.",
+  "type": "object",
+  "additionalProperties": true,
+  "properties": {
+    "label": {
+      "description": "Optional; control characters become spaces, trimmed, at most 80 characters kept. Blank or absent means \"publisher\".",
+      "type": "string"
+    }
+  }
+}

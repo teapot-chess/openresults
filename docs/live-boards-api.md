@@ -15,6 +15,11 @@ arbiter has published; this API says what is on the board right now. They are
 joined by `(round, board)` when a page is drawn. A game is shown only if its
 board is in the published snapshot.
 
+The JSON Schema for the body and every answer below is in
+`priv/contracts/publish-v1/` (`live-board.request`, `live-board.response`,
+the batch pair, `error.response`); a change here changes those in the same
+pull request.
+
 ## One request
 
 ```

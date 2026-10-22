@@ -1,0 +1,49 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://raw.githubusercontent.com/teapot-chess/openresults/main/priv/contracts/publish-v1/live-board.request.schema.json",
+  "title": "One live board (POST /api/tournaments/:slug/live body)",
+  "description": "Sender: Alnasl (Alnasl.Games.body/3 via Alnasl.Outbox), one board per request. Headers: Authorization: Bearer <relay key orrk_... | operator ingest token | owning installation key>; X-OpenResults-Key: the tournament's key once claimed, NOT with a relay key; Content-Type: application/json. The tournament must have published and the (round, board) must be in its current snapshot (409 board_not_published). Keyed by (slug, round, board) and decided by ply count, so a resend is always safe. Unknown fields are ignored (additionalProperties true). Prose: docs/live-boards-api.md. Several boards at once: live-board-batch.request.schema.json.",
+  "type": "object",
+  "required": ["round", "board"],
+  "anyOf": [{ "required": ["moves"] }, { "required": ["fen"] }],
+  "additionalProperties": true,
+  "properties": {
+    "round": { "description": "The snapshot's round number.", "type": "integer", "minimum": 1, "maximum": 999 },
+    "board": {
+      "description": "The board number as the snapshot numbers it (rounds[].boards[].board): in a team event the round-wide number, not the board within the match.",
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 9999
+    },
+    "moves": {
+      "description": "The WHOLE game so far, every time: SAN, from the start position or from start_fen. Read leniently (missing x or +/#, 0-0, e8Q, unneeded disambiguation); stored canonically. Each 2-12 bytes.",
+      "type": "array",
+      "maxItems": 700,
+      "items": { "type": "string", "minLength": 2, "maxLength": 12 }
+    },
+    "fen": {
+      "description": "The current position. With moves, a check they agree (422 fen_mismatch); alone, the game is shown without a move list and ply is required.",
+      "type": "string",
+      "maxLength": 120
+    },
+    "ply": {
+      "description": "PLIES (half-moves) played, not full moves. Required with fen alone; with moves it must equal their count (422 ply_mismatch).",
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 1400
+    },
+    "start_fen": { "description": "For a game not from the standard position. No Chess960 castling.", "type": "string", "maxLength": 120 },
+    "white_ms": { "description": "White's clock in MILLISECONDS as it reads at the moment of this report.", "type": "integer", "minimum": 0, "maximum": 864000000 },
+    "black_ms": { "description": "Black's clock in milliseconds, likewise.", "type": "integer", "minimum": 0, "maximum": 864000000 },
+    "running": {
+      "description": "Whose clock runs: white, black, or none / null when neither. \"stopped\" is accepted as a synonym of none. Absent leaves the held value alone.",
+      "enum": ["white", "black", "none", "stopped", null]
+    },
+    "status": { "description": "Default live. A game reported finished stays finished.", "enum": ["live", "finished"] },
+    "result": {
+      "description": "The relay's suggestion, shown as provisional; only meaningful with status finished. The published result always wins.",
+      "enum": ["1-0", "0-1", "1/2-1/2", "*", null]
+    },
+    "replace": { "description": "true: a full resend that replaces whatever is held, whatever its ply.", "type": "boolean" }
+  }
+}

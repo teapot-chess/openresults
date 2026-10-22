@@ -1,0 +1,18 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://raw.githubusercontent.com/teapot-chess/openresults/main/priv/contracts/publish-v1/live-board.response.schema.json",
+  "title": "Live board stored (POST /api/tournaments/:slug/live, single board, 200)",
+  "description": "Reader: Alnasl. 200 also for an update older than what is held (applied false, reason older_than_stored): a late retry never undoes a newer move. Refusals (error.response.schema.json): 401 unauthorized; 403 key_required, key_mismatch, not_owner, tournament_hidden, installation_suspended, installation_revoked, address_blocked, relay_key_revoked, relay_key_wrong_tournament, owner_suspended, owner_revoked; 404 tournament_not_published; 409 moves_conflict, board_not_published, live_game_limit (with limit); 422 invalid_request, invalid_fen, invalid_moves (with ply), ply_mismatch, fen_mismatch; 429 rate_limited; 503 publishing_paused, storage_low (with retry_after). A 409 is NOT always moves_conflict: dispatch on `error`.",
+  "type": "object",
+  "required": ["status", "applied", "ply"],
+  "properties": {
+    "status": { "const": "ok" },
+    "applied": { "type": "boolean" },
+    "ply": { "description": "Plies (half-moves) now held for the board.", "type": "integer", "minimum": 0 },
+    "reason": { "description": "Only when applied is false.", "const": "older_than_stored" }
+  },
+  "if": { "properties": { "applied": { "const": false } } },
+  "then": { "required": ["reason"] },
+  "else": { "not": { "required": ["reason"] } },
+  "additionalProperties": false
+}

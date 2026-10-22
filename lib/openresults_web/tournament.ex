@@ -1177,6 +1177,13 @@ defmodule OpenResultsWeb.Tournament do
     }
   end
 
+  # The team table's shape: OpenPairings sends a team tie-break's working as
+  # the bare list of parts, no total, and always has. Read as an object it was
+  # a working of nothing, which nobody noticed because nothing renders it yet.
+  # The total is the row's own `tiebreaks` figure; it is not added up here.
+  defp normalise_working(parts) when is_list(parts),
+    do: %{"total" => nil, "parts" => Enum.filter(parts, &is_map/1)}
+
   defp normalise_working(_not_a_map), do: %{"total" => nil, "parts" => []}
 
   @doc """
