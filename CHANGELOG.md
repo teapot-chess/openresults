@@ -27,6 +27,8 @@ Each entry is tagged so a version can be skimmed:
 
 ## [Unreleased]
 
+- [Security] **Bandit 1.14.1 and phoenix_html 4.4.0.** Bandit 1.13.1 let HTTP/2 requests built for it eat memory (EEF-CVE-2026-116078 and friends); phoenix_html 4.3.0 picked up a medium advisory (EEF-CVE-2026-117645). Both closed.
+
 ## [0.29.0] - 2026-10-22
 
 - [Feature] **Live pages can be paused.** A page that rewrites itself every twenty seconds is, strictly, a page that moves under a screen reader's cursor and a reader's eyes, and the accessibility guidelines would like you to be able to say stop. A "Pause live updates" button now sits in the footer of every page that updates by itself. Paused, the page still listens but nothing is applied, and the footer keeps count ("Paused - 3 updates waiting"); resuming applies the latest state once, not three times. The choice is remembered in the visitor's browser, in Dutch (je) and French too.
