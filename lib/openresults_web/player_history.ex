@@ -3,11 +3,14 @@ defmodule OpenResultsWeb.PlayerHistory do
   One player's appearances across every tournament this server has published,
   matched by FIDE id.
 
-  Nothing here is stored. It is assembled on every request from
-  `OpenResults.Snapshots.list_current/0` - one row per tournament this server
-  currently holds - the same source the front page reads. There is no
-  identity table and no cross-tournament player record: the FIDE id IS the
-  join key, read straight out of `players[].fide_id` in each snapshot.
+  Read from the results index (`OpenResults.ResultsIndex`): one indexed
+  query on `player_appearances`, rather than walking the current snapshot of
+  every tournament on the server, which is what this did until the server
+  held enough tournaments for that to hurt. The index holds copies of the
+  same fields, after the same display rules this module used to apply
+  itself - so everything below still holds, it is merely decided once at
+  publish time instead of on every request. There is still no identity
+  table and no cross-tournament player record: the FIDE id IS the join key.
 
   ## Why FIDE id and never a name
 
@@ -48,8 +51,15 @@ defmodule OpenResultsWeb.PlayerHistory do
   extends everywhere else on the site.
 
   **A taken-down tournament.** Not filtered here at all: `Takedown.purge/1`
-  deletes every row for the slug, so it is simply absent from
-  `list_current/0` and never reaches this module.
+  deletes its index rows with everything else, so it never reaches this
+  module.
+
+  **A name that is not this player's.** An appearance whose published name
+  does not match the FIDE list's name for the id - a mistyped id - stays off
+  the page. See `OpenResults.ResultsIndex.NameMatch` for the rule, which errs
+  towards keeping a result.
+
+  **A suppressed id.** The player asked for this page to go; it has none.
 
   Nothing is computed that was not already sent. A placing and a points total
   are read straight off `standings.rows`, the same fields the standings page
@@ -58,8 +68,7 @@ defmodule OpenResultsWeb.PlayerHistory do
   disagree.
   """
 
-  alias OpenResults.Snapshots
-  alias OpenResultsWeb.Tournament
+  alias OpenResults.ResultsIndex
 
   @type entry :: %{
           slug: String.t(),
@@ -69,77 +78,53 @@ defmodule OpenResultsWeb.PlayerHistory do
           end_date: String.t() | nil,
           player_no: integer(),
           player_name: String.t() | nil,
+          rating: integer() | nil,
           rank: integer() | nil,
           points: number() | nil,
           total: non_neg_integer() | nil,
+          performance: integer() | nil,
           linkable?: boolean()
         }
 
   @doc """
-  Every published, listed tournament whose player list carries `fide_id`,
+  The FIDE list's row for `fide_id` (or `nil`) and every published, listed,
+  approved tournament whose player list carries it under a matching name,
   newest first by start date.
 
   `fide_id` is expected to already be a positive integer - see
   `OpenResultsWeb.PlayerHistoryController` for where a path parameter is
   parsed and rejected before it reaches here.
   """
-  @spec for_fide_id(integer()) :: [entry()]
-  def for_fide_id(fide_id) when is_integer(fide_id) do
-    [listed_only: true]
-    |> Snapshots.list_current()
-    |> Enum.filter(&Tournament.listed?(&1.payload))
-    |> Enum.map(&entry_for(&1.payload, fide_id))
-    |> Enum.reject(&is_nil/1)
-    |> Enum.sort_by(&sort_key/1, :desc)
+  @spec load(integer()) :: %{listed: map() | nil, entries: [entry()]}
+  def load(fide_id) when is_integer(fide_id) do
+    %{listed: listed, appearances: appearances} = ResultsIndex.player(fide_id)
+    %{listed: listed, entries: Enum.map(appearances, &entry/1)}
   end
 
+  @doc "`load/1`'s entries alone."
+  @spec for_fide_id(integer()) :: [entry()]
+  def for_fide_id(fide_id) when is_integer(fide_id), do: load(fide_id).entries
   def for_fide_id(_not_a_fide_id), do: []
 
-  defp entry_for(payload, fide_id) do
-    case Enum.find(Tournament.players(payload), &(Map.get(&1, "fide_id") == fide_id)) do
-      nil -> nil
-      player -> build(payload, player)
-    end
-  end
-
-  defp build(payload, player) do
-    info = Tournament.info(payload)
-    no = Map.get(player, "no")
-
-    # `standings_row/2` is only consulted when the arbiter allows it - the
-    # same tick `Tournament.card/2`'s opponent totals already honour. A row
-    # that exists in the payload but is switched off here must read exactly
-    # like a row that was never sent.
-    row = Tournament.show?(payload, "standings") && Tournament.standings_row(payload, no)
-
+  defp entry(appearance) do
     %{
-      slug: Map.get(info, "slug"),
-      name: Tournament.name(payload),
-      city: Tournament.show?(payload, "city") && string(info, "city"),
-      start_date: string(info, "start_date"),
-      end_date: string(info, "end_date"),
-      player_no: no,
-      player_name: Map.get(player, "name"),
-      # Not counted (C.05 6.6) is not a place: the entry reads as one the
-      # tournament did not rank.
-      rank: if(row && not Tournament.uncounted?(row), do: Map.get(row, "rank")),
-      points: row && Map.get(row, "points"),
-      total: row && Tournament.ranked_total(payload),
-      linkable?: Tournament.show?(payload, "player_cards")
+      slug: appearance.slug,
+      name: appearance.tournament_name,
+      city: appearance.city,
+      start_date: if(appearance.dates_shown, do: appearance.start_date),
+      end_date: if(appearance.dates_shown, do: appearance.end_date),
+      player_no: appearance.no,
+      player_name: appearance.name,
+      rating: appearance.rating,
+      rank: appearance.rank,
+      points: appearance.points && normalise(appearance.points),
+      total: appearance.ranked_total,
+      performance: appearance.performance,
+      linkable?: appearance.card_linkable
     }
   end
 
-  # Chronological, most recent first. `start_date` is an ISO date string, so
-  # lexical order is chronological order; an absent one falls to the end
-  # rather than sorting first, which a bare `nil` or `""` would do against
-  # real dates.
-  defp sort_key(%{start_date: date}) when is_binary(date) and date != "", do: date
-  defp sort_key(_no_date), do: ""
-
-  defp string(map, key) do
-    case Map.get(map, key) do
-      value when is_binary(value) and value != "" -> value
-      _absent_or_blank -> nil
-    end
-  end
+  # Points are stored as a float; 2.0 reads back as 2, as it was sent.
+  defp normalise(points) when points == trunc(points), do: trunc(points)
+  defp normalise(points), do: points
 end

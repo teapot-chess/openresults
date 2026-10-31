@@ -6874,3 +6874,148 @@ button.lb-move:hover {
     padding-right: 0.3rem;
   }
 }
+
+/* ---- the results hub ----
+
+   The front page, the federation listings, search and the player pages
+   (`OpenResultsWeb.HubHTML`). Plain links and one GET form, so all of it
+   works with the scripts switched off. */
+.hub-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1.25rem;
+  margin: 0.75rem 0 0.5rem;
+  font-size: 0.9375rem;
+}
+
+.hub-nav a {
+  text-decoration: none;
+  border-bottom: 2px solid transparent;
+  padding-bottom: 0.125rem;
+  transition: border-color 120ms ease;
+}
+
+.hub-nav a:hover,
+.hub-nav a[aria-current="page"] {
+  border-bottom-color: var(--accent);
+}
+
+.hub-nav a[aria-current="page"] {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.hub-search {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.5rem;
+  max-width: 34rem;
+  margin: 0.5rem 0 1.25rem;
+}
+
+.hub-search .fieldset {
+  flex: 1 1 16rem;
+  margin: 0;
+}
+
+.hub-search label {
+  display: block;
+}
+
+.hub-search .label {
+  display: block;
+  font-size: 0.8125rem;
+  color: var(--quiet);
+  margin-bottom: 0.25rem;
+}
+
+.hub-search-button {
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  background: var(--accent);
+  color: var(--panel);
+  font: inherit;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: filter 120ms ease, transform 120ms ease;
+}
+
+.hub-search-button:hover {
+  filter: brightness(1.1);
+}
+
+.hub-search-button:active {
+  transform: translateY(1px);
+}
+
+.badge-unapproved {
+  display: inline-block;
+  margin-left: 0.5rem;
+  padding: 0 0.45rem;
+  border: 1px dashed var(--withheld);
+  border-radius: 999px;
+  color: var(--withheld);
+  font-size: 0.75rem;
+  font-weight: 400;
+  vertical-align: 0.1em;
+}
+
+.federation-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(10.5rem, 1fr));
+  gap: 0.5rem;
+}
+
+.federation-list a {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  background: var(--panel);
+  text-decoration: none;
+  transition: border-color 120ms ease, transform 120ms ease;
+}
+
+.federation-list a:hover {
+  border-color: var(--accent);
+  transform: translateY(-1px);
+}
+
+.federation-code {
+  font-weight: 600;
+}
+
+.federation-list .quiet {
+  margin-left: auto;
+  font-size: 0.8125rem;
+}
+
+.pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.25rem;
+  margin: 1rem 0;
+}
+
+.hub-note {
+  color: var(--quiet);
+  font-size: 0.875rem;
+  margin: 0.5rem 0;
+}
+
+.hub-more {
+  margin: 1.5rem 0 0.5rem;
+}
+
+.player-rating strong {
+  font-variant-numeric: tabular-nums;
+}

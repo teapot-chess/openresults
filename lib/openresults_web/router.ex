@@ -188,6 +188,16 @@ defmodule OpenResultsWeb.Router do
     # no slug, for `Revalidate` to key an ETag against.
     get "/players/:fide_id", PlayerHistoryController, :show
 
+    # The results hub: every federation with a tournament here, one
+    # federation's listing and archive, and search across tournaments and
+    # players - all read from `OpenResults.ResultsIndex`. Here rather than
+    # behind `Revalidate` for the player page's reason: no slug. The two
+    # listings cache themselves per federation (`OpenResultsWeb.HubCache`);
+    # search is rate-limited instead. See `OpenResultsWeb.HubController`.
+    get "/federations", HubController, :federations
+    get "/f/:code", HubController, :federation
+    get "/search", HubController, :search
+
     # An event: the tournaments that are sections of it, as cards. `:id` is
     # the random id the arbiter's app minted for the group, not a slug - so
     # `Visibility` and `Revalidate` have nothing to key on, and the page is
@@ -460,6 +470,15 @@ defmodule OpenResultsWeb.Router do
     post "/address-blocks/:id/unblock", AddressBlockController, :unblock
 
     get "/action-log", ActionLogController, :index
+
+    # Player pages: the ones hidden at a player's request, and the
+    # appearances whose name does not match their FIDE id. Hiding and
+    # restoring are confirmed pairs like everything else here.
+    get "/players", PlayerController, :index
+    get "/players/hide", PlayerController, :confirm_hide
+    post "/players/hide", PlayerController, :hide
+    get "/players/:fide_id/restore", PlayerController, :confirm_restore
+    post "/players/:fide_id/restore", PlayerController, :restore
 
     # Read-only, and cheap to open: see `OpenResults.Stats`.
     get "/stats", StatsController, :show

@@ -1,0 +1,75 @@
+<header class="masthead">
+  <h1>
+    <Flags.flag :if={@code != :none} code={@code} />
+    {federation_label(@code)}
+  </h1>
+  <p class="details">
+    <span>{gettext("Tournaments published here for this federation.")}</span>
+  </p>
+</header>
+
+<.hub_nav />
+<.search_form id="federation-search" />
+
+<p :if={@empty?} class="empty" id="federation-empty">
+  {gettext("No tournament has been published for this federation yet.")}
+</p>
+
+<section :for={kind <- [:live, :upcoming, :finished]} :if={@groups[kind] != []} data-group={kind}>
+  <h2>{section_title(kind)}</h2>
+  <ul class="tournaments" id={"federation-#{kind}"}>
+    <.entry_row :for={entry <- @groups[kind]} entry={entry} />
+  </ul>
+</section>
+
+<section :if={@archive.total > 0 or @year} id="federation-archive" data-group="archive">
+  <h2>{gettext("Archive")}</h2>
+
+  <nav :if={@years != []} class="rounds" aria-label={gettext("Year")} id="archive-years">
+    <a
+      href={archive_path(@code, nil, 1)}
+      class={["chip", is_nil(@year) && "current"]}
+      aria-current={is_nil(@year) && "page"}
+    >
+      {gettext("All years")}
+    </a>
+    <a
+      :for={year <- @years}
+      href={archive_path(@code, year, 1)}
+      class={["chip", @year == year && "current"]}
+      aria-current={@year == year && "page"}
+    >
+      {year}
+    </a>
+  </nav>
+
+  <p :if={@archive.entries == []} class="empty">
+    {gettext("Nothing in the archive for this year.")}
+  </p>
+
+  <ul :if={@archive.entries != []} class="tournaments" id="federation-archive-list">
+    <.entry_row :for={entry <- @archive.entries} entry={entry} />
+  </ul>
+
+  <nav :if={@archive.pages > 1} class="pager" aria-label={gettext("Pages")} id="archive-pager">
+    <a
+      :if={@archive.page > 1}
+      href={archive_path(@code, @year, @archive.page - 1)}
+      rel="prev"
+      id="archive-prev"
+    >
+      {gettext("Newer")}
+    </a>
+    <span class="quiet">
+      {gettext("Page %{page} of %{pages}", page: @archive.page, pages: @archive.pages)}
+    </span>
+    <a
+      :if={@archive.page < @archive.pages}
+      href={archive_path(@code, @year, @archive.page + 1)}
+      rel="next"
+      id="archive-next"
+    >
+      {gettext("Older")}
+    </a>
+  </nav>
+</section>

@@ -12,11 +12,23 @@ defmodule OpenResultsWeb.SitemapController do
 
   `lastmod` is the current snapshot's date: the pages of a tournament change
   when it publishes and at no other time.
+
+  The results hub adds its own pages: `/federations`, each federation's
+  listing, and the cross-tournament player pages of players who are
+  certainly adults by the FIDE list's birth year
+  (`OpenResultsWeb.PlayerHistoryController.minor?/2` - an unknown year
+  counts as a minor) and whose page was not hidden at their request. That is
+  a sitemap of people's names after all, and that is the maintainer's
+  decision of 2026-10-31: the player page is the reason people search this
+  site, for players old enough to have been asked.
   """
 
   use OpenResultsWeb, :controller
 
+  alias OpenResults.FideList
+  alias OpenResults.ResultsIndex
   alias OpenResults.Snapshots
+  alias OpenResultsWeb.PlayerHistoryController
   alias OpenResultsWeb.Tournament
 
   def show(conn, _params) do
@@ -24,8 +36,9 @@ defmodule OpenResultsWeb.SitemapController do
       Enum.filter(Snapshots.list_current(visible_only: true), &Tournament.listed?(&1.payload))
 
     urls =
-      [{url(~p"/"), nil}, {url(~p"/terms"), nil}] ++
-        Enum.flat_map(tournaments, &tournament_urls/1)
+      [{url(~p"/"), nil}, {url(~p"/terms"), nil}, {url(~p"/federations"), nil}] ++
+        federation_urls() ++
+        Enum.flat_map(tournaments, &tournament_urls/1) ++ player_urls()
 
     body = [
       ~s(<?xml version="1.0" encoding="utf-8"?>\n),
@@ -37,6 +50,27 @@ defmodule OpenResultsWeb.SitemapController do
     conn
     |> put_resp_content_type("application/xml")
     |> send_resp(200, body)
+  end
+
+  defp federation_urls do
+    for {code, _count} <- ResultsIndex.federations(Date.utc_today()),
+        do: {url(~p"/f/#{code || "none"}"), nil}
+  end
+
+  defp player_urls do
+    today = Date.utc_today()
+    ids = ResultsIndex.indexable_fide_ids()
+
+    ids
+    |> Enum.chunk_every(500)
+    |> Enum.flat_map(fn chunk ->
+      listed = FideList.lookup(chunk)
+
+      for id <- chunk,
+          row = Map.get(listed, id),
+          not PlayerHistoryController.minor?(row, today),
+          do: {url(~p"/players/#{id}"), nil}
+    end)
   end
 
   defp tournament_urls(snapshot) do

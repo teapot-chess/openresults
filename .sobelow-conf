@@ -6,11 +6,13 @@
 #     temp files, FIDE list downloads, the moderation journal); none is a raw
 #     user string.
 #   * XSS.SendResp / XSS.Raw - bodies are escaped HTML builders, feed/sitemap XML,
-#     or the repo's own changelog; `raw(gettext(...))` is a translator-owned string;
+#     or the repo's own changelog, or a page this app rendered itself and cached
+#     (Revalidate, OpenResultsWeb.HubCache); `raw(gettext(...))` is a translator-owned string;
 #     `InlineScripts.tag/1` wraps a script read from this repo at compile time.
 #   * DOS.StringToAtom - every atom comes from a literal list or a regex-bounded
 #     SAN letter, never from request data.
-#   * SQL.Query - table names are module attributes, never request data.
+#   * SQL.Query - table names are module attributes, never request data; the
+#     results index's FTS5 statements pass every value as a parameter.
 #   * Config.CSP - the policy is set by OpenResultsWeb.Plugs.ContentSecurityPolicy
 #     (script-src by hash, since the 2026-10-19 sweep), which Sobelow does not
 #     look inside; OpenResultsWeb.Framing loosens frame-ancestors on purpose.

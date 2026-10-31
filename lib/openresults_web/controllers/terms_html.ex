@@ -26,11 +26,12 @@ defmodule OpenResultsWeb.TermsHTML do
   they are HTML comments, not HEEx ones.
   """
   attr :email, :string, required: true
+  attr :id, :string, default: "terms-contact-email"
 
   def contact_link(assigns) do
     ~H"""
     <!--email_off-->
-    <a href={"mailto:" <> @email} id="terms-contact-email">{@email}</a>
+    <a href={"mailto:" <> @email} id={@id}>{@email}</a>
     <!--/email_off-->
     """
   end

@@ -1,0 +1,77 @@
+<header class="masthead">
+  <h1>{gettext("Search")}</h1>
+  <p :if={@q != ""} class="details">
+    <span>{gettext("Results for “%{query}”", query: @q)}</span>
+  </p>
+</header>
+
+<.hub_nav />
+<.search_form q={@q} id="search-page" />
+
+<p :if={@outcome == :too_short and @q != ""} class="empty" id="search-too-short">
+  {ngettext(
+    "Type at least %{count} letter.",
+    "Type at least %{count} letters.",
+    OpenResults.ResultsIndex.min_query()
+  )}
+</p>
+
+<p :if={@outcome == :rate_limited} class="empty" id="search-rate-limited" role="alert">
+  {gettext("Too many searches from your address. Try again in a minute.")}
+</p>
+
+<%= if is_map(@results) do %>
+  <p
+    :if={@results.tournaments == [] and @results.players == [] and @results.appearances == []}
+    class="empty"
+    id="search-nothing"
+  >
+    {gettext("Nothing matches that.")}
+  </p>
+
+  <section :if={@results.players != []} id="search-players">
+    <h2>{gettext("Players")}</h2>
+    <ul class="tournaments">
+      <li :for={player <- @results.players} id={"player-#{player.fide_id}"}>
+        <a href={~p"/players/#{player.fide_id}"}>{player.name}</a>
+        <span class="details">
+          <span :if={player.title}>{player.title}</span>
+          <span :if={player.federation}>
+            <Flags.flag code={player.federation} />{player.federation}
+          </span>
+          <span>{gettext("FIDE %{id}", id: player.fide_id)}</span>
+          <span>
+            {ngettext("%{count} tournament", "%{count} tournaments", player.tournaments)}
+          </span>
+        </span>
+      </li>
+    </ul>
+  </section>
+
+  <section :if={@results.appearances != []} id="search-appearances">
+    <h2>{gettext("In one tournament")}</h2>
+    <p class="hub-note">
+      {gettext(
+        "Players this site cannot tie to a FIDE ID, listed once per tournament. Two lines with the same name may be two different people."
+      )}
+    </p>
+    <ul class="tournaments">
+      <li :for={hit <- @results.appearances} id={"appearance-#{hit.id}"}>
+        <a :if={hit.card_linkable} href={~p"/t/#{hit.slug}/player/#{hit.no}"}>{hit.name}</a>
+        <span :if={not hit.card_linkable}>{hit.name}</span>
+        <span class="details">
+          <a href={~p"/t/#{hit.slug}"}>{hit.tournament_name}</a>
+          <span :if={hit.club}>{hit.club}</span>
+          <span :if={dates(hit)}>{dates(hit)}</span>
+        </span>
+      </li>
+    </ul>
+  </section>
+
+  <section :if={@results.tournaments != []} id="search-tournaments">
+    <h2>{gettext("Tournaments")}</h2>
+    <ul class="tournaments">
+      <.entry_row :for={entry <- @results.tournaments} entry={entry} show_federation />
+    </ul>
+  </section>
+<% end %>

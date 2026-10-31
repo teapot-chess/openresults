@@ -129,7 +129,7 @@ defmodule OpenResults.ModerationJournal do
   require Logger
 
   @actions ~w(delete hide revoke suspend block_address put_setting untrust lower_limits
-               revoke_relay_keys)
+               revoke_relay_keys hide_player)
   @margin_days 7
 
   # The switch and the value that makes the site safer. The other direction is
@@ -162,6 +162,10 @@ defmodule OpenResults.ModerationJournal do
   @doc "A tournament hidden."
   def record_hide(slug, %DateTime{} = at) when is_binary(slug),
     do: append(%{"action" => "hide", "target" => slug}, at)
+
+  @doc "A player page hidden at the player's request (`target` is the FIDE id, as text)."
+  def record_hide_player(fide_id, %DateTime{} = at) when is_integer(fide_id),
+    do: append(%{"action" => "hide_player", "target" => Integer.to_string(fide_id)}, at)
 
   @doc "An installation revoked."
   def record_revoke(id, hide_tournaments, %DateTime{} = at) when is_binary(id),
@@ -384,6 +388,14 @@ defmodule OpenResults.ModerationJournal do
       else: :error
   end
 
+  defp well_formed(%{"action" => "hide_player", "target" => target} = entry)
+       when is_binary(target) do
+    case Integer.parse(target) do
+      {id, ""} when id > 0 -> {:ok, entry}
+      _ -> :error
+    end
+  end
+
   defp well_formed(%{"action" => action, "target" => target} = entry)
        when action in ~w(delete hide revoke suspend untrust) and is_binary(target),
        do: {:ok, entry}
@@ -477,6 +489,37 @@ defmodule OpenResults.ModerationJournal do
           end)
 
         Tournaments.forget(slug)
+        applied?(result, entry)
+    end
+  end
+
+  # A player page hidden at the player's request and not known to the
+  # restored database: hidden again, unless the action log there shows it
+  # restored after the journal's entry (`known?/4` - the player withdrew the
+  # request, which is the one thing that may undo this).
+  defp reapply(%{"action" => "hide_player", "target" => target, "at" => at} = entry, _later, _now) do
+    {fide_id, ""} = Integer.parse(target)
+
+    cond do
+      known?("player", target, at, "hide_player") ->
+        false
+
+      OpenResults.ResultsIndex.suppressed?(fide_id) ->
+        false
+
+      true ->
+        result =
+          Repo.transaction(fn ->
+            OpenResults.ResultsIndex.insert_suppression!(
+              fide_id,
+              nil,
+              Moderation.restore_replay_actor()
+            )
+
+            replayed!("hide_player", "player", target, entry, %{scope: "history"})
+          end)
+
+        OpenResults.ResultsIndex.bump([{:player, fide_id}, :all])
         applied?(result, entry)
     end
   end

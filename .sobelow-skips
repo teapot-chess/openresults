@@ -20,18 +20,24 @@ SQL.Query: SQL injection,lib/openresults/fide_list/store.ex:220,24C9F3F
 SQL.Query: SQL injection,lib/openresults/fide_list/store.ex:222,649A096
 SQL.Query: SQL injection,lib/openresults/fide_list/store.ex:232,20E42AC
 SQL.Query: SQL injection,lib/openresults/fide_list/store.ex:312,2122D73
+SQL.Query: SQL injection,lib/openresults/fide_list/store.ex:330,1043705
+SQL.Query: SQL injection,lib/openresults/results_index.ex:193,283CEF3
+SQL.Query: SQL injection,lib/openresults/results_index.ex:226,78485F9
 Traversal.FileModule: Directory Traversal in `File.mkdir_p!`,lib/openresults/fide_list/repo.ex:36,7430AD8
 Traversal.FileModule: Directory Traversal in `File.mkdir_p!`,lib/openresults/fide_list/source.ex:138,33A2B24
 Traversal.FileModule: Directory Traversal in `File.mkdir_p`,lib/openresults/backup.ex:90,13529B
 Traversal.FileModule: Directory Traversal in `File.mkdir_p`,lib/openresults/moderation_journal.ex:252,5D259F2
 Traversal.FileModule: Directory Traversal in `File.mkdir_p`,lib/openresults/moderation_journal.ex:284,3DF2CEB
+Traversal.FileModule: Directory Traversal in `File.mkdir_p`,lib/openresults/moderation_journal.ex:288,5C53C3C
 Traversal.FileModule: Directory Traversal in `File.open`,lib/openresults/backup.ex:540,6E1564F
 Traversal.FileModule: Directory Traversal in `File.read`,lib/openresults/backup.ex:94,FF5BD6
 Traversal.FileModule: Directory Traversal in `File.read`,lib/openresults/backup.ex:432,DDCF2D
 Traversal.FileModule: Directory Traversal in `File.read`,lib/openresults/moderation_journal.ex:277,36F9924
 Traversal.FileModule: Directory Traversal in `File.read`,lib/openresults/moderation_journal.ex:309,E997E2
+Traversal.FileModule: Directory Traversal in `File.read`,lib/openresults/moderation_journal.ex:313,10DD01F
 Traversal.FileModule: Directory Traversal in `File.read`,lib/openresults/moderation_journal.ex:675,2EB6131
 Traversal.FileModule: Directory Traversal in `File.read`,lib/openresults/moderation_journal.ex:795,755D41B
+Traversal.FileModule: Directory Traversal in `File.read`,lib/openresults/moderation_journal.ex:838,35A4089
 Traversal.FileModule: Directory Traversal in `File.read`,lib/openresults/stats/system_info.ex:102,12BC18F
 Traversal.FileModule: Directory Traversal in `File.rm`,lib/openresults/backup.ex:95,60F9FDA
 Traversal.FileModule: Directory Traversal in `File.rm`,lib/openresults/backup.ex:154,2221F90
@@ -43,13 +49,16 @@ Traversal.FileModule: Directory Traversal in `File.rm`,lib/openresults/backup.ex
 Traversal.FileModule: Directory Traversal in `File.rm`,lib/openresults/fide_list/run.ex:113,2C07117
 Traversal.FileModule: Directory Traversal in `File.rm`,lib/openresults/moderation_journal.ex:702,1D8FDD4
 Traversal.FileModule: Directory Traversal in `File.rm`,lib/openresults/moderation_journal.ex:822,7E1A49F
+Traversal.FileModule: Directory Traversal in `File.rm`,lib/openresults/moderation_journal.ex:865,36AA9A5
 Traversal.FileModule: Directory Traversal in `File.write`,lib/openresults/backup.ex:249,4381BB0
 Traversal.FileModule: Directory Traversal in `File.write`,lib/openresults/backup.ex:292,6FFA8F
 Traversal.FileModule: Directory Traversal in `File.write`,lib/openresults/backup.ex:400,681742
 Traversal.FileModule: Directory Traversal in `File.write`,lib/openresults/moderation_journal.ex:694,70642DF
 Traversal.FileModule: Directory Traversal in `File.write`,lib/openresults/moderation_journal.ex:814,6C3C096
+Traversal.FileModule: Directory Traversal in `File.write`,lib/openresults/moderation_journal.ex:857,3615BD0
 XSS.Raw: XSS,lib/openresults_web/controllers/changelog_controller.ex:28,7401725
 XSS.Raw: XSS,lib/openresults_web/controllers/changelog_html/show.html.heex:9,6DC7F62
+XSS.Raw: XSS,lib/openresults_web/controllers/player_history_html/show.html.heex:74,1D372AF
 XSS.Raw: XSS,lib/openresults_web/controllers/registration_html/received.html.heex:7,37FD9F
 XSS.Raw: XSS,lib/openresults_web/controllers/registration_html/received.html.heex:7,432BECB
 XSS.Raw: XSS,lib/openresults_web/controllers/registration_html/received.html.heex:17,234C7B2
@@ -60,5 +69,8 @@ XSS.Raw: XSS,lib/openresults_web/controllers/tournament_html/player.html.heex:10
 XSS.Raw: XSS,lib/openresults_web/inline_scripts.ex:40,747FDFD
 XSS.SendResp: XSS in `send_resp`,lib/openresults_web/controllers/feed_controller.ex:58,277C1E7
 XSS.SendResp: XSS in `send_resp`,lib/openresults_web/controllers/sitemap_controller.ex:39,9EAAA7
+XSS.SendResp: XSS in `send_resp`,lib/openresults_web/controllers/sitemap_controller.ex:52,6E950A0
+XSS.SendResp: XSS in `send_resp`,lib/openresults_web/hub_cache.ex:71,6ACD7DA
+XSS.SendResp: XSS in `send_resp`,lib/openresults_web/hub_cache.ex:75,57D3F53
 XSS.SendResp: XSS in `send_resp`,lib/openresults_web/plugs/revalidate.ex:196,29D3D60
 XSS.SendResp: XSS in `send_resp`,lib/openresults_web/plugs/revalidate.ex:206,48A155E

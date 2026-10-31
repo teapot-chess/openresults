@@ -1,5 +1,6 @@
 <header class="masthead">
   <h1>{gettext("Terms and privacy")}</h1>
+
   <p class="details">
     <span id="terms-updated">{gettext("Last updated %{date}.", date: @updated)}</span>
   </p>
@@ -8,8 +9,11 @@
 <div class="terms-body">
   <section id="terms-operator" aria-labelledby="terms-operator-heading">
     <h2 id="terms-operator-heading">{gettext("Who runs this site")}</h2>
+
     <p :if={@operator}>{gettext("This site is run by %{operator}.", operator: @operator)}</p>
+
     <p :if={!@operator}>{gettext("This site is run by the operator of this server.")}</p>
+
     <p>
       {gettext(
         "It is where arbiters publish chess tournaments - pairings, results and standings - for players and spectators to follow."
@@ -19,11 +23,13 @@
 
   <section id="terms-publishing" aria-labelledby="terms-publishing-heading">
     <h2 id="terms-publishing-heading">{gettext("Who may publish, and what")}</h2>
+
     <p>
       {gettext(
         "Arbiters and organisers may publish the tournaments they run, from OpenPairings. Only publish an event you have the right to publish."
       )}
     </p>
+
     <p>
       {gettext(
         "A tournament page carries its pairings, results and standings, the names of its arbiters, and the player details chess results normally show: name, FIDE ID, rating, title, federation, club and category."
@@ -33,10 +39,14 @@
 
   <section id="terms-not-allowed" aria-labelledby="terms-not-allowed-heading">
     <h2 id="terms-not-allowed-heading">{gettext("Not allowed")}</h2>
+
     <ul>
       <li>{gettext("Invented or falsified results.")}</li>
+
       <li>{gettext("Passing yourself off as a real event or organiser.")}</li>
+
       <li>{gettext("Anything that is not a chess tournament.")}</li>
+
       <li>
         {gettext(
           "Personal details beyond those above, such as phone numbers, home addresses or email addresses typed into a name or any other field."
@@ -47,11 +57,13 @@
 
   <section id="terms-visibility" aria-labelledby="terms-visibility-heading">
     <h2 id="terms-visibility-heading">{gettext("How visibility works")}</h2>
+
     <p>
       {gettext(
-        "A tournament's link works from its first publish, it appears on this site's front page straight away, and search engines may find it."
+        "A tournament's link works from its first publish, it appears on this site's front page, listings and search straight away, marked as unapproved until the operator has looked at it, and search engines may find it."
       )}
     </p>
+
     <p>
       {gettext(
         "Player history pages, which gather one player's results across tournaments by FIDE ID, include it only once the operator has approved it, or at once if the operator trusts its publisher. That way invented results cannot land on real players' histories."
@@ -59,8 +71,37 @@
     </p>
   </section>
 
+  <section id="terms-player-pages" aria-labelledby="terms-player-pages-heading">
+    <h2 id="terms-player-pages-heading">{gettext("Player pages")}</h2>
+
+    <p>
+      {gettext(
+        "A player page gathers one player's results from the approved tournaments published here, by FIDE ID, with the player's current rating from this site's copy of the FIDE rating list. A name published beside a FIDE ID that clearly belongs to somebody else - a mistyped ID - is left off that player's page."
+      )}
+    </p>
+
+    <p>
+      {gettext(
+        "Search engines may find player pages, except those of players who may be under 18 by the birth year on the FIDE list, or whose birth year is not known: those are never offered to search engines. A birth year is never shown."
+      )}
+    </p>
+
+    <p :if={@contact_email} id="terms-player-removal">
+      {gettext(
+        "To have your player page removed, write to the operator. It is removed on request, no reasons needed, and leaves this site's search too. Your name stays on the tournaments themselves; to have it removed there, report the tournament as described below."
+      )} <.contact_link email={@contact_email} id="terms-player-contact-email" />
+    </p>
+
+    <p :if={!@contact_email} id="terms-player-removal">
+      {gettext(
+        "To have your player page removed, use “Report this page” on any tournament you played in and say so. It is removed on request, no reasons needed, and leaves this site's search too. Your name stays on the tournaments themselves."
+      )}
+    </p>
+  </section>
+
   <section id="terms-moderation" aria-labelledby="terms-moderation-heading">
     <h2 id="terms-moderation-heading">{gettext("Moderation")}</h2>
+
     <p>
       {gettext(
         "The operator may hide or delete tournaments, suspend or revoke a publisher's access, and block internet addresses from publishing, without notice, when these terms are broken or a report is upheld."
@@ -70,15 +111,18 @@
 
   <section id="terms-removal" aria-labelledby="terms-removal-heading">
     <h2 id="terms-removal-heading">{gettext("Having something removed or corrected")}</h2>
+
     <p>
       {gettext(
         "To have a tournament, or your name in it, removed or corrected, open the tournament on this site and use “Report this page”, at the bottom of every tournament page. The report goes to the operator, not to the arbiter, and nothing changes until somebody has read it."
       )}
     </p>
+
     <p :if={@contact_email} id="terms-contact">
       {gettext("You can also write to the operator directly:")}
       <.contact_link email={@contact_email} />
     </p>
+
     <p>
       {gettext(
         "A wrong result is best corrected by the arbiter who published it: the page changes when they publish again. The operator handles removal."
@@ -90,23 +134,28 @@
     <h2 id="terms-privacy-heading">{gettext("Privacy")}</h2>
 
     <h3>{gettext("What is stored")}</h3>
+
     <ul>
       <li>{gettext("The tournaments arbiters publish, including earlier versions of each.")}</li>
+
       <li>
         {gettext(
           "Entries sent through a tournament's entry form: the name, the email address and the other details the form asks for. They are kept for the organiser. If the organiser switches it on, the name alone of an entry still waiting for a decision is shown on the entry list, marked unconfirmed; the email address and the other details are never shown on a page."
         )}
       </li>
+
       <li>
         {gettext(
           "Reports: what was written, the email address if one was given, and the internet address the report came from."
         )}
       </li>
+
       <li>
         {gettext(
           "For each copy of OpenPairings that publishes here, an installation record: the app's version, when it registered and was last seen, and the internet addresses it did that from."
         )}
       </li>
+
       <li>
         {gettext(
           "For a tournament published from a hosted OpenPairings account, that account's email address, kept as a moderation contact and shown only in this site's admin panel - never on any public page."
@@ -115,6 +164,7 @@
     </ul>
 
     <h3>{gettext("What is not stored")}</h3>
+
     <p>
       {gettext(
         "There are no accounts and no tracking. The only cookie this site sets remembers a language you picked. To count how many different people read it, the site turns your internet address and your browser's name into a short code with a secret key that is replaced every day and then thrown away. Neither the address nor the browser's name is stored, the code is kept in memory for that day only and never written to disk, and the same person on another day gets an unrelated code. What stays in the database are daily totals: how many readers, how many page views, and the same per tournament."
@@ -122,6 +172,7 @@
     </p>
 
     <h3>{gettext("How long")}</h3>
+
     <ul>
       <li>
         {ngettext(
@@ -130,6 +181,7 @@
           @days.registrations
         )}
       </li>
+
       <li>
         {ngettext(
           "The email address on a report: deleted %{count} day after the report is resolved. An open report keeps it.",
@@ -137,6 +189,7 @@
           @days.report_contact
         )}
       </li>
+
       <li>
         {ngettext(
           "The internet addresses of reports and installations: deleted after %{count} day.",
@@ -144,6 +197,7 @@
           @days.addresses
         )}
       </li>
+
       <li>
         {ngettext(
           "A blocked address range: kept in the operator's log until %{count} day after the block ends.",
@@ -151,14 +205,17 @@
           @days.blocks
         )}
       </li>
+
       <li>
         {gettext(
           "What a report says is kept, even after its tournament is deleted: it is the record of why the operator acted."
         )}
       </li>
+
       <li>
         {gettext("Published tournaments: until the arbiter or the operator deletes them.")}
       </li>
+
       <li>
         {ngettext(
           "Backups: anything deleted from the site is gone from every backup within %{count} day of being deleted.",
@@ -169,12 +226,14 @@
     </ul>
 
     <h3>{gettext("Who is responsible")}</h3>
+
     <p :if={@operator}>
       {gettext(
         "The organiser or arbiter who publishes a tournament decides what is published about their event. %{operator} hosts it and handles reports and removal.",
         operator: @operator
       )}
     </p>
+
     <p :if={!@operator}>
       {gettext(
         "The organiser or arbiter who publishes a tournament decides what is published about their event. The operator hosts it and handles reports and removal."
@@ -182,11 +241,13 @@
     </p>
 
     <h3>{gettext("Your rights")}</h3>
+
     <p :if={@contact_email}>
       {gettext(
         "To ask what this site holds about you, or to have it deleted, use “Report this page” on the tournament concerned, or write to the operator at the address above."
       )}
     </p>
+
     <p :if={!@contact_email}>
       {gettext(
         "To ask what this site holds about you, or to have it deleted, use “Report this page” on the tournament concerned."
@@ -196,16 +257,19 @@
 
   <section id="terms-no-guarantee" aria-labelledby="terms-no-guarantee-heading">
     <h2 id="terms-no-guarantee-heading">{gettext("No guarantee")}</h2>
+
     <p>
       {gettext(
         "Results are published by arbiters and are not checked by the operator. The arbiter's own records are what count."
       )}
     </p>
+
     <p>{gettext("This site is provided as it is, and it may change or stop at any time.")}</p>
   </section>
 
   <section id="terms-changes" aria-labelledby="terms-changes-heading">
     <h2 id="terms-changes-heading">{gettext("Changes to these terms")}</h2>
+
     <p>
       {gettext(
         "These terms may change. The date at the top of this page says when they last did."
