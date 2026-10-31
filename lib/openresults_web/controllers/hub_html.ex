@@ -51,6 +51,12 @@ defmodule OpenResultsWeb.HubHTML do
       <a href={~p"/federations"} aria-current={@current == :federations && "page"}>
         {gettext("All tournaments by federation")}
       </a>
+      <a href={~p"/tournaments"} aria-current={@current == :alphabetical && "page"}>
+        {gettext("A-Z")}
+      </a>
+      <a href={~p"/statistics"} aria-current={@current == :statistics && "page"}>
+        {gettext("Statistics")}
+      </a>
     </nav>
     """
   end
@@ -114,6 +120,14 @@ defmodule OpenResultsWeb.HubHTML do
       gettext("Finished in the last %{days} days",
         days: OpenResults.ResultsIndex.federation_recent_days()
       )
+
+  @doc "A link to one page of a letter of the alphabetical list."
+  def letter_path(letter, 1), do: ~p"/tournaments?#{[letter: letter]}"
+  def letter_path(letter, page), do: ~p"/tournaments?#{[letter: letter, page: page]}"
+
+  @doc "A letter as a DOM id: `#` is not one."
+  def letter_id("#"), do: "other"
+  def letter_id(letter), do: letter
 
   @doc "A link to one page of the archive, keeping the year."
   def archive_path(code, year, page) do

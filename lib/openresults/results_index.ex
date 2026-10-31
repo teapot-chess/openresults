@@ -61,7 +61,10 @@ defmodule OpenResults.ResultsIndex do
 
   # Bump when what `index_snapshot/1` writes changes; the boot backfill then
   # rebuilds every row written by an older one.
-  @version 1
+  #
+  # 2 (phase 2): `series_id`, `name_key`, `round_numbers` and the three
+  # `*_shown` page flags.
+  @version 2
 
   # A tournament that never published a round and started this long ago is a
   # shell somebody tried out and forgot - left off the listings.
@@ -131,6 +134,13 @@ defmodule OpenResults.ResultsIndex do
         complete: facts.complete?,
         not_begun: facts.not_begun?,
         event_id: event_id(info),
+        series_id: series_id(info),
+        name_key: name_key(Tournament.name(payload)),
+        round_numbers:
+          Enum.map_join(Tournament.round_numbers(payload), ",", &Integer.to_string/1),
+        standings_shown: Tournament.show?(payload, "standings"),
+        pairings_shown: Tournament.show?(payload, "pairings"),
+        crosstable_shown: Tournament.crosstable?(payload),
         last_published_at: snapshot.received_at || DateTime.utc_now()
       })
 
@@ -255,11 +265,13 @@ defmodule OpenResults.ResultsIndex do
   """
   @spec keys_for(String.t()) :: [term()]
   def keys_for(slug) when is_binary(slug) do
-    case Repo.one(from e in Entry, where: e.slug == ^slug, select: {e.id, e.federation}) do
+    case Repo.one(
+           from e in Entry, where: e.slug == ^slug, select: {e.id, e.federation, e.series_id}
+         ) do
       nil ->
         [:all]
 
-      {_id, federation} ->
+      {_id, federation, series} ->
         ids =
           Repo.all(
             from a in Appearance,
@@ -268,13 +280,41 @@ defmodule OpenResults.ResultsIndex do
               select: a.fide_id
           )
 
-        [:all, {:federation, federation || :none} | Enum.map(ids, &{:player, &1})]
+        series = if series, do: [{:series, series}], else: []
+
+        [:all, {:federation, federation || :none} | series] ++ Enum.map(ids, &{:player, &1})
     end
   end
 
-  @doc "Moves the generations of `keys` (from `keys_for/1`)."
+  @doc """
+  Moves the generations of `keys` (from `keys_for/1`).
+
+  A `{:series, id}` key is not a generation anybody reads: the "other
+  editions" block is drawn on a tournament's own pages, which are cached
+  under that tournament's snapshot id (`OpenResultsWeb.Plugs.Revalidate`),
+  not under a generation. So for those this touches every edition of the
+  series still in the index the way a sibling section is touched
+  (`OpenResults.TournamentGroups.touch/1`: a new epoch, its pages dropped,
+  its open pages told to poll). Every caller that changes what a series
+  shows already comes through here - a publish, a takedown, a status change,
+  a reindex - which is why it lives here and not in each of them.
+  """
   @spec bump([term()]) :: :ok
-  def bump(keys), do: Generations.bump(keys)
+  def bump(keys) do
+    Generations.bump(keys)
+
+    keys
+    |> Enum.flat_map(fn
+      {:series, id} -> [id]
+      _other -> []
+    end)
+    |> Enum.uniq()
+    |> Enum.each(fn id ->
+      OpenResults.TournamentGroups.touch(
+        Repo.all(from e in Entry, where: e.series_id == ^id, select: e.slug)
+      )
+    end)
+  end
 
   @doc """
   For a change that leaves the index as it is but changes what it shows -
@@ -551,6 +591,259 @@ defmodule OpenResults.ResultsIndex do
   @spec listed_slug?(String.t()) :: boolean()
   def listed_slug?(slug), do: Repo.exists?(where(visible_entries(), [entry: e], e.slug == ^slug))
 
+  ## ---------- reading: series ----------
+
+  @editions_limit 30
+
+  @doc """
+  The other editions of `slug`'s series that may be shown beside it, newest
+  first: the same `series_id`, visible (pending included, marked), listed by
+  their own arbiter, and from **the same publisher** - the same
+  installation, or both published with the operator token.
+
+  The last rule is `OpenResults.TournamentGroups`' reasoning again: a
+  series id is printed in every snapshot's open JSON, so anybody could copy
+  one into a tournament of their own. A copy from another publisher is
+  simply never an edition. Empty for a tournament in no series.
+  """
+  @spec editions(String.t()) :: [Entry.t()]
+  def editions(slug) when is_binary(slug) do
+    case Repo.one(
+           from e in Entry,
+             left_join: t in TournamentRow,
+             on: t.slug == e.slug,
+             where: e.slug == ^slug and not is_nil(e.series_id),
+             select: {e.series_id, t.installation_id}
+         ) do
+      nil ->
+        []
+
+      {series, owner} ->
+        visible_entries()
+        |> where([entry: e], e.series_id == ^series and e.slug != ^slug)
+        |> same_publisher(owner)
+        |> order_by([entry: e], desc: e.start_date, asc: e.name)
+        |> limit(^@editions_limit)
+        |> Repo.all()
+    end
+  end
+
+  # `nil` is the operator token's publisher, and SQL's `=` never matches it.
+  defp same_publisher(query, nil), do: where(query, [row: t], is_nil(t.installation_id))
+  defp same_publisher(query, owner), do: where(query, [row: t], t.installation_id == ^owner)
+
+  ## ---------- reading: the alphabetical list ----------
+
+  @letters_page_size 100
+
+  @doc """
+  The first letters the alphabetical list has tournaments under, in order:
+  `"a".."z"` and `"#"` for everything that starts with neither (a digit, a
+  script without Latin letters).
+  """
+  @spec letters(Date.t()) :: [String.t()]
+  def letters(today) do
+    visible_entries()
+    |> without_shells(today)
+    |> exclude(:select)
+    |> select([entry: e], fragment("substr(?, 1, 1)", e.name_key))
+    |> distinct(true)
+    |> Repo.all()
+    |> Enum.map(&letter_of/1)
+    |> Enum.uniq()
+    |> Enum.sort_by(&{&1 == "#", &1})
+  end
+
+  defp letter_of(first) when is_binary(first) do
+    if first =~ ~r/\A[a-z]\z/, do: first, else: "#"
+  end
+
+  defp letter_of(_none), do: "#"
+
+  @doc """
+  One page of the tournaments filed under `letter` (from `letters/1`), by
+  name: `%{entries: [...], page: n, pages: n, total: n}`. The same
+  tournaments the listings show - pending included, shells not.
+  """
+  @spec alphabetical(String.t(), Date.t(), pos_integer()) :: map()
+  def alphabetical(letter, today, page \\ 1) do
+    base =
+      visible_entries()
+      |> without_shells(today)
+      |> under_letter(letter)
+
+    total = Repo.aggregate(exclude(base, :select), :count)
+    pages = max(div(total + @letters_page_size - 1, @letters_page_size), 1)
+    page = page |> max(1) |> min(pages)
+
+    entries =
+      base
+      |> order_by([entry: e], asc: e.name_key, desc: e.start_date, asc: e.slug)
+      |> limit(^@letters_page_size)
+      |> offset(^((page - 1) * @letters_page_size))
+      |> Repo.all()
+
+    %{entries: entries, page: page, pages: pages, total: total}
+  end
+
+  defp under_letter(query, "#") do
+    where(
+      query,
+      [entry: e],
+      fragment("substr(?, 1, 1)", e.name_key) not in ^Enum.map(?a..?z, &<<&1>>)
+    )
+  end
+
+  defp under_letter(query, letter),
+    do: where(query, [entry: e], fragment("substr(?, 1, 1)", e.name_key) == ^letter)
+
+  ## ---------- reading: statistics ----------
+
+  @doc """
+  The years the statistics page can show: those in which a visible
+  tournament that shows its dates started. Newest first.
+  """
+  @spec statistics_years(Date.t()) :: [String.t()]
+  def statistics_years(today) do
+    visible_entries()
+    |> without_shells(today)
+    |> where([entry: e], e.dates_shown and not is_nil(e.start_date))
+    |> exclude(:select)
+    |> select([entry: e], fragment("substr(?, 1, 4)", e.start_date))
+    |> distinct(true)
+    |> Repo.all()
+    |> Enum.filter(&(&1 =~ ~r/^\d{4}$/))
+    |> Enum.sort(:desc)
+  end
+
+  @doc """
+  Counting, nothing more: for `year`, the tournaments that started in each
+  month and how many player entries they had, per federation -
+  `[%{federation: code | nil, months: %{1 => n, ...}, tournaments: n, players: n}]`,
+  by code with the no-federation bucket last.
+
+  Only tournaments that show their dates: a month is a date, and counting a
+  tournament under the month its arbiter hid would publish it by another
+  door. Pending ones count - they are on the listings - shells do not.
+  """
+  @spec statistics(String.t(), Date.t()) :: [map()]
+  def statistics(year, today) when is_binary(year) do
+    visible_entries()
+    |> without_shells(today)
+    |> where(
+      [entry: e],
+      e.dates_shown and fragment("substr(?, 1, 4)", e.start_date) == ^year
+    )
+    |> exclude(:select)
+    |> group_by([entry: e], [e.federation, fragment("substr(?, 6, 2)", e.start_date)])
+    |> select([entry: e], {
+      e.federation,
+      fragment("substr(?, 6, 2)", e.start_date),
+      count(e.id),
+      sum(e.players_count)
+    })
+    |> Repo.all()
+    |> Enum.group_by(&elem(&1, 0))
+    |> Enum.map(fn {federation, rows} ->
+      months =
+        for {_fed, month, count, _players} <- rows,
+            {n, ""} <- [Integer.parse(month)],
+            n in 1..12,
+            into: %{},
+            do: {n, count}
+
+      %{
+        federation: federation,
+        months: months,
+        tournaments: rows |> Enum.map(&elem(&1, 2)) |> Enum.sum(),
+        players: rows |> Enum.map(&(elem(&1, 3) || 0)) |> Enum.sum()
+      }
+    end)
+    |> Enum.sort_by(&{is_nil(&1.federation), &1.federation})
+  end
+
+  ## ---------- reading: feeds ----------
+
+  @feed_limit 50
+
+  # Approved only. A feed and a calendar are copied into other people's
+  # readers and calendars, where an "unapproved" mark does not travel; a
+  # pending tournament is on the listings, where the mark does.
+  defp approved(query), do: where(query, [row: t], coalesce(t.status, "listed") == "listed")
+
+  @doc """
+  What a federation's Atom feed announces, newest change first: approved,
+  listed tournaments that are not shells, each with the moment it first
+  reached this server (`first_seen`, from its `tournaments` row). At most
+  #{@feed_limit}.
+  """
+  @spec feed_entries(:all | :none | String.t(), Date.t()) :: [map()]
+  def feed_entries(federation, today) do
+    visible_entries()
+    |> in_federation(federation)
+    |> without_shells(today)
+    |> approved()
+    |> order_by([entry: e], desc: e.last_published_at, asc: e.slug)
+    |> limit(^@feed_limit)
+    |> select_merge([row: t], %{first_seen: t.inserted_at})
+    |> Repo.all()
+  end
+
+  @doc """
+  What a federation's calendar holds: approved, listed tournaments that show
+  their dates and have not finished by `today` (upcoming or being played),
+  soonest first. At most 200.
+  """
+  @spec calendar_entries(:all | :none | String.t(), Date.t()) :: [Entry.t()]
+  def calendar_entries(federation, today) do
+    from_date = Date.to_iso8601(today)
+
+    visible_entries()
+    |> in_federation(federation)
+    |> approved()
+    |> where(
+      [entry: e],
+      e.dates_shown and not is_nil(e.start_date) and
+        coalesce(e.end_date, e.start_date) >= ^from_date
+    )
+    |> order_by([entry: e], asc: e.start_date, asc: e.name)
+    |> limit(200)
+    |> Repo.all()
+  end
+
+  ## ---------- reading: the sitemap ----------
+
+  @doc """
+  The tournaments the sitemap lists, `per` to a page, by slug - the ones the
+  listings show, shells included (an abandoned page is still a page), with
+  what each publishes: `{entries, pages}`.
+  """
+  @spec sitemap_tournaments(pos_integer(), pos_integer()) :: {[Entry.t()], pos_integer()}
+  def sitemap_tournaments(page, per) do
+    base = visible_entries()
+    total = Repo.aggregate(exclude(base, :select), :count)
+    pages = max(div(total + per - 1, per), 1)
+
+    entries =
+      base
+      |> order_by([entry: e], asc: e.slug)
+      |> limit(^per)
+      |> offset(^((max(page, 1) - 1) * per))
+      |> Repo.all()
+
+    {entries, pages}
+  end
+
+  @doc "An index row's published round numbers, from its stored list."
+  @spec round_numbers(Entry.t()) :: [integer()]
+  def round_numbers(%Entry{round_numbers: text}) when is_binary(text) do
+    for part <- String.split(text, ",", trim: true),
+        {n, ""} <- [Integer.parse(part)],
+        do: n
+  end
+
+  def round_numbers(_entry), do: []
+
   ## ---------- reading: players ----------
 
   # Appearances that may reach a player page: approved, listed by the
@@ -808,6 +1101,21 @@ defmodule OpenResults.ResultsIndex do
 
   defp fide_id(value) when is_integer(value) and value > 0, do: value
   defp fide_id(_absent), do: nil
+
+  # The same shape an event id has - see `OpenResults.TournamentGroups`.
+  defp series_id(info) do
+    case info["series_id"] do
+      id when is_binary(id) -> if id =~ ~r/\A[A-Za-z0-9_-]{6,64}\z/, do: id
+      _absent -> nil
+    end
+  end
+
+  # The name as the alphabetical list sorts it: folded the way search folds
+  # it, so "Émile" files under E and not after Z.
+  defp name_key(name) when is_binary(name),
+    do: name |> Parser.search_key() |> String.slice(0, 200)
+
+  defp name_key(_absent), do: ""
 
   defp event_id(info) do
     case info["group"] do

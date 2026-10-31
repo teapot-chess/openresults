@@ -403,6 +403,26 @@ claim where it was.
 The hall display, the projector and the live-board pages are full-screen
 views and carry no strip.
 
+**`tournament.series_id`** (added 2026-10-31, additive) - the series this
+tournament is one edition of: the same event in other years (the Open of
+2025, 2026, ...). Not `group`, which is the sections of ONE event.
+
+```json
+"series_id": "5d2e8b0c4a9f1e3d7b"
+```
+
+A random id the arbiter's app mints (6-64 characters of `A-Z a-z 0-9 _ -`;
+OpenPairings sends 18 hex digits). Absent means no series, which is every
+snapshot before this date and every OpenPairings version that predates it;
+a value of any other shape is read as absent. Unlike `group` the snapshot
+names no other edition: this server finds them itself, among the
+tournaments it holds, and shows an "Other editions" block under the
+standings with those that carry the same id, are public here (pending ones
+marked), are listed by their own arbiter, and have **the same publisher** -
+the same installation, or both published with the operator token. The id is
+in the open JSON, so a copy from another publisher is never an edition. See
+`OpenResults.ResultsIndex.editions/1`.
+
 **`tournament.hall`** - the arbiter's settings for the hall display
 (`/t/<slug>/hall`, see `docs/public-extras.md`). Added 2026-09-30. **Absent
 means the defaults**, and so does any key that is absent, out of range or of

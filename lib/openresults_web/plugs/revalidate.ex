@@ -192,7 +192,7 @@ defmodule OpenResultsWeb.Plugs.Revalidate do
             conn
             |> stats(:hit)
             |> put_resp_header("content-encoding", "gzip")
-            |> put_resp_content_type("text/html")
+            |> put_served_type(served_type(conn))
             |> send_resp(200, gzip_body)
             |> halt()
 
@@ -202,7 +202,7 @@ defmodule OpenResultsWeb.Plugs.Revalidate do
           body ->
             conn
             |> stats(:hit)
-            |> put_resp_content_type("text/html")
+            |> put_served_type(served_type(conn))
             |> send_resp(200, body)
             |> halt()
 
@@ -269,10 +269,11 @@ defmodule OpenResultsWeb.Plugs.Revalidate do
   defp visibility(conn, slug),
     do: conn.assigns[:tournament_visibility] || OpenResultsWeb.Plugs.Visibility.visibility(slug)
 
-  # Only a plain 200 of HTML. A redirect, a 404 or an error page is not this
-  # document and must never be served in its place.
+  # Only a plain 200 of the type this route serves (HTML, or the CSV a
+  # `CsvDownload` route serves). A redirect, a 404 or an error page is not
+  # this document and must never be served in its place.
   defp keep(%{status: 200} = conn, slug, id, locale, etag) do
-    if html?(conn) do
+    if served?(conn) do
       body = IO.iodata_to_binary(conn.resp_body)
       Page.put(slug, id, locale, etag, body)
 
@@ -288,10 +289,32 @@ defmodule OpenResultsWeb.Plugs.Revalidate do
 
   defp keep(conn, _slug, _id, _locale, _etag), do: conn
 
-  defp html?(conn) do
+  # What this route serves: HTML, unless a plug ahead of this one said
+  # otherwise (`OpenResultsWeb.Plugs.CsvDownload` for the exports). Read on a
+  # hit to label the stored bytes, and on a miss to decide whether the
+  # response is the document this route is for - an error page is HTML
+  # whatever the route, and must never be stored as a CSV.
+  @doc false
+  # The content type of a stored body, from the short list of what this site
+  # stores - one literal per clause, so no request can name a type.
+  @spec put_served_type(Plug.Conn.t(), String.t()) :: Plug.Conn.t()
+  def put_served_type(conn, "text/csv"), do: put_resp_content_type(conn, "text/csv")
+  def put_served_type(conn, "application/xml"), do: put_resp_content_type(conn, "application/xml")
+
+  def put_served_type(conn, "application/atom+xml"),
+    do: put_resp_content_type(conn, "application/atom+xml")
+
+  def put_served_type(conn, "text/calendar"), do: put_resp_content_type(conn, "text/calendar")
+  def put_served_type(conn, _html), do: put_resp_content_type(conn, "text/html")
+
+  defp served_type(conn), do: conn.private[:revalidate_content_type] || "text/html"
+
+  defp served?(conn) do
+    type = served_type(conn)
+
     conn
     |> get_resp_header("content-type")
-    |> Enum.any?(&String.starts_with?(&1, "text/html"))
+    |> Enum.any?(&String.starts_with?(&1, type))
   end
 
   # The PATH is part of the identity, not just the snapshot - one document

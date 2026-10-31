@@ -6,6 +6,12 @@
   <p class="details">
     <span>{gettext("Tournaments published here for this federation.")}</span>
   </p>
+  <p class="details hub-follow" id="federation-follow">
+    <a href={federation_path(@code) <> "/feed.xml"} id="federation-feed">{gettext("Feed (Atom)")}</a>
+    <a href={federation_path(@code) <> "/calendar.ics"} id="federation-calendar">
+      {gettext("Calendar of upcoming tournaments (iCal)")}
+    </a>
+  </p>
 </header>
 
 <.hub_nav />
