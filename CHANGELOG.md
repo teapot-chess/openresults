@@ -27,6 +27,8 @@ Each entry is tagged so a version can be skimmed:
 
 ## [Unreleased]
 
+## [0.30.0] - 2026-10-31
+
 - [Feature] **Standings, cross-table, pairings and player list as CSV.** Each list has a download link under it, and `/t/<slug>/standings.csv` and friends work for anyone who prefers typing. A file holds exactly what its page shows: a column the arbiter hides is not in it, a list the arbiter does not publish is a 404 rather than an empty spreadsheet, and the FIDE ID appears only where the player cards, which already print it, are published. Numbers use a decimal point in every language, because a CSV is read by programs and programs do not negotiate. A name somebody published as a spreadsheet formula arrives as text, which is a disappointment only to the person who tried it.
 - [Feature] **Last year's edition is one click away.** A tournament OpenPairings marks as part of a series shows its other editions under the standings. Only editions from the same publisher are shown, so copying a series ID from somebody else's page buys a stranger nothing but the typing. Hidden and unlisted editions stay out of it. Older OpenPairings versions keep publishing exactly as before; they simply have no series to mention.
 - [Feature] **A federation's tournaments in a feed reader and a calendar.** `/f/BEL/feed.xml` announces each approved tournament when it arrives and again when it finishes; `/f/BEL/calendar.ics` holds the upcoming and running ones as all-day events, dates only, because this site has no round times and is not about to make some up. A tournament whose dates are hidden is not in the calendar, since an event without a day is a rumour. Tournaments only, never players.
