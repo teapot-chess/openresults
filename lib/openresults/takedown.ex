@@ -82,6 +82,10 @@ defmodule OpenResults.Takedown do
     # the siblings' tab strips still name this tournament.
     siblings = OpenResults.TournamentGroups.sibling_slugs(slug)
 
+    # The listing and player pages it is on - asked before its index rows go,
+    # bumped after the commit. See `OpenResults.ResultsIndex.Generations`.
+    index_keys = OpenResults.ResultsIndex.keys_for(slug)
+
     {:ok, counts} =
       Repo.transaction(fn ->
         # Read before the row goes: the row is where the owner is stored.
@@ -106,6 +110,10 @@ defmodule OpenResults.Takedown do
         # And the credentials made for the relays of those games.
         RelayKeys.delete_all_for(slug)
 
+        # The results hub's copy: its listing row, its players, its search
+        # entries. Derived data, but data about people all the same.
+        OpenResults.ResultsIndex.delete(slug)
+
         # Each context deletes its own rows. The alternative - one query per
         # table written here - would put `snapshots` and `registrations` schema
         # knowledge in a third place that has no other reason to know it.
@@ -119,6 +127,7 @@ defmodule OpenResults.Takedown do
     # After the commit, so the read path learns what was committed.
     Tournaments.forget(slug)
     OpenResults.TournamentGroups.touch(siblings)
+    OpenResults.ResultsIndex.bump(index_keys)
 
     counts
   end

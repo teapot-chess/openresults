@@ -106,6 +106,10 @@ defmodule OpenResults.Snapshots do
       # repeat afterwards - see `TournamentGroups.record/3`.
       id_before = latest_id(slug)
 
+      # The listings and player pages this tournament is on now, so the ones it
+      # leaves are refreshed too - bumped after the commit, below.
+      index_keys_before = OpenResults.ResultsIndex.keys_for(slug)
+
       result =
         case Keyword.get(opts, :installation) do
           nil -> ingest_as_operator(slug, payload, key, received_at)
@@ -117,6 +121,13 @@ defmodule OpenResults.Snapshots do
       # one's state. After the commit, like the announcement below.
       with {:ok, %Snapshot{id: id}} <- result,
            do: OpenResults.TournamentGroups.record(slug, payload, id != id_before)
+
+      # An unchanged repeat changed nothing a listing shows.
+      with {:ok, %Snapshot{id: id}} when id != id_before <- result do
+        OpenResults.ResultsIndex.bump(
+          index_keys_before ++ OpenResults.ResultsIndex.keys_for(slug)
+        )
+      end
 
       # After the commit and after `LatestIdCache` has the new id, so a hall
       # display re-reading on this message finds the document it announces.
@@ -139,6 +150,7 @@ defmodule OpenResults.Snapshots do
         with :ok <- OpenResults.Tombstones.check_operator_publish(slug, key),
              :ok <- TournamentKeys.authorize_publish(slug, key),
              {:ok, snapshot} <- store(slug, payload, received_at) do
+          OpenResults.ResultsIndex.index_snapshot(snapshot)
           Tournaments.ensure_listed(slug)
           # Only the operator path: an installation-key publish never carries
           # `publisher` (see docs/snapshot-schema.md) - it already identifies
@@ -161,6 +173,9 @@ defmodule OpenResults.Snapshots do
         with :ok <- Tournaments.authorize_owner(slug, installation, :publish),
              :ok <- TournamentKeys.authorize_publish(slug, key, break_glass: false),
              {:ok, snapshot} <- store(slug, payload, received_at) do
+          # The results hub's index, in the same transaction, so it can never
+          # disagree with the page. See `OpenResults.ResultsIndex`.
+          OpenResults.ResultsIndex.index_snapshot(snapshot)
           # Inside the transaction that inserted, so the newest N at commit
           # are exactly the ones kept. See `prune_versions/2`.
           prune_versions(slug, PublicPublishing.installation_max_versions(installation))

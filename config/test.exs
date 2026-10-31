@@ -105,6 +105,10 @@ config :openresults, :backup_interval, :disabled
 # database. Its own tests point it at a file of their own.
 config :openresults, :moderation_journal, false
 
+# Every test builds its own results index through the ingest path; a boot
+# backfill would only race the sandbox. See `OpenResults.ResultsIndex.Backfill`.
+config :openresults, :results_index_backfill, false
+
 # On in test, so the suite exercises the feature; the tests that prove the
 # environment gate switch it off themselves (and are not async).
 config :openresults, :public_publishing, true

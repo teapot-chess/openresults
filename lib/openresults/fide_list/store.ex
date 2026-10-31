@@ -258,6 +258,8 @@ defmodule OpenResults.FideList.Store do
 
     Repo.query!("DROP TABLE IF EXISTS #{@retired}")
     Repo.query!("DROP TABLE IF EXISTS #{@words_retired}")
+    # Every player page's header comes from this list.
+    OpenResults.ResultsIndex.Generations.bump(:fide_list)
     :ok
   end
 
@@ -297,6 +299,22 @@ defmodule OpenResults.FideList.Store do
         "WHERE #{@words_live} MATCH ? LIMIT ?",
       [match, limit]
     )
+  end
+
+  @doc """
+  The players with these FIDE ids, in no particular order - for the results
+  hub, which checks a page's worth of appearances at once. Asked in chunks so
+  no statement carries more parameters than SQLite allows.
+  """
+  def by_ids(ids) when is_list(ids) do
+    ids
+    |> Enum.filter(&is_integer/1)
+    |> Enum.uniq()
+    |> Enum.chunk_every(500)
+    |> Enum.flat_map(fn chunk ->
+      marks = Enum.map_join(chunk, ", ", fn _ -> "?" end)
+      rows("SELECT #{select()} FROM #{@live} WHERE fide_id IN (#{marks})", chunk)
+    end)
   end
 
   @doc "The player with `fide_id`, as a list of zero or one."

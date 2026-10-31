@@ -278,6 +278,27 @@ defmodule OpenResults.FideList do
   end
 
   @doc """
+  The list's rows for `ids`, as a map from FIDE id to row - name, title,
+  federation, birth year and the three ratings. `%{}` when there is no list,
+  or when it cannot be read: the results hub then shows what tournaments
+  published and nothing else, which is a smaller page rather than a broken one.
+  """
+  @spec lookup([integer()]) :: %{integer() => map()}
+  def lookup([]), do: %{}
+
+  def lookup(ids) when is_list(ids) do
+    if available?() do
+      ids |> Store.by_ids() |> Map.new(&{&1.fide_id, &1})
+    else
+      %{}
+    end
+  rescue
+    _unreadable -> %{}
+  catch
+    :exit, _not_started -> %{}
+  end
+
+  @doc """
   Where the zip is written while it is read: `:fide_list_work_dir`, or a
   directory beside the list's database. Never the system's temp directory,
   which on some hosts is memory - and 45 MB of it counted against this

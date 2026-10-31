@@ -76,6 +76,7 @@ defmodule OpenResults.Application do
       # grouped tournament's ETag. Before the endpoint, like the caches
       # above. See `OpenResults.TournamentGroups.Epochs`.
       OpenResults.TournamentGroups.Epochs,
+      OpenResults.ResultsIndex.Generations,
       # The server settings saved in the admin panel, and the public notice,
       # in ETS: limits are read on every publish, and the notice on every
       # page. Before the endpoint, like the caches above, and before
@@ -116,6 +117,7 @@ defmodule OpenResults.Application do
       # its own; a fresh install's first import starts a minute after boot.
       # Nothing waits for it - the entry form says "not yet" until it is done.
       OpenResults.FideList.Sync,
+      OpenResults.ResultsIndex.Backfill,
       OpenResultsWeb.Endpoint
     ]
 
