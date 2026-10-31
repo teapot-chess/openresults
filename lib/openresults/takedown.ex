@@ -110,6 +110,8 @@ defmodule OpenResults.Takedown do
         # And the credentials made for the relays of those games.
         RelayKeys.delete_all_for(slug)
 
+        OpenResults.RoundProofs.delete_all_for(slug)
+
         # The results hub's copy: its listing row, its players, its search
         # entries. Derived data, but data about people all the same.
         OpenResults.ResultsIndex.delete(slug)

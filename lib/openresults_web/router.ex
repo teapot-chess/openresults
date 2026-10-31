@@ -303,6 +303,10 @@ defmodule OpenResultsWeb.Router do
     pipe_through [OpenResultsWeb.Plugs.Locale, OpenResultsWeb.Plugs.Visibility]
 
     get "/t/:slug/feed.xml", FeedController, :show
+    # A round's pairing proof, as a file - see `OpenResultsWeb.ProofController`.
+    # Not revalidated: the file can arrive a moment after the snapshot that
+    # announces it, and a cached 404 would outlive it.
+    get "/t/:slug/round/:n/proof", ProofController, :show
     get "/sitemap.xml", SitemapController, :show
 
     # The parts the sitemap index at `/sitemap.xml` points to (`pages.xml`,
@@ -366,6 +370,12 @@ defmodule OpenResultsWeb.Router do
     # The credentials of a publish, the ownership check of a publish, and the
     # tournament's key in the header as for a publish. A relay key is NOT
     # accepted here: a box must not be able to mint itself a successor.
+    # The pairing proofs a publish announced and its answer asked for
+    # (`proofs_wanted`) - see `OpenResults.RoundProofs`. The credentials, the
+    # ownership check and the tournament key of a publish.
+    post "/tournaments/:slug/proofs", ProofController, :create,
+      private: %{installation_access: :proof}
+
     post "/tournaments/:slug/relay-keys", RelayKeyController, :create,
       private: %{installation_access: :relay_key}
 

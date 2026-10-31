@@ -37,6 +37,8 @@ defmodule OpenResultsWeb.AccessibilityTest do
     # A PGN file, not a document.
     "/t/:slug/live/:round/:board/pgn",
     "/t/:slug/live/:round/pgn",
+    # A round's pairing proof: a gzip file.
+    "/t/:slug/round/:n/proof",
     # Files and feeds, not documents (results hub phase 2).
     "/t/:slug/standings.csv",
     "/t/:slug/crosstable.csv",

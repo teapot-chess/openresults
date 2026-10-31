@@ -2551,6 +2551,71 @@ defmodule OpenResultsWeb.TournamentHTML do
   end
 
   @doc """
+  The round's "Proof" pill: a disclosure, no script, that says which program
+  paired the round and offers the engine's pairing proof as a file, with
+  its digest and how to check it. Renders nothing for a round whose
+  snapshot announces no proof - an older round, a round paired by hand, a
+  field too large to prove - so a page without proofs looks exactly as it
+  always did.
+  """
+  attr :round, :map, required: true
+  attr :slug, :string, required: true
+
+  def round_proof(assigns) do
+    proof = Tournament.round_proof(assigns.round)
+
+    assigns =
+      assign(assigns,
+        proof: proof,
+        engine: Tournament.round_engine(assigns.round),
+        bytes: proof && proof["bytes"]
+      )
+
+    ~H"""
+    <details :if={@proof} class="round-proof" id={"round-proof-#{@round["number"]}"}>
+      <summary class="round-proof-trigger">
+        <.icon name="hero-check-badge-mini" class="round-proof-icon" />
+        {gettext("Proof")}
+      </summary>
+      <div class="round-proof-panel">
+        <p :if={@engine} class="round-proof-engine">
+          {gettext("Paired by %{engine}", engine: engine_label(@engine))}
+        </p>
+        <p class="quiet">
+          {gettext(
+            "The engine's own proof that every matching it used for this round was optimal, checkable with a verifier that shares none of its code."
+          )}
+        </p>
+        <a
+          class="round-proof-download"
+          id={"round-proof-download-#{@round["number"]}"}
+          href={~p"/t/#{@slug}/round/#{@round["number"]}/proof"}
+          download
+        >
+          <.icon name="hero-arrow-down-tray-mini" class="round-proof-icon" />
+          {gettext("Download proof")}
+          <span :if={is_integer(@bytes)} class="quiet">({kilobytes(@bytes)})</span>
+        </a>
+        <p class="round-proof-digest quiet">
+          SHA-256 <code>{@proof["sha256"]}</code>
+        </p>
+      </div>
+    </details>
+    """
+  end
+
+  defp engine_label({name, nil}), do: engine_name(name)
+  defp engine_label({name, version}), do: "#{engine_name(name)} #{version}"
+
+  defp engine_name("ainalrami"), do: "Ainalrami"
+  defp engine_name(name), do: name
+
+  defp kilobytes(bytes) when bytes < 1_000_000, do: "#{max(1, div(bytes + 999, 1000))} kB"
+
+  defp kilobytes(bytes),
+    do: "#{:erlang.float_to_binary(bytes / 1_000_000, decimals: 1)} MB"
+
+  @doc """
   One line per round whose results the arbiter has not published, said once
   on the page rather than repeated in every row of the result column - which
   stays on the page regardless, its cells all reading as unreported (see

@@ -19,6 +19,7 @@ defmodule OpenResultsWeb.InstallationAccess do
   | `:live` | `POST /api/tournaments/:slug/live` | path slug | yes | yes | its own budget, block, pause |
   | `:relay_key` | `POST /api/tournaments/:slug/relay-keys` | path slug | yes | yes | block, pause; the route's own budget per tournament |
   | `:relay_key_revoke` | `DELETE /api/tournaments/:slug/relay-keys` | path slug | **no** | yes | the route's own budget per tournament |
+  | `:proof` | `POST /api/tournaments/:slug/proofs` | path slug | yes | yes | block, pause, storage; no budget of its own (a proof is taken only once, and only when the current snapshot announces it) |
 
   `:relay_key` hands out a credential for `:live`, so it is refused whenever
   `:live` would be - a hidden tournament included. Withdrawing one
@@ -82,10 +83,11 @@ defmodule OpenResultsWeb.InstallationAccess do
     :delete,
     :live,
     :relay_key,
-    :relay_key_revoke
+    :relay_key_revoke,
+    :proof
   ]
   @writes [:mint, :publish]
-  @refused_while_suspended [:mint, :publish, :history, :registrations, :live, :relay_key]
+  @refused_while_suspended [:mint, :publish, :history, :registrations, :live, :relay_key, :proof]
   @live_per_minute 1200
 
   @doc "The actions a route may opt in to."
@@ -155,13 +157,13 @@ defmodule OpenResultsWeb.InstallationAccess do
   defp budget(_installation, _action), do: :ok
 
   defp address_block(address, action)
-       when action in @writes or action in [:live, :relay_key] do
+       when action in @writes or action in [:live, :relay_key, :proof] do
     if AddressBlocks.blocked?(address), do: {:error, :address_blocked}, else: :ok
   end
 
   defp address_block(_address, _action), do: :ok
 
-  defp pause(action) when action in @writes or action in [:live, :relay_key] do
+  defp pause(action) when action in @writes or action in [:live, :relay_key, :proof] do
     if Settings.get(:public_publishing_paused), do: {:error, :publishing_paused}, else: :ok
   end
 
@@ -173,7 +175,7 @@ defmodule OpenResultsWeb.InstallationAccess do
   # Mint and publish only. Delete is what makes room, and a measurement that
   # could not be made reads `:unknown`, which is not low - see
   # `OpenResults.DiskSpace`.
-  defp storage(action) when action in @writes do
+  defp storage(action) when action in @writes or action == :proof do
     if DiskSpace.low?(),
       do: {:error, :storage_low, %{retry_after: @storage_retry_after}},
       else: :ok
@@ -222,7 +224,7 @@ defmodule OpenResultsWeb.InstallationAccess do
     end
   end
 
-  defp ownership(conn, installation, action) when action in [:live, :relay_key] do
+  defp ownership(conn, installation, action) when action in [:live, :relay_key, :proof] do
     Tournaments.authorize_owner(conn.path_params["slug"], installation, :publish)
   end
 

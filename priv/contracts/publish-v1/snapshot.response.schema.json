@@ -12,6 +12,19 @@
       "description": "The server's clock when the stored row was received, ISO 8601 UTC (microseconds).",
       "type": "string",
       "format": "date-time"
+    },
+    "proofs_wanted": {
+      "description": "The round proofs this snapshot announces (`rounds[].proof`) that this server does not hold yet: upload each to POST /api/tournaments/:slug/proofs. Absent when there are none, and from every server older than proofs.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["round", "sha256"],
+        "additionalProperties": false,
+        "properties": {
+          "round": { "type": "integer", "minimum": 1 },
+          "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+        }
+      }
     }
   },
   "additionalProperties": false

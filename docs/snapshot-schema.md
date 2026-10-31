@@ -912,6 +912,36 @@ could not be resolved.
   publishing already identifies its installation in the admin panel, and an
   installation is not a hosted account.
 
+## Which system, which engine, and the pairing proof
+
+Three additive fields, added 2026-10-31 so the document can describe more
+than one Swiss system and say which program paired what.
+
+- **`tournament.swiss_variant`** - `dutch`, `dubov`, `burstein` or `lim`,
+  beside `system: "swiss"` only. Absent means the publisher did not say,
+  which for every publisher before the field means Dutch. `system` itself
+  is unchanged: a Dubov event is still `swiss`, so every renderer that keys
+  off `system` keeps working without knowing the variant exists.
+- **`rounds[].engine`** - `{"name": "ainalrami", "version": "0.48.0"}`.
+  Per round, not per tournament: a desktop update can change the engine
+  between round 4 and round 5, and the round should say what actually
+  paired it. Absent for a round paired by hand, by a round-robin table, or
+  by an older publisher.
+- **`rounds[].proof`** - `{"sha256", "bytes", "format", "version",
+  "compression": "gzip"}`: the engine's pairing proof for that round, named
+  by the digest of the gzip file. The file is NOT in the document. A proof
+  runs to hundreds of kilobytes on an ordinary field, and the snapshot is
+  resent whole and stored again on every publish; the digest is what
+  travels, and the file follows once (`public-publishing.md`, "Round
+  proofs").
+
+The round page shows a small **Proof** pill beside the heading when the
+round announces one: which engine paired it, a download of the file and its
+SHA-256. A round without a proof shows nothing at all, so older rounds and
+older publishers look exactly as they did. This server never runs the
+verifier; it checks only that the file it serves is the one the snapshot
+named. A proof speaks in starting ranks, never names.
+
 ## What is deliberately NOT in here
 
 **Anything a spectator has no business seeing.** No email addresses, no

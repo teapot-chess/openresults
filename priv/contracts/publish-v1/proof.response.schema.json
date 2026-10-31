@@ -1,0 +1,16 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://raw.githubusercontent.com/teapot-chess/openresults/main/priv/contracts/publish-v1/proof.response.schema.json",
+  "title": "Round proof accepted (POST /api/tournaments/:slug/proofs, 200)",
+  "description": "Reader: OpenPairings. `stored` is false when this server already held the same proof - a retry after a lost answer, which is not an error.",
+  "type": "object",
+  "required": ["status", "slug", "round", "sha256", "stored"],
+  "additionalProperties": false,
+  "properties": {
+    "status": { "const": "ok" },
+    "slug": { "$ref": "common.schema.json#/definitions/slug" },
+    "round": { "type": "integer", "minimum": 1 },
+    "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "stored": { "type": "boolean" }
+  }
+}

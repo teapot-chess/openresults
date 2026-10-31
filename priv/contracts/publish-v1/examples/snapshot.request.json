@@ -12,6 +12,7 @@
     "end_date": "2026-03-05",
     "rounds_count": 5,
     "system": "swiss",
+    "swiss_variant": "dutch",
     "arbiter": "A. Arbiter",
     "deputy": null,
     "fide_rated": true,
@@ -70,6 +71,8 @@
     {
       "number": 1,
       "date": "2026-03-01",
+      "engine": { "name": "ainalrami", "version": "0.48.0" },
+      "proof": { "sha256": "ea47fb5bbb502fc4c23d5ecb987210bfae546c4a63d8952f3a62360c076ab8e4", "bytes": 171, "format": "ainalrami-pairing-proof", "version": 2, "compression": "gzip" },
       "results_public": true,
       "boards": [
         { "board": 1, "label": "1", "white": 1, "black": 3, "result": "1-0", "points": { "white": 1.0, "black": 0.0 } },

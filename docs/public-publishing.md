@@ -312,11 +312,48 @@ Mints a slug bound to this installation. Request body `{}`.
   is `mint`, `publish`, `history`, `registrations`, `delete`, `live` (a hall
   relay's board updates), `relay_key` or `relay_key_revoke` (the publisher
   making and withdrawing its box's relay key; all three in
-  `docs/live-boards-api.md`); naming the
+  `docs/live-boards-api.md`), or `proof` (a round's pairing proof, "Round
+  proofs" above); naming the
   action is what runs that action's checks, ownership included, before the
   controller. On any ingest route without it - or with an action nothing
   checks - an installation key gets the anonymous 401, as if it were unknown.
   `test/openresults_web/default_deny_test.exs` walks the router to prove it.
+
+### Round proofs: `POST /api/tournaments/:slug/proofs`
+
+**(added 2026-10-31)** The snapshot announces each round's pairing proof by
+digest (`rounds[].proof`, see `snapshot-schema.md`). The answer to the
+publish then lists the ones this server does not hold yet:
+
+```json
+{"status": "ok", "slug": "...", "received_at": "...",
+ "proofs_wanted": [{"round": 3, "sha256": "..."}]}
+```
+
+and the publisher uploads exactly those, one request each:
+
+```json
+{"round": 3, "sha256": "...", "gzip_base64": "..."}
+```
+
+- Credentials, ownership and tournament key as for a publish; the
+  installation action is `proof`. Refused while suspended or revoked, from
+  a blocked address, while paused and below the disk floor; no budget of its
+  own, because a proof is only accepted when the CURRENT snapshot announces
+  it, and only once (a repeat answers `"stored": false`).
+- Checked: the bytes are gzip, their SHA-256 and size are the announced
+  ones (`proof_mismatch`, 422), the round announces that digest
+  (`proof_not_announced`, 409), at most 5,000,000 gzipped bytes
+  (`proof_too_large`, 413). Never checked: whether the proof proves
+  anything. That is the verifier's job, and it runs on the reader's machine.
+- Kept: only the proofs the current snapshot announces. A publish that no
+  longer announces one (the round paired again, withdrawn) deletes it; a
+  takedown deletes all of them.
+- Served at `GET /t/:slug/round/:n/proof` as `application/gzip`, only for
+  the digest the current snapshot names for that round and only where the
+  round page itself may be seen.
+- A server older than this answers the publish without `proofs_wanted`, and
+  its publisher sends nothing more.
 
 ### Snapshot size cap
 

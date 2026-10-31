@@ -237,6 +237,49 @@ defmodule OpenResultsWeb.Contracts.PublishV1ContractTest do
   end
 
   describe "OpenPairings -> the other publishing routes" do
+    test "POST /api/tournaments/:slug/proofs: the publish asks, the upload answers" do
+      slug = unique_slug("contract")
+      key = random_key()
+      snapshot = with_slug(example("snapshot.request.json"), slug)
+
+      asked = snapshot |> publish(operator_token(), key) |> json_response(200)
+      assert_valid!(@contract, "snapshot.response.schema.json", asked)
+      upload = example("proof.request.json")
+      assert asked["proofs_wanted"] == [%{"round" => 1, "sha256" => upload["sha256"]}]
+
+      path = "/api/tournaments/#{slug}/proofs"
+      body = path |> post_json(upload, operator_token(), key) |> json_response(200)
+      assert_valid!(@contract, "proof.response.schema.json", body)
+      assert body["stored"] == true
+
+      again = path |> post_json(upload, operator_token(), key) |> json_response(200)
+      assert again["stored"] == false
+
+      # Held now, so the next publish asks for nothing.
+      repeat = snapshot |> publish(operator_token(), key) |> json_response(200)
+      refute Map.has_key?(repeat, "proofs_wanted")
+    end
+
+    test "the proof upload's refusals follow the error schema" do
+      {slug, key} = published!()
+      path = "/api/tournaments/#{slug}/proofs"
+      upload = example("proof.request.json")
+      other = Base.encode64(:zlib.gzip("not the announced proof"))
+
+      for {body, status, code} <- [
+            {Map.put(upload, "round", 2), 409, "proof_not_announced"},
+            {Map.put(upload, "gzip_base64", other), 422, "proof_mismatch"},
+            {Map.delete(upload, "sha256"), 422, "invalid_request"}
+          ] do
+        answer = path |> post_json(body, operator_token(), key) |> json_response(status)
+        assert_valid!(@contract, "error.response.schema.json", answer)
+        assert answer["error"] == code
+      end
+
+      answer = path |> post_json(upload, operator_token(), random_key()) |> json_response(403)
+      assert_valid!(@contract, "error.response.schema.json", answer)
+    end
+
     test "GET /api/server" do
       body = json_response(get(build_conn(), "/api/server"), 200)
       assert_valid!(@contract, "server.response.schema.json", body)

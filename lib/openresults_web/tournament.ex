@@ -665,6 +665,29 @@ defmodule OpenResultsWeb.Tournament do
   def results_public?(_not_a_round), do: true
 
   @doc """
+  The round's pairing proof as the snapshot announces it - `%{"sha256",
+  "bytes", "format", "version"}` with a well-formed digest - or nil. A
+  round paired by hand, by an older publisher, or too large to prove has
+  none, and the page then shows nothing about proofs at all.
+  """
+  def round_proof(%{"proof" => %{"sha256" => sha} = proof}) when is_binary(sha) do
+    if Regex.match?(~r/\A[0-9a-f]{64}\z/, sha), do: proof
+  end
+
+  def round_proof(_round), do: nil
+
+  @doc """
+  `{name, version}` of the program that paired the round, as strings
+  (`version` may be nil), or nil when the snapshot does not say.
+  """
+  def round_engine(%{"engine" => %{"name" => name} = engine})
+      when is_binary(name) and name != "" do
+    {name, if(is_binary(engine["version"]), do: engine["version"])}
+  end
+
+  def round_engine(_round), do: nil
+
+  @doc """
   The numbers of the published rounds whose results are withheld, in order.
   """
   def withheld_result_rounds(payload) do

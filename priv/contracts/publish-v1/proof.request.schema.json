@@ -1,0 +1,14 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://raw.githubusercontent.com/teapot-chess/openresults/main/priv/contracts/publish-v1/proof.request.schema.json",
+  "title": "Round proof upload (POST /api/tournaments/:slug/proofs body)",
+  "description": "Sender: OpenPairings. One round's pairing proof, sent only when the answer to a publish listed it in `proofs_wanted`. The file is gzip, base64-encoded so the body stays plain JSON; its SHA-256 (of the gzip bytes) and size must be the ones the CURRENT snapshot announces for that round in `rounds[].proof`. Headers as for a publish: `Authorization: Bearer <operator ingest token | installation key orik_...>`, `X-OpenResults-Key` once the slug is claimed. The server checks only the digest, the size and the gzip header; it never runs a verifier. Refusals: 401 unauthorized; 403 key_required, key_mismatch, not_owner, installation_suspended, installation_revoked, address_blocked, tournament_hidden; 404 tournament_not_published; 409 proof_not_announced; 413 proof_too_large (with limit_bytes); 422 invalid_request, proof_mismatch; 503 publishing_paused, storage_low.",
+  "type": "object",
+  "required": ["round", "sha256", "gzip_base64"],
+  "additionalProperties": true,
+  "properties": {
+    "round": { "type": "integer", "minimum": 1 },
+    "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "gzip_base64": { "description": "The gzip file, standard base64 with padding.", "type": "string", "minLength": 4 }
+  }
+}

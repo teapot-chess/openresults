@@ -48,6 +48,7 @@ defmodule OpenResultsWeb.SnapshotController do
 
   alias OpenResults.Moderation
   alias OpenResults.ModerationJournal
+  alias OpenResults.RoundProofs
   alias OpenResults.Snapshots
   alias OpenResults.Takedown
   alias OpenResults.TournamentKeys
@@ -84,11 +85,23 @@ defmodule OpenResultsWeb.SnapshotController do
            installation: installation(conn)
          ) do
       {:ok, snapshot} ->
-        json(conn, %{
-          status: "ok",
-          slug: snapshot.tournament_slug,
-          received_at: DateTime.to_iso8601(snapshot.received_at)
-        })
+        # The round proofs this document announces and this server does not
+        # hold yet, for the publisher to upload - see `OpenResults.RoundProofs`.
+        # Absent when there are none, so the answer to a publisher that
+        # announces no proofs is exactly what it always was.
+        wanted = RoundProofs.reconcile(snapshot.tournament_slug, conn.body_params)
+
+        json(
+          conn,
+          Map.merge(
+            %{
+              status: "ok",
+              slug: snapshot.tournament_slug,
+              received_at: DateTime.to_iso8601(snapshot.received_at)
+            },
+            if(wanted == [], do: %{}, else: %{proofs_wanted: wanted})
+          )
+        )
 
       {:error, reason} when reason in [:key_required, :key_mismatch] ->
         forbid(conn, reason)

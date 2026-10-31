@@ -80,6 +80,18 @@
     },
     {
       "method": "POST",
+      "path": "/api/tournaments/:slug/proofs",
+      "senders": ["openpairings"],
+      "auth": ["operator", "installation"],
+      "headers": {
+        "Content-Type": "application/json",
+        "X-OpenResults-Key": "the tournament's key, once claimed (never claims here)"
+      },
+      "request": "proof.request.schema.json",
+      "responses": { "200": "proof.response.schema.json", "4xx/5xx": "error.response.schema.json" }
+    },
+    {
+      "method": "POST",
       "path": "/api/tournaments/:slug/relay-keys",
       "senders": ["openpairings"],
       "auth": ["operator", "installation"],

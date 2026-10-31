@@ -56,6 +56,9 @@
         "owner_revoked",
         "owner_suspended",
         "ply_mismatch",
+        "proof_mismatch",
+        "proof_not_announced",
+        "proof_too_large",
         "publishing_paused",
         "rate_limited",
         "registration_closed",
@@ -88,7 +91,7 @@
           "minimum": 0
         },
         "limit_bytes": {
-          "description": "snapshot_too_large: the most an installation key may publish, in bytes.",
+          "description": "snapshot_too_large: the most an installation key may publish, in bytes. proof_too_large: the largest proof file kept, in gzipped bytes.",
           "type": "integer",
           "minimum": 0
         },

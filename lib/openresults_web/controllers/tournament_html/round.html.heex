@@ -15,13 +15,18 @@
           are hidden but whose five round pages each print one is not hiding
           anything. The masthead above already honours it; this heading did
           not. --%>
-    <h2>
-      {Tournament.round_heading(@payload, @round["number"])}
-      <span :if={Tournament.show?(@payload, "dates") && @round["date"]} class="quiet">
-        {date(@round["date"])}
-      </span>
-      <.live_marker round={@round} />
-    </h2>
+    <div class="round-heading">
+      <h2>
+        {Tournament.round_heading(@payload, @round["number"])}
+        <span :if={Tournament.show?(@payload, "dates") && @round["date"]} class="quiet">
+          {date(@round["date"])}
+        </span>
+        <.live_marker round={@round} />
+      </h2>
+      <%!-- The engine's pairing proof, when the round has one: a small
+            pill beside the heading, closed until asked. --%>
+      <.round_proof round={@round} slug={@slug} />
+    </div>
 
     <.withheld_results_note
       rounds={if Tournament.results_public?(@round), do: [], else: [@round["number"]]}

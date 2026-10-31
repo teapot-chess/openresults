@@ -64,6 +64,12 @@ defmodule OpenResultsWeb.ApiError do
     ply_mismatch: {422, "`ply` does not match the number of `moves`"},
     fen_mismatch: {422, "`fen` is not the position `moves` lead to"},
     moves_conflict: {409, "the moves disagree with those already held for this board"},
+    proof_not_announced:
+      {409,
+       "the current snapshot announces no proof with this digest for this round; publish first"},
+    proof_mismatch:
+      {422, "the proof is not gzip, or its SHA-256 or size is not the one the snapshot announced"},
+    proof_too_large: {413, "the proof is larger than this server keeps"},
     not_configured:
       {404, "this server does not relay a Belgian (KBSB/FRBE) roster; ask the operator"}
   }

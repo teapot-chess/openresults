@@ -71,6 +71,10 @@
           "description": "Keizer standings carry different columns; the renderer keys off this. A team Swiss is `swiss` with `team_event: true`.",
           "enum": ["swiss", "roundrobin", "keizer"]
         },
+        "swiss_variant": {
+          "description": "Which Swiss pairing system, beside `system: swiss` only. Absent: not said - every publisher before this field paired the Dutch system (C.04.3). Adding a value here is an additive change.",
+          "enum": ["dutch", "dubov", "burstein", "lim"]
+        },
         "arbiter": { "$ref": "#/definitions/nullableString" },
         "deputy": { "$ref": "#/definitions/nullableString" },
         "fide_rated": { "type": "boolean" },
@@ -202,12 +206,45 @@
         "sex": { "enum": ["M", "F"] }
       }
     },
+    "engine": {
+      "type": "object",
+      "required": ["name"],
+      "additionalProperties": true,
+      "properties": {
+        "name": { "description": "Lowercase program name, e.g. ainalrami.", "type": "string", "minLength": 1 },
+        "version": { "$ref": "#/definitions/nullableString" }
+      }
+    },
+    "proof": {
+      "type": "object",
+      "required": ["sha256"],
+      "additionalProperties": true,
+      "properties": {
+        "sha256": {
+          "description": "Lowercase hex SHA-256 of the file exactly as uploaded and served (gzip bytes).",
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "bytes": { "description": "Size of that file.", "type": "integer", "minimum": 1 },
+        "format": { "description": "The proof format inside, e.g. ainalrami-pairing-proof.", "type": "string" },
+        "version": { "description": "That format's version.", "type": "integer" },
+        "compression": { "const": "gzip" }
+      }
+    },
     "round": {
       "type": "object",
       "additionalProperties": true,
       "properties": {
         "number": { "type": "integer", "minimum": 1 },
         "date": { "$ref": "#/definitions/nullableString" },
+        "engine": {
+          "description": "The program that paired this round. Per round, because an update can change the engine in the middle of an event. Absent: not said (paired by hand, by a round-robin table, or by an older publisher).",
+          "$ref": "#/definitions/engine"
+        },
+        "proof": {
+          "description": "The round's pairing proof, named by digest; the file itself is uploaded separately (POST /api/tournaments/:slug/proofs) when the publish answer lists it in `proofs_wanted`. Absent: there is none.",
+          "$ref": "#/definitions/proof"
+        },
         "results_public": {
           "description": "Absent means true. false: the pairings are published and every result (and points, postponed flags) is withheld as null/absent.",
           "type": "boolean"

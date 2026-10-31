@@ -548,6 +548,108 @@ a.event-tab:hover {
   margin: 0.25rem 0 0.75rem;
 }
 
+/* The round heading with its "Proof" pill at the far end. The pill is a
+   `<details>`: it opens by tap with no script, and a round without a proof
+   renders no pill, so the heading is then exactly the heading it was. */
+.round-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  column-gap: 1rem;
+}
+
+.round-proof {
+  position: relative;
+  margin: 2rem 0 0.75rem;
+}
+
+.round-proof-trigger {
+  list-style: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.15rem 0.6rem;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  background: var(--panel);
+  color: var(--accent);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  transition:
+    border-color 120ms ease,
+    background-color 120ms ease;
+}
+
+.round-proof-trigger::-webkit-details-marker {
+  display: none;
+}
+
+.round-proof-trigger:hover,
+.round-proof[open] > .round-proof-trigger {
+  border-color: var(--accent);
+}
+
+.round-proof-trigger:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.round-proof-icon {
+  width: 0.9rem;
+  height: 0.9rem;
+}
+
+.round-proof-panel {
+  display: none;
+}
+
+.round-proof[open] > .round-proof-panel {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: min(22rem, calc(100vw - 2rem));
+  padding: 0.75rem 0.9rem;
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  background: var(--panel);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+  font-size: 0.8125rem;
+}
+
+.round-proof-panel p {
+  margin: 0;
+}
+
+.round-proof-engine {
+  font-weight: 600;
+}
+
+.round-proof-download {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-weight: 600;
+}
+
+.round-proof-digest code {
+  font-size: 0.7rem;
+  overflow-wrap: anywhere;
+}
+
+/* A page printed or thrown onto a projector has no use for a download. */
+@media print {
+  .round-proof {
+    display: none;
+  }
+}
+
 /* Standings can carry any number of tiebreak columns, so the table scrolls
    inside its own box rather than pushing the page sideways. */
 .scroller {
