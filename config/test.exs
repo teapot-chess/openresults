@@ -98,6 +98,13 @@ config :phoenix,
   sort_verified_routes_query_params: true
 
 config :openresults, :backup_interval, :disabled
+config :openresults, :offsite_backup_interval, :disabled
+# Crashes are half the point of some tests; they are not reports.
+config :openresults, :error_reports, false
+# Every off-site PUT goes to a Req.Test stub, never to a network.
+config :openresults, :offsite_backup_req_options,
+  plug: {Req.Test, OpenResults.Ops.OffsiteBackup},
+  retry: false
 
 # No moderation journal (`OpenResults.ModerationJournal`): beside the test
 # database it would collect a line from every moderation test, run after run,

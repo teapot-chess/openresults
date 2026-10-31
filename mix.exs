@@ -77,6 +77,9 @@ defmodule OpenResults.MixProject do
        app: false,
        compile: false,
        depth: 1},
+      # Process state and metrics for the operator, at /admin/dashboard behind
+      # the admin gate. See the router.
+      {:phoenix_live_dashboard, "~> 0.8.3"},
       {:telemetry_metrics, "~> 1.0"},
       {:telemetry_poller, "~> 1.0"},
       {:gettext, "~> 1.0"},

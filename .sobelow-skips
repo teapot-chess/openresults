@@ -1,7 +1,8 @@
 CI.System: Command Injection via `System` function,lib/openresults/disk_space.ex:130,29B2313
-Config.CSP: Missing Content-Security-Policy,lib/openresults_web/router.ex:32,763D53A
+Config.CSP: Missing Content-Security-Policy,lib/openresults_web/router.ex:34,67D7B84
 Config.CSWH: Cross-Site Websocket Hijacking,lib/openresults_web/endpoint.ex:11,5CDD6F6
-Config.CSWH: Cross-Site Websocket Hijacking,lib/openresults_web/endpoint.ex:47,43D2B9E
+Config.CSWH: Cross-Site Websocket Hijacking,lib/openresults_web/endpoint.ex:22,5B7C590
+Config.CSWH: Cross-Site Websocket Hijacking,lib/openresults_web/endpoint.ex:58,3065CE0
 DOS.StringToAtom: Unsafe `String.to_atom`,lib/openresults/chess.ex:554,96EC22
 DOS.StringToAtom: Unsafe `String.to_atom`,lib/openresults/chess.ex:555,17D413A
 DOS.StringToAtom: Unsafe `String.to_atom`,lib/openresults_web/controllers/tournament_html.ex:3135,730D06D
@@ -30,6 +31,8 @@ Traversal.FileModule: Directory Traversal in `File.mkdir_p`,lib/openresults/mode
 Traversal.FileModule: Directory Traversal in `File.mkdir_p`,lib/openresults/moderation_journal.ex:284,3DF2CEB
 Traversal.FileModule: Directory Traversal in `File.mkdir_p`,lib/openresults/moderation_journal.ex:288,5C53C3C
 Traversal.FileModule: Directory Traversal in `File.open`,lib/openresults/backup.ex:540,6E1564F
+Traversal.FileModule: Directory Traversal in `File.open`,lib/openresults/ops/age.ex:243,32A6D0C
+Traversal.FileModule: Directory Traversal in `File.read!`,lib/openresults/ops/age.ex:133,6B86ABC
 Traversal.FileModule: Directory Traversal in `File.read`,lib/openresults/backup.ex:94,FF5BD6
 Traversal.FileModule: Directory Traversal in `File.read`,lib/openresults/backup.ex:432,DDCF2D
 Traversal.FileModule: Directory Traversal in `File.read`,lib/openresults/moderation_journal.ex:277,36F9924
@@ -50,6 +53,12 @@ Traversal.FileModule: Directory Traversal in `File.rm`,lib/openresults/fide_list
 Traversal.FileModule: Directory Traversal in `File.rm`,lib/openresults/moderation_journal.ex:702,1D8FDD4
 Traversal.FileModule: Directory Traversal in `File.rm`,lib/openresults/moderation_journal.ex:822,7E1A49F
 Traversal.FileModule: Directory Traversal in `File.rm`,lib/openresults/moderation_journal.ex:865,36AA9A5
+Traversal.FileModule: Directory Traversal in `File.rm`,lib/openresults/ops/age.ex:136,5FB393C
+Traversal.FileModule: Directory Traversal in `File.rm`,lib/openresults/ops/age.ex:137,29C347F
+Traversal.FileModule: Directory Traversal in `File.rm`,lib/openresults/ops/age.ex:233,427D7E2
+Traversal.FileModule: Directory Traversal in `File.rm`,lib/openresults/ops/offsite_backup.ex:234,3FD6005
+Traversal.FileModule: Directory Traversal in `File.stream!`,lib/openresults/ops/offsite_backup.ex:250,69AFB14
+Traversal.FileModule: Directory Traversal in `File.write!`,lib/openresults/ops/age.ex:130,4C43375
 Traversal.FileModule: Directory Traversal in `File.write`,lib/openresults/backup.ex:249,4381BB0
 Traversal.FileModule: Directory Traversal in `File.write`,lib/openresults/backup.ex:292,6FFA8F
 Traversal.FileModule: Directory Traversal in `File.write`,lib/openresults/backup.ex:400,681742

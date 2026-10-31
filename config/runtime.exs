@@ -99,6 +99,28 @@ if keep = System.get_env("BACKUP_RETENTION") do
   end
 end
 
+# Off-site backups - `OpenResults.Ops.OffsiteBackup`, docs/deployment.md
+# "Off-site backups". The same variable names as OpenPairings'. Off unless
+# every required one is set; half a configuration refuses to boot rather than
+# quietly sending nothing. Not read in test, where an operator's shell must
+# not decide what the suite does.
+#
+#   OFFSITE_BACKUP_RECIPIENTS            age public keys (age1...), comma-separated
+#   OFFSITE_BACKUP_S3_ENDPOINT           https://<s3-compatible endpoint>
+#   OFFSITE_BACKUP_S3_BUCKET             bucket name (path-style requests)
+#   OFFSITE_BACKUP_S3_ACCESS_KEY_ID      a write-only key for that bucket, ideally
+#   OFFSITE_BACKUP_S3_SECRET_ACCESS_KEY
+#   OFFSITE_BACKUP_S3_REGION             optional, default us-east-1
+#   OFFSITE_BACKUP_S3_PREFIX             optional, default openresults
+#   OFFSITE_BACKUP_STALE_HOURS           optional, default 36
+if config_env() != :test do
+  case OpenResults.Ops.OffsiteBackup.from_env() do
+    {:ok, offsite} -> config :openresults, :offsite_backup, offsite
+    :disabled -> :ok
+    {:error, message} -> raise message
+  end
+end
+
 # How long `OpenResults.Retention` keeps personal data that has served its
 # purpose - see docs/privacy-retention.md. DAYS, a whole number of at least one,
 # or the app does not start, like BACKUP_RETENTION above: 0 would delete an

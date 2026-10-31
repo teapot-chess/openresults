@@ -3,8 +3,10 @@
 # skip: true  - findings recorded in .sobelow-skips are accepted. Every entry there
 # was read in context and is a false positive:
 #   * Traversal.FileModule - paths are server-built (data dir, backup staging and
-#     temp files, FIDE list downloads, the moderation journal); none is a raw
-#     user string.
+#     temp files, FIDE list downloads, the moderation journal, the off-site
+#     backup's encrypted copy beside the newest backup); none is a raw user
+#     string. `OpenResults.Ops.Age`'s file functions also serve `mix ops.age`,
+#     whose paths the operator types on their own machine.
 #   * XSS.SendResp / XSS.Raw - bodies are escaped HTML builders, feed/sitemap XML,
 #     or the repo's own changelog, or a page this app rendered itself and cached
 #     (Revalidate, OpenResultsWeb.HubCache); `raw(gettext(...))` is a translator-owned string;
@@ -16,7 +18,9 @@
 #   * Config.CSP - the policy is set by OpenResultsWeb.Plugs.ContentSecurityPolicy
 #     (script-src by hash, since the 2026-10-19 sweep), which Sobelow does not
 #     look inside; OpenResultsWeb.Framing loosens frame-ancestors on purpose.
-#   * Config.CSWH - check_origin is set in config/runtime.exs.
+#   * Config.CSWH - check_origin is set in config/runtime.exs. The admin socket
+#     (`/admin/live`, LiveDashboard) is also CSRF-checked against the admin
+#     session cookie - see OpenResultsWeb.AdminAccess.LiveDashboard.
 #   * CI.System - fixed `df` lookup via System.find_executable/1.
 [
   exit: :low,

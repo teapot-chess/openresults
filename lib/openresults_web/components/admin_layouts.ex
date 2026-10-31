@@ -30,6 +30,7 @@ defmodule OpenResultsWeb.Admin.Layouts do
     {"Players", "/admin/players"},
     {"Action log", "/admin/action-log"},
     {"Stats", "/admin/stats"},
+    {"System", "/admin/system"},
     {"Settings", "/admin/settings"}
   ]
 

@@ -12,6 +12,17 @@ defmodule OpenResultsWeb.Endpoint do
     websocket: true,
     longpoll: true
 
+  # LiveDashboard's socket, and the opposite of the one above: under `/admin`,
+  # so Cloudflare Access gates the upgrade like every admin path, and WITH the
+  # admin session as connect-info, so LiveView checks the page's CSRF token
+  # against the admin cookie. Who may mount is decided by
+  # `OpenResultsWeb.AdminAccess.LiveDashboard`. WebSocket only: a long-poll
+  # fallback is a stream of plain HTTP requests that would need the same
+  # treatment again, for a page two people open.
+  socket "/admin/live", Phoenix.LiveView.Socket,
+    websocket: [connect_info: [session: OpenResultsWeb.Plugs.AdminSession.session_options()]],
+    longpoll: false
+
   # The piece sprites: third-party art that changes only with a release, and
   # that a round of sixty boards points at sixty times a page. A day's cache
   # (the ETag still revalidates after it) instead of a request per view.

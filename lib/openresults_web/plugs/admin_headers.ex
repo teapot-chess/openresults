@@ -35,6 +35,15 @@ defmodule OpenResultsWeb.Plugs.AdminHeaders do
   - `X-Robots-Tag: noindex, nofollow`. Access keeps crawlers out; this is
     for the day it does not.
 
+  ## Except the dashboard
+
+  LiveDashboard (`/admin/dashboard`) is a LiveView and cannot run without
+  scripts. Its requests carry a per-request nonce
+  (`OpenResultsWeb.AdminAccess.LiveDashboard`), and only then is the policy
+  `script-src 'nonce-...'`: the dashboard's own tags, nothing inline that
+  lacks the nonce, nothing from anywhere else. Style attributes are allowed
+  there because its templates use them; everything else is as above.
+
   Set when the plug runs, so a page rendered from an error keeps them, and
   set again just before sending, so nothing later in the request can loosen
   them by accident.
@@ -47,7 +56,6 @@ defmodule OpenResultsWeb.Plugs.AdminHeaders do
 
   @headers [
     {"cache-control", "no-store"},
-    {"content-security-policy", @policy},
     {"x-frame-options", "DENY"},
     {"x-robots-tag", "noindex, nofollow"},
     {"referrer-policy", "same-origin"},
@@ -65,5 +73,15 @@ defmodule OpenResultsWeb.Plugs.AdminHeaders do
 
   @doc "Puts the admin headers on `conn`, replacing whatever was there."
   @spec put(Plug.Conn.t()) :: Plug.Conn.t()
-  def put(conn), do: merge_resp_headers(conn, @headers)
+  def put(conn) do
+    merge_resp_headers(conn, [{"content-security-policy", policy(conn)} | @headers])
+  end
+
+  defp policy(%Plug.Conn{private: %{admin_csp_nonce: nonce}}) when is_binary(nonce) do
+    "default-src 'self'; script-src 'nonce-#{nonce}'; style-src 'self' 'nonce-#{nonce}'; " <>
+      "style-src-attr 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; " <>
+      "object-src 'none'; base-uri 'none'; frame-ancestors 'none'"
+  end
+
+  defp policy(_conn), do: @policy
 end
