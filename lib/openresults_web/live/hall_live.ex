@@ -135,6 +135,7 @@ defmodule OpenResultsWeb.HallLive do
     socket
     |> stream_configure(:rows, dom_id: & &1.id)
     |> stream(:rows, [])
+    |> assign(:row_count, 0)
   end
 
   @impl true
@@ -370,7 +371,9 @@ defmodule OpenResultsWeb.HallLive do
         slide -> Hall.rows(socket.assigns.data, slide, socket.assigns.arrivals, now())
       end
 
-    stream(socket, :rows, rows, reset: true)
+    socket
+    |> assign(:row_count, length(rows))
+    |> stream(:rows, rows, reset: true)
   end
 
   ## ---------- rendering ----------
@@ -434,6 +437,7 @@ defmodule OpenResultsWeb.HallLive do
               standings_top={@settings.standings_top}
               slug={@slug}
               pieces={@pieces}
+              row_count={@row_count}
             />
         <% end %>
       </main>
@@ -487,12 +491,26 @@ defmodule OpenResultsWeb.HallLive do
   defp view_name({:live, _page}), do: gettext("Live boards")
   defp view_name({:announcement, _page}), do: gettext("Announcement")
 
+  # How much larger than the hall's base size a board row may be drawn. A
+  # full page (`Hall.boards_per_page/0`) gets 1.25, which is what fits; a short
+  # one - six boards in a club rapid - grows into the empty screen it would
+  # otherwise leave, up to 1.6 so names never outshout the tournament's title.
+  # The 70 is the stage's height in hall units, the 2.2 a row's padding and the
+  # 3.84 one em of row height, all from app.css's `.hall-table`.
+  defp fit_style(rows) when rows > 0 do
+    fit = ((70 / rows - 2.2) / 3.84) |> max(1.25) |> min(1.6) |> Float.round(3)
+    "--fit: #{fit}"
+  end
+
+  defp fit_style(_none), do: nil
+
   attr :slide, :any, required: true
   attr :data, :map, required: true
   attr :streams, :any, required: true
   attr :standings_top, :integer, required: true
   attr :slug, :string, default: nil
   attr :pieces, :string, default: "cburnett"
+  attr :row_count, :integer, default: 0
 
   defp slide(%{slide: {:pairings, _}} = assigns) do
     assigns = assign(assigns, :matches?, Hall.matches?(assigns.data))
@@ -520,7 +538,7 @@ defmodule OpenResultsWeb.HallLive do
           </tr>
         </thead>
 
-        <tbody id="hall-rows" phx-update="stream">
+        <tbody id="hall-rows" phx-update="stream" style={fit_style(@row_count)}>
           <tr :for={{id, board} <- @streams.rows} id={id}>
             <th scope="row" class="num hall-board">{board.label}</th>
 
@@ -550,7 +568,7 @@ defmodule OpenResultsWeb.HallLive do
           </tr>
         </thead>
 
-        <tbody id="hall-rows" phx-update="stream">
+        <tbody id="hall-rows" phx-update="stream" style={fit_style(@row_count)}>
           <tr :for={{id, match} <- @streams.rows} id={id}>
             <th scope="row" class="num hall-board">{match.number}</th>
 
@@ -656,7 +674,7 @@ defmodule OpenResultsWeb.HallLive do
           </tr>
         </thead>
 
-        <tbody id="hall-rows" phx-update="stream">
+        <tbody id="hall-rows" phx-update="stream" style={fit_style(@row_count)}>
           <tr :for={{id, board} <- @streams.rows} id={id} class={[board.fresh? && "is-fresh"]}>
             <th scope="row" class="num hall-board">{board.label}</th>
 
