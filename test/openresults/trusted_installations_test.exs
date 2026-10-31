@@ -55,7 +55,7 @@ defmodule OpenResults.TrustedInstallationsTest do
       slug = minted_slug(key)
       assert Tournaments.status(slug) == :listed
 
-      slug |> payload() |> publish(key, random_key()) |> json_response(200)
+      slug |> current_payload() |> publish(key, random_key()) |> json_response(200)
 
       assert html_response(get(build_conn(), "/"), 200) =~ slug
       assert html_response(get(build_conn(), "/players/#{@fide_id}"), 200) =~ slug
@@ -67,7 +67,7 @@ defmodule OpenResults.TrustedInstallationsTest do
       slug = minted_slug(key)
       assert Tournaments.status(slug) == :pending
 
-      slug |> payload() |> publish(key, random_key()) |> json_response(200)
+      slug |> current_payload() |> publish(key, random_key()) |> json_response(200)
 
       assert html_response(get(build_conn(), "/"), 200) =~ slug
       refute html_response(get(build_conn(), "/players/#{@fide_id}"), 200) =~ slug

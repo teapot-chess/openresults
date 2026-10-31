@@ -74,9 +74,9 @@ defmodule OpenResultsWeb.TournamentControllerTest do
     end)
   end
 
-  describe "GET /" do
+  describe "GET /f/BEL" do
     test "lists what has published", %{conn: conn, swiss: swiss} do
-      html = conn |> get(~p"/") |> html_response(200)
+      html = conn |> get(~p"/f/BEL") |> html_response(200)
 
       assert html =~ swiss["tournament"]["name"]
       assert html =~ ~s|href="/t/#{swiss["tournament"]["slug"]}"|

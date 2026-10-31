@@ -1,6 +1,24 @@
 # Design: OpenResults as a replacement for chess-results.com
 
-Status: proposal, 2026-10-31. Nothing here is built. Guesses are marked
+Status: proposal, 2026-10-31. **Phase 1 is built** (branch
+`results-hub-phase1`); where it departs from the text below:
+
+- Removal is by email to the operator, not a report-form reason (the
+  maintainer's answer to section 6), so there is no `scope` beyond hiding
+  the whole page.
+- Player pages and player search use approved tournaments only; pending ones
+  are in the tournament listings and search, marked unapproved.
+- The name check runs at ingest (stored, for the admin list) and again when
+  the page is drawn, against the FIDE list in force then, so a new list
+  never leaves a stale verdict on a page.
+- The front page still decodes the snapshots of the tournaments it shows,
+  for the event grouping; the listings read only the index.
+- The sitemap's tournament URLs still come from the tournaments table, not
+  the index.
+- A stale shell is a tournament with no published round whose start date is
+  more than 30 days ago.
+
+The original proposal follows unchanged. Guesses are marked
 **(guess)**; everything else was read from this repo, OpenPairings, or
 chess-results.com itself (read-only).
 

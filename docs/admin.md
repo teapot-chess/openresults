@@ -348,6 +348,15 @@ written to the action log with your address.
   (at most 30), with a reason. Before you confirm, the page shows how many
   installations were seen from that range in the last 30 days: a club's wifi
   can be many people.
+- **Players.** Player pages hidden at a player's request, and the published
+  results whose name does not match the FIDE list's name for their FIDE ID
+  (probably a mistyped ID; those are already kept off that player's page, the
+  list is there so somebody can tell the arbiter). **Hide** takes a FIDE ID:
+  `/players/<id>` answers 404 and the ID leaves search and the sitemap. The
+  name stays on every tournament page; that is the organiser's publication
+  and a separate request. **Restore** undoes it. Both are in the action log,
+  and a hide survives restoring the database from a backup the way a
+  takedown does (the moderation journal replays it).
 - **Action log.** Everything above, plus break-glass uses of the operator
   token and retention runs, filterable by who, what and target.
 - **Settings.** The operator name, the terms link, the contact email and the

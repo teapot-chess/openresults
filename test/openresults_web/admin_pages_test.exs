@@ -64,6 +64,12 @@ defmodule OpenResultsWeb.AdminPagesTest do
       "/admin/address-blocks/:id" <> rest ->
         ["/admin/address-blocks/#{world.block.id}" <> rest]
 
+      "/admin/players/hide" ->
+        ["/admin/players/hide?fide_id=1503014"]
+
+      "/admin/players/:fide_id" <> rest ->
+        ["/admin/players/1503014" <> rest]
+
       "/admin/switches/:key" ->
         ["/admin/switches/registration_open", "/admin/switches/public_publishing_paused"]
 

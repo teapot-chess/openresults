@@ -234,6 +234,21 @@ defmodule OpenResultsWeb.AccessibilityTest do
           "/t/#{world.event_open}/round/1?lang=nl"
         ]
 
+      "/federations" ->
+        ["/federations", "/federations?lang=nl"]
+
+      "/f/:code" ->
+        ["/f/BEL", "/f/BEL?lang=fr", "/f/none", "/f/12345"]
+
+      "/search" ->
+        [
+          "/search",
+          "/search?q=gent",
+          "/search?q=muller&lang=nl",
+          "/search?q=ab",
+          "/search?q=zzzqqq"
+        ]
+
       "/players/:fide_id" ->
         ["/players/#{world.fide_id}", "/players/999999999"]
 
