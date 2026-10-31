@@ -70,6 +70,25 @@ defmodule OpenResultsWeb.AdminPagesTest do
       "/admin/players/:fide_id" <> rest ->
         ["/admin/players/1503014" <> rest]
 
+      # LiveDashboard's pages: a third-party LiveView with its own layout,
+      # scripts and markup, none of it this panel's to audit or link-check.
+      # Its gate and its headers are held by `admin_panel_test.exs`'s walks
+      # and `OpenResultsWeb.AdminSystemTest`.
+      "/admin/dashboard" <> _ ->
+        []
+
+      "/admin/system/errors/:id" <> rest ->
+        {:new, report} =
+          OpenResults.Ops.ErrorReports.record(%{
+            fingerprint: "walk#{System.unique_integer([:positive])}",
+            kind: "RuntimeError",
+            message: "a crash for the walk",
+            location: "OpenResults.Walk.run/0",
+            stacktrace: "OpenResults.Walk.run/0 (lib/walk.ex:1)"
+          })
+
+        ["/admin/system/errors/#{report.id}" <> rest]
+
       "/admin/switches/:key" ->
         ["/admin/switches/registration_open", "/admin/switches/public_publishing_paused"]
 

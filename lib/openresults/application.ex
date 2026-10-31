@@ -110,6 +110,10 @@ defmodule OpenResults.Application do
       OpenResults.ModerationJournal,
       # Start to serve requests, typically the last entry
       OpenResults.Backup.Scheduler,
+      # Sends the newest backup off the box, encrypted; idle unless configured.
+      OpenResults.Ops.OffsiteBackup.Scheduler,
+      # Writes crash reports for the logger handler installed below.
+      OpenResults.Ops.ErrorReports.Recorder,
       # Forgets old client addresses, releases minted slugs that never
       # published, and removes expired address blocks - once a day.
       OpenResults.Retention.Scheduler,
@@ -124,7 +128,16 @@ defmodule OpenResults.Application do
     # See https://elixir.hexdocs.pm/Supervisor.html
     # for other strategies and supported options
     opts = [strategy: :one_for_one, name: OpenResults.Supervisor]
-    Supervisor.start_link(children, opts)
+
+    with {:ok, pid} <- Supervisor.start_link(children, opts) do
+      # Crash reports onto the admin panel's System page, not into a third
+      # party's dashboard - see `OpenResults.Ops.ErrorReports`. Off in test.
+      if Application.get_env(:openresults, :error_reports, true) do
+        OpenResults.Ops.ErrorReports.LoggerHandler.install()
+      end
+
+      {:ok, pid}
+    end
   end
 
   # Tell Phoenix to update the endpoint configuration

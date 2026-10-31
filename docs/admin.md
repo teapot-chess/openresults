@@ -282,7 +282,7 @@ request.
 ## Using the panel
 
 Everything that changes something goes through a confirmation page that says
-what will happen, then a button. Nothing needs JavaScript. Every change is
+what will happen, then a button. Nothing needs JavaScript (LiveDashboard aside, below). Every moderation change is
 written to the action log with your address.
 
 - **Dashboard.** The two switches, what needs attention (pending tournaments,
@@ -402,6 +402,35 @@ written to the action log with your address.
   query strings are kept. "Schedulers: 2 online of 2" is how to confirm the deploy's
   `+S 2:2` took effect. CPU, load and system memory come from `/proc` and say
   "not measured" anywhere else.
+- **System.** The three questions before any other: is it up, is the
+  off-site copy current, what has crashed. **Health** is what `/healthz`
+  tells a monitor (status, database, off-site backup, version). **Off-site
+  backup** shows the bucket's host and name and how many public keys the
+  copies are encrypted to (never the keys or the secret), the last ten runs
+  with the reason for any failure, and **Send the newest backup now**, which
+  uploads it even if it was already sent and waits for the answer. With the
+  `OFFSITE_BACKUP_*` variables unset it says so; see
+  [`deployment.md`](deployment.md), "Off-site backups". **Errors** lists the
+  crashes this server has logged, one row per kind with how often and when
+  first and last, at most 200, kept here and sent nowhere. Messages are cut
+  to their first sentence with any data in them replaced (`[term]`,
+  `[email]`, `[redacted]`), and stack traces show `Module.function/arity
+  (file:line)` without arguments, so nothing a visitor typed ends up on the
+  page; the server log has the full story. **Forget** one when it is fixed,
+  or **Forget them all**; a crash that happens again comes back counted from
+  one. Neither, nor sending, is in the action log: they change nothing
+  anybody published.
+- **LiveDashboard** (`/admin/dashboard`, linked from System). Phoenix's own
+  page of processes, memory, ETS tables, sockets and the telemetry metrics,
+  read-only: killing processes is switched off. It is the one admin page that
+  runs JavaScript, so it is the one page whose CSP allows a script - only its
+  own, by a nonce drawn for each request; every other page keeps
+  `script-src 'none'`. Its live connection is a WebSocket on `/admin/live`,
+  under the same Access application (the `admin*` path covers it, so nothing
+  in Cloudflare needs adding), checked against the admin session cookie, and
+  allowed only for an address still on `OPENRESULTS_ADMIN_EMAILS` that loaded
+  a dashboard page in the last 12 hours. Remove an address and its open
+  dashboard stops at the next reconnect.
 
 ## When it does not work
 

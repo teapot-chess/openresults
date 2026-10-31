@@ -128,6 +128,12 @@ defmodule OpenResultsWeb.StatsTelemetry do
       %{conn: %Plug.Conn{path_info: ["t", _slug, "events"]}} ->
         :ok
 
+      # `/healthz` is polled by a monitor and by the deploy, every few
+      # seconds. Counted, it would be the busiest "public page" on the site
+      # and one more reader a day, and nobody read it.
+      %{conn: %Plug.Conn{path_info: ["healthz"]}} ->
+        :ok
+
       %{conn: %Plug.Conn{} = conn} ->
         group = group(conn)
         cache = conn.private[:openresults_page_cache]

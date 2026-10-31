@@ -144,6 +144,29 @@ loop: if a clean re-fetch still cannot resolve the tree, the problem is the
 lock file or the network, and grinding away only delays the moment the deploy
 admits it is stuck.
 
+### Health check
+
+`GET /healthz` answers JSON, for the deploy's loop and for an external
+monitor:
+
+```json
+{"status": "ok", "version": "0.29.0", "checks": {"database": "ok", "backup": "disabled"}}
+```
+
+`200` with `"status": "ok"` when the database answers `SELECT 1`; `503` with
+`"degraded"` and `"database": "unreachable"` when it does not. **Only the
+database decides.** `backup` (see "Off-site backups") is reported and never
+flips the status, so a deploy waiting for `200` does not hang on a stale
+bucket, and nothing automated restarts a working site over one. The FIDE
+list's database is not asked: the site serves without it.
+
+It says nothing a stranger could not learn from the front page - no counts,
+no hostnames, no error text - so it is public: no rate limit, no cookie, no
+log line, not counted on the stats page, never cached. **Cloudflare Access
+covers `/admin*` only, so `/healthz` needs no Access rule**; if an Access
+application ever covers the whole hostname, give `/healthz` a Bypass policy
+of its own.
+
 ## Production database
 
 `DATABASE_PATH` points at `/var/lib/openresults/openresults.db`, **outside**
@@ -198,9 +221,65 @@ the deploy does not rewrite
 daemon-reload`), which step 1 below already reads. Keep the passphrase off
 this box.
 
-A backup on the same disk survives a bad deploy, not the disk. Nothing here
-copies one off the box. And keep the copy you mean to restore from **outside**
-`backups/`: a prune removes anything older than the window except the newest.
+A backup on the same disk survives a bad deploy, not the disk. Off-site
+backups (below) are what copies one off the box. And keep the copy you mean
+to restore from **outside** `backups/`: a prune removes anything older than
+the window except the newest.
+
+### Off-site backups
+
+Off unless configured. When it is, `OpenResults.Ops.OffsiteBackup.Scheduler`
+looks once an hour (the first look ten minutes after a boot) and sends the
+newest local backup if it has not been sent yet: encrypted with
+[age](https://age-encryption.org) to one or more **public** keys, then a
+signed `PUT` to any S3-compatible bucket (Hetzner Object Storage, Cloudflare
+R2, Backblaze B2, MinIO, AWS) at `<prefix>/<backup file>.age`. So a new local
+backup is off the box within the hour, and a failed send is tried again the
+next hour. The same variables, and the same behaviour, as OpenPairings'.
+
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `OFFSITE_BACKUP_RECIPIENTS` | none | age public keys (`age1...`), comma-separated |
+| `OFFSITE_BACKUP_S3_ENDPOINT` | none | `https://` endpoint of the S3-compatible service (plain `http` only for `localhost`) |
+| `OFFSITE_BACKUP_S3_BUCKET` | none | the bucket; requests are path-style (`<endpoint>/<bucket>/<key>`) |
+| `OFFSITE_BACKUP_S3_ACCESS_KEY_ID` | none | a key for that bucket - ideally one that may write and not read or delete |
+| `OFFSITE_BACKUP_S3_SECRET_ACCESS_KEY` | none | its secret |
+| `OFFSITE_BACKUP_S3_REGION` | `us-east-1` | the signing region, where the service cares |
+| `OFFSITE_BACKUP_S3_PREFIX` | `openresults` | the "folder" in the bucket |
+| `OFFSITE_BACKUP_STALE_HOURS` | 36 | hours without a successful send before the status says `stale` |
+
+**All five without a default, or none.** Half a configuration refuses to boot
+and names what is missing (never a value); a malformed public key, a
+non-`https` endpoint or a stale threshold below 1 does the same. Hand-managed,
+so they go in a drop-in under `/etc/systemd/system/openresults.service.d/`,
+like the admin variables.
+
+**The server holds no key that can read what it sends.** Make the key pair on
+your own machine, not the server:
+
+```bash
+mix ops.age keygen --out openresults-backup-key.txt   # prints the public key
+mix ops.age public --identity openresults-backup-key.txt
+```
+
+(or `age-keygen -o openresults-backup-key.txt` with the standard tool). The
+public key goes in `OFFSITE_BACKUP_RECIPIENTS`; the file stays offline. **Lose
+every secret key and every off-site copy is noise**: make two, keep them in
+two places, and list both public keys. An `OPENRESULTS_BACKUP_PASSPHRASE`
+backup stays passphrase-encrypted inside the age file - restoring it needs
+both.
+
+**Deleting old copies is the bucket's job.** Set a lifecycle rule on the
+prefix (for example: expire objects after 90 days); nothing here deletes from
+the bucket, which is also why the key it holds need not be allowed to.
+
+What a run did - when, which object, how big, and on failure the HTTP status
+and S3's error code, never the reply's body (it quotes the access key id) -
+is on the admin panel's System page, with a button to send the newest backup
+now. `/healthz` reports the state as `backup`: `disabled`, `ok`, `stale` (no
+successful send for `OFFSITE_BACKUP_STALE_HOURS`, which is also what a server
+whose *local* backups stopped looks like from here) or `failing` (the latest
+attempt failed). It never changes the status code: see "Health check" below.
 
 ### The moderation journal, beside the database
 
@@ -344,6 +423,23 @@ one action log row for each, by `restore-replay`, on the admin panel's action
 log. Then work through "What a restore undoes" before telling anybody it is
 done, and keep the `before-restore` files until you have.
 
+### Restoring from an off-site copy
+
+Download the object from the bucket (its console, `aws s3 cp`, `rclone`,
+whatever the provider offers), then, **on the machine that holds the secret
+key** - not the server:
+
+```bash
+age -d -i openresults-backup-key.txt -o openresults-2026-10-31T02-05-00Z.orbak \
+  openresults-2026-10-31T02-05-00Z.orbak.age
+# or, from a checkout of this repo:
+mix ops.age decrypt --identity openresults-backup-key.txt openresults-2026-10-31T02-05-00Z.orbak.age
+```
+
+The result is an ordinary `.orbak`, exactly as `backups/` held it. Copy it to
+the server somewhere outside `backups/`, give it to the service account, and
+carry on from step 2 above (`--verify` takes any path).
+
 ## What a restore undoes
 
 Everything written after the backup - except what the moderation journal puts
@@ -463,6 +559,7 @@ All read in `config/runtime.exs`.
 | `PORT` | no (default 4000) | internal HTTP port - **the unit sets 4004**, see below |
 | `OPENRESULTS_INGEST_TOKEN` | effectively | the bearer token an arbiter publishes with. Unset means every publish is refused with a 401 - except with an installation key, see "Public publishing" below |
 | `BACKUP_DIR` / `BACKUP_RETENTION` / `OPENRESULTS_BACKUP_PASSPHRASE` | no | see "Backups" above |
+| `OFFSITE_BACKUP_*` | no (off) | encrypted copies in an S3-compatible bucket - see "Off-site backups" above |
 | `POOL_SIZE` | no (default 10) | Ecto connection pool size |
 | `OPENRESULTS_FIDE_LIST_SYNC` | no (default on) | `off` stops the daily FIDE list check; a list already here keeps answering searches |
 | `OPENRESULTS_FIDE_LIST_HOUR` | no (default 3) | hour of the day, UTC, of that check (it runs at :17 past) |

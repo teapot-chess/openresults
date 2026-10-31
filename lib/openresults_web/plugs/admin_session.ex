@@ -27,9 +27,12 @@ defmodule OpenResultsWeb.Plugs.AdminSession do
   `max_age`: it ends with the browser session, and Cloudflare Access decides
   how long a sign-in lasts anyway. Signed and encrypted.
 
-  It holds the CSRF token and flash messages, nothing else. Who is signed in
-  is never read from it: that is re-established from the Access token on
-  every request, by `OpenResultsWeb.Plugs.AdminAuth`.
+  It holds the CSRF token and flash messages, and - after a LiveDashboard
+  page - a stamp of who loaded it and when. Who is signed in is never read
+  from it for an HTTP request: that is re-established from the Access token
+  on every request, by `OpenResultsWeb.Plugs.AdminAuth`. The stamp is only
+  for the dashboard's socket, which never sees that token; see
+  `OpenResultsWeb.AdminAccess.LiveDashboard`.
 
   ## A refused token keeps the admin headers
 

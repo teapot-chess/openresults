@@ -65,7 +65,9 @@ defmodule OpenResults.FideList.SyncTest do
 
   test "a fresh install looks straight after boot", context do
     start_sync(context, [])
-    assert_receive :ran
+    # Not the default 100 ms: the first look reads the FIDE repo before it
+    # runs, and on a CI runner with 32 async cases that took longer once.
+    assert_receive :ran, 2_000
   end
 
   test "a server with a list it looked at today waits for the slot", context do

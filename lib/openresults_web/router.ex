@@ -1,6 +1,8 @@
 defmodule OpenResultsWeb.Router do
   use OpenResultsWeb, :router
 
+  import Phoenix.LiveDashboard.Router
+
   # The read path, stripped to what a public results page actually needs.
   #
   # Gone from the scaffold's version: `fetch_session`, `fetch_live_flash` and
@@ -64,6 +66,19 @@ defmodule OpenResultsWeb.Router do
     plug OpenResultsWeb.Plugs.AdminSession
     plug :put_root_layout, html: {OpenResultsWeb.Admin.Layouts, :root}
   end
+
+  # LiveDashboard's pages, after `:admin`: a CSP nonce for its scripts and
+  # the session stamp its socket is admitted by - see
+  # `OpenResultsWeb.AdminAccess.LiveDashboard`.
+  pipeline :admin_dashboard do
+    plug OpenResultsWeb.AdminAccess.LiveDashboard
+  end
+
+  # Liveness, for a monitor and for the deploy's "did it come back". No
+  # pipeline at all - no locale, no CSP, no session, no visibility - and no
+  # log line per poll. Public by design and says almost nothing: see
+  # `OpenResults.Ops.Health`.
+  get "/healthz", OpenResultsWeb.HealthController, :show, log: false
 
   pipeline :api do
     plug :accepts, ["json"]
@@ -520,6 +535,17 @@ defmodule OpenResultsWeb.Router do
     # Read-only, and cheap to open: see `OpenResults.Stats`.
     get "/stats", StatsController, :show
 
+    # The operator's page: health, the off-site backup and the crashes this
+    # server has logged. Forgetting a crash and sending a backup now are
+    # confirmed pairs like everything else. See `OpenResults.Ops`.
+    get "/system", SystemController, :show
+    get "/system/offsite-backup", SystemController, :confirm_send
+    post "/system/offsite-backup", SystemController, :send_now
+    get "/system/errors/clear", SystemController, :confirm_clear
+    post "/system/errors/clear", SystemController, :clear
+    get "/system/errors/:id/forget", SystemController, :confirm_forget
+    post "/system/errors/:id/forget", SystemController, :forget
+
     # Server settings and the public notice. A setting's and the notice's
     # confirmation is a GET carrying the value (nothing here is personal), so
     # every POST is a confirmed action like the rest.
@@ -541,5 +567,22 @@ defmodule OpenResultsWeb.Router do
       get "/confirmation-probe", ConfirmationProbeController, :new
       post "/confirmation-probe", ConfirmationProbeController, :create
     end
+  end
+
+  # LiveDashboard, in production too, for the same administrators: the
+  # `:admin` pipeline checks the Access token on the HTTP request, the
+  # on_mount hook checks the session stamp on the socket (`/admin/live`, in
+  # the endpoint), so neither half is reachable without the other. It reads
+  # process state and metrics, not tournament data - but process state is
+  # somebody's business. No destructive actions (killing processes) offered.
+  scope "/admin" do
+    pipe_through [:admin, :admin_dashboard]
+
+    live_dashboard "/dashboard",
+      metrics: OpenResultsWeb.Telemetry,
+      live_socket_path: "/admin/live",
+      live_session_name: :admin_dashboard,
+      csp_nonce_assign_key: :csp_nonce,
+      on_mount: [{OpenResultsWeb.AdminAccess.LiveDashboard, :admin}]
   end
 end

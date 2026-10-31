@@ -3287,6 +3287,50 @@ a.xt-opp:hover {
   color: var(--quiet);
 }
 
+/* The System page's health words (`OpenResultsWeb.Admin.SystemHTML`): the
+   good one quiet, the ones that want a look in the accent, "off" dashed. */
+.admin-status-ok {
+  color: var(--quiet);
+}
+
+.admin-status-degraded,
+.admin-status-unreachable,
+.admin-status-failing,
+.admin-status-stale {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.admin-status-disabled {
+  border-style: dashed;
+  color: var(--withheld);
+}
+
+.admin-error {
+  border-top: 1px solid var(--rule);
+  padding: 0.75rem 0;
+}
+
+.admin-error h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.admin-error-message {
+  margin: 0.35rem 0 0.15rem;
+  overflow-wrap: anywhere;
+}
+
+.admin-stack {
+  max-height: 20rem;
+  overflow: auto;
+  padding: 0.6rem;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+}
+
 .admin-table td {
   white-space: normal;
   vertical-align: top;

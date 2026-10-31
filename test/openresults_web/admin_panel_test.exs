@@ -38,6 +38,9 @@ defmodule OpenResultsWeb.AdminPanelTest do
   # on, and a placeholder for anything else.
   defp fill(path, slug) do
     path
+    # LiveDashboard's pages take a page name and a node, not an id.
+    |> String.replace("/admin/dashboard/:node/:page", "/admin/dashboard/#{node()}/home")
+    |> String.replace("/admin/dashboard/:page", "/admin/dashboard/home")
     |> String.replace(~r/:slug\b/, slug)
     |> String.replace(~r/[:*]\w+/, "1")
   end
@@ -393,6 +396,7 @@ defmodule OpenResultsWeb.AdminPanelTest do
                "/admin/players",
                "/admin/action-log",
                "/admin/stats",
+               "/admin/system",
                "/admin/settings"
              ]
 
