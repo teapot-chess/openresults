@@ -2604,6 +2604,7 @@ a.xt-opp:hover {
 
 .hall-clock {
   margin: 0;
+  flex-shrink: 0;
   font-size: calc(6 * var(--u));
   font-weight: 700;
   font-variant-numeric: tabular-nums;
@@ -2701,11 +2702,12 @@ a.xt-opp:hover {
 
 /* Pairings and results only. A board row carries two players with title,
    federation and rating where a name row carries one, so at the shared size
-   it read as fine print from the back of the hall. A quarter larger, and two
-   boards fewer per page (`@boards_per_page`) so the rows still fit. */
+   it read as fine print from the back of the hall. A quarter larger on a
+   full page (two boards fewer, `@boards_per_page`, so the rows still fit),
+   and up to 1.6 on a short one: `--fit` comes from `fit_style/1`. */
 .hall-boards tbody,
 .hall-matches tbody {
-  font-size: 1.25em;
+  font-size: calc(var(--fit, 1.25) * 1em);
 }
 
 .hall-board {
