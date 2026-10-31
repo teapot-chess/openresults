@@ -2255,6 +2255,12 @@ defmodule OpenResultsWeb.TournamentHTML do
                 pending={Tournament.pending?(board)}
                 postponed_date={postponed_date(@show, board)}
               />
+              <.game_link
+                payload={@payload}
+                slug={@slug}
+                round={@round["number"]}
+                board={board["board"]}
+              />
             </td>
 
             <td class={seat_class(:black, tag.black?)} aria-current={tag.black? && "true"}>
@@ -3067,6 +3073,12 @@ defmodule OpenResultsWeb.TournamentHTML do
                     pending={entry.pending}
                     postponed_date={if(@show.dates, do: entry.postponed_date)}
                   />
+                  <.game_link
+                    payload={@payload}
+                    slug={@slug}
+                    round={entry.round}
+                    board={entry.board}
+                  />
                 </td>
               <% :bye -> %>
                 <%!-- The bye's label sits where the opponent's NAME sits, under
@@ -3842,6 +3854,52 @@ defmodule OpenResultsWeb.TournamentHTML do
   end
 
   @doc """
+  Two small links from a board to its live game page and its PGN, beside the
+  result.
+
+  Gated on the arbiter's word alone (`Tournament.live_boards?/1`) and on the
+  pairings being public, for the reason the "Live boards" chip is: these pages
+  are cached per snapshot, so a link that waited for a game to be reported
+  would be missing from the cache until the next publish. A board with no
+  game yet opens a page that says so, which is honest and no worse than a
+  dead end the page would otherwise have drawn silently.
+  """
+  attr :payload, :map, required: true
+  attr :slug, :string, required: true
+  attr :round, :any, required: true
+  attr :board, :any, required: true
+
+  def game_link(assigns) do
+    assigns =
+      assign(
+        assigns,
+        :linked?,
+        is_integer(assigns.board) and is_integer(assigns.round) and
+          Tournament.live_boards?(assigns.payload) and Tournament.show?(assigns.payload, "pairings")
+      )
+
+    ~H"""
+    <span :if={@linked?} class="game-links">
+      <a
+        href={~p"/t/#{@slug}/live/#{@round}/#{@board}"}
+        class="game-link"
+        aria-label={gettext("Game, round %{round} board %{board}", round: @round, board: @board)}
+      >
+        {gettext("Game")}
+      </a>
+      <a
+        href={~p"/t/#{@slug}/live/#{@round}/#{@board}/pgn"}
+        class="game-link"
+        download
+        aria-label={gettext("Download PGN, round %{round} board %{board}", round: @round, board: @board)}
+      >
+        PGN
+      </a>
+    </span>
+    """
+  end
+
+  @doc """
   Links to the CSV exports (`OpenResultsWeb.ExportController`), each only
   where its page is published - the same switches the controller enforces.
   """
@@ -3862,7 +3920,13 @@ defmodule OpenResultsWeb.TournamentHTML do
         &elem(&1, 0)
       )
 
-    assigns = assign(assigns, :links, links)
+    assigns =
+      assigns
+      |> assign(:links, links)
+      |> assign(
+        :games?,
+        Tournament.live_boards?(payload) and Tournament.show?(payload, "pairings")
+      )
 
     ~H"""
     <p :if={@links != []} class="footnote export-links" id="export-links">
@@ -3874,6 +3938,12 @@ defmodule OpenResultsWeb.TournamentHTML do
         download
       >
         {label}
+      </a>
+    </p>
+
+    <p :if={@games?} class="footnote export-links" id="games-links">
+      <a id="export-games" href={~p"/t/#{@slug}/games.pgn"} download>
+        {gettext("Download all games")}
       </a>
     </p>
     """

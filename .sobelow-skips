@@ -5,6 +5,7 @@ Config.CSWH: Cross-Site Websocket Hijacking,lib/openresults_web/endpoint.ex:47,4
 DOS.StringToAtom: Unsafe `String.to_atom`,lib/openresults/chess.ex:554,96EC22
 DOS.StringToAtom: Unsafe `String.to_atom`,lib/openresults/chess.ex:555,17D413A
 DOS.StringToAtom: Unsafe `String.to_atom`,lib/openresults_web/controllers/tournament_html.ex:3135,730D06D
+DOS.StringToAtom: Unsafe `String.to_atom`,lib/openresults_web/controllers/tournament_html.ex:3147,5171EC2
 DOS.StringToAtom: Unsafe `String.to_atom`,lib/openresults_web/controllers/tournament_html.ex:3350,574451D
 DOS.StringToAtom: Unsafe `String.to_atom`,lib/openresults_web/hall.ex:204,6E65F73
 DOS.StringToAtom: Unsafe `String.to_atom`,lib/openresults_web/live_boards_data.ex:269,4A38906
@@ -64,6 +65,7 @@ XSS.Raw: XSS,lib/openresults_web/controllers/registration_html/received.html.hee
 XSS.Raw: XSS,lib/openresults_web/controllers/registration_html/received.html.heex:17,234C7B2
 XSS.Raw: XSS,lib/openresults_web/controllers/registration_html/received.html.heex:17,25A4B78
 XSS.Raw: XSS,lib/openresults_web/controllers/tournament_html.ex:3232,60D8844
+XSS.Raw: XSS,lib/openresults_web/controllers/tournament_html.ex:3244,3AA5345
 XSS.Raw: XSS,lib/openresults_web/controllers/tournament_html.ex:3447,4D64A2D
 XSS.Raw: XSS,lib/openresults_web/controllers/tournament_html/player.html.heex:104,31DE7E6
 XSS.Raw: XSS,lib/openresults_web/inline_scripts.ex:40,747FDFD
