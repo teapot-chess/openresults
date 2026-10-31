@@ -177,6 +177,20 @@ defmodule OpenResults.SnapshotPayloads do
   end
 
   @doc """
+  `payload` moved to this week: started yesterday, ends in three days. The
+  fixtures are dated March 2026, which the front page - live, upcoming and
+  the last fortnight - stopped showing some time ago; a test about the front
+  page needs a tournament the front page would show.
+  """
+  def current(payload) do
+    today = Date.utc_today()
+
+    payload
+    |> put_in(["tournament", "start_date"], today |> Date.add(-1) |> Date.to_iso8601())
+    |> put_in(["tournament", "end_date"], today |> Date.add(3) |> Date.to_iso8601())
+  end
+
+  @doc """
   Loads a fixture from disk. Read at run time rather than at compile time, so
   a regenerated fixture takes effect without a recompile.
   """

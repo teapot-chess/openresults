@@ -1,0 +1,33 @@
+<header class="masthead">
+  <h1>{gettext("Tournaments by federation")}</h1>
+  <p class="details">
+    <span>{gettext("Every tournament published here, filed under the federation it names.")}</span>
+  </p>
+</header>
+
+<.hub_nav current={:federations} />
+<.search_form id="federations-search" />
+
+<section>
+  <p :if={@federations == []} class="empty" id="federations-empty">
+    {gettext("Nothing has been published yet.")}
+  </p>
+
+  <ul :if={@federations != []} class="federation-list" id="federations">
+    <li :for={{code, count} <- @federations} id={"fed-" <> (code || "none")}>
+      <a href={federation_path(code)}>
+        <Flags.flag :if={code} code={code} />
+        <span class="federation-code">{federation_label(code)}</span>
+        <span class="quiet">
+          {ngettext("%{count} tournament", "%{count} tournaments", count)}
+        </span>
+      </a>
+    </li>
+  </ul>
+
+  <p class="hub-note">
+    {gettext(
+      "A tournament's federation is what its organiser entered. It is a claim, not something this site checks."
+    )}
+  </p>
+</section>

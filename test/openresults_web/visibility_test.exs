@@ -33,14 +33,14 @@ defmodule OpenResultsWeb.VisibilityTest do
     {installation, key} = installation!()
 
     pending = mint!(installation)
-    pending |> payload() |> publish(key, random_key()) |> json_response(200)
+    pending |> current_payload() |> publish(key, random_key()) |> json_response(200)
 
     hidden = mint!(installation)
-    hidden |> payload() |> publish(key, random_key()) |> json_response(200)
+    hidden |> current_payload() |> publish(key, random_key()) |> json_response(200)
     {:ok, _} = Moderation.hide(hidden, admin())
 
     listed = unique_slug("listed")
-    listed |> payload() |> publish(operator_token()) |> json_response(200)
+    listed |> current_payload() |> publish(operator_token()) |> json_response(200)
 
     # The same length as a minted slug, so a body that echoes the slug is the
     # same length either way.
@@ -208,10 +208,19 @@ defmodule OpenResultsWeb.VisibilityTest do
       assert index =~ pending
       assert index =~ listed
 
-      # The front page is rendered on every request, never cached or
-      # revalidated, so nothing has to remember to refresh it.
+      # The front page is cached and revalidated like a tournament page, under
+      # a generation every publish moves: a browser holding it gets a 304
+      # until something new is published, and then a 200 with the newcomer.
       conn = get(build_conn(), "/")
-      assert get_resp_header(conn, "etag") == []
+      [etag] = get_resp_header(conn, "etag")
+      assert (build_conn() |> put_req_header("if-none-match", etag) |> get("/")).status == 304
+
+      {installation, key} = installation!()
+      fresh = mint!(installation)
+      fresh |> current_payload() |> publish(key, random_key()) |> json_response(200)
+
+      again = build_conn() |> put_req_header("if-none-match", etag) |> get("/")
+      assert html_response(again, 200) =~ fresh
     end
 
     test "a tournament appears on the front page the moment it first publishes" do
@@ -220,7 +229,7 @@ defmodule OpenResultsWeb.VisibilityTest do
 
       refute html_response(get(build_conn(), "/"), 200) =~ slug
 
-      slug |> payload() |> publish(key, random_key()) |> json_response(200)
+      slug |> current_payload() |> publish(key, random_key()) |> json_response(200)
 
       assert html_response(get(build_conn(), "/"), 200) =~ slug
     end

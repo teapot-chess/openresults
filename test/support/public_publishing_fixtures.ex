@@ -44,6 +44,9 @@ defmodule OpenResults.PublicPublishingFixtures do
   @doc "The swiss fixture, published under `slug`."
   def payload(slug), do: put_in(SnapshotPayloads.swiss(), ["tournament", "slug"], slug)
 
+  @doc "`payload/1`, dated this week, for a test about the front page."
+  def current_payload(slug), do: slug |> payload() |> SnapshotPayloads.current()
+
   @doc "A publish, with whichever bearer token and tournament key."
   def publish(payload, bearer, tournament_key \\ nil, conn \\ build_conn()) do
     conn

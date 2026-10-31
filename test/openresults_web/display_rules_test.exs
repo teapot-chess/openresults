@@ -115,18 +115,18 @@ defmodule OpenResultsWeb.DisplayRulesTest do
     end
   end
 
-  describe "the front page listing" do
+  describe "the federation listing" do
     test "a listed tournament appears", %{conn: conn} do
       _slug = publish(SnapshotPayloads.swiss())
 
-      assert conn |> get(~p"/") |> html_response(200) =~ "Gent Spring Open 2026"
+      assert conn |> get(~p"/f/BEL") |> html_response(200) =~ "Gent Spring Open 2026"
     end
 
     test "an unlisted one does not, but its own page still works", %{conn: conn} do
       payload = put_in(SnapshotPayloads.swiss(), ["tournament", "listed"], false)
       slug = publish(payload)
 
-      refute conn |> get(~p"/") |> html_response(200) =~ "Gent Spring Open 2026"
+      refute conn |> get(~p"/f/BEL") |> html_response(200) =~ "Gent Spring Open 2026"
 
       # Unlisting is not taking down, and the settings page that offers it
       # says so in as many words: the address still works for anyone holding
@@ -139,13 +139,13 @@ defmodule OpenResultsWeb.DisplayRulesTest do
       payload = update_in(SnapshotPayloads.swiss(), ["tournament"], &Map.delete(&1, "listed"))
       _slug = publish(payload)
 
-      assert conn |> get(~p"/") |> html_response(200) =~ "Gent Spring Open 2026"
+      assert conn |> get(~p"/f/BEL") |> html_response(200) =~ "Gent Spring Open 2026"
     end
 
     test "honours the city and dates ticks, like every other page", %{conn: conn} do
       _slug = publish(hiding(["city", "dates"]))
 
-      html = conn |> get(~p"/") |> html_response(200)
+      html = conn |> get(~p"/f/BEL") |> html_response(200)
 
       # This list printed both regardless. An arbiter who unticked them saw
       # them gone from their tournament's own pages and still here, on the
@@ -164,7 +164,7 @@ defmodule OpenResultsWeb.DisplayRulesTest do
       # than the one with the bug.
       _slug = publish(SnapshotPayloads.swiss())
 
-      html = conn |> get(~p"/") |> html_response(200)
+      html = conn |> get(~p"/f/BEL") |> html_response(200)
 
       assert html =~ "Ghent"
       assert html =~ "2026-03-01"

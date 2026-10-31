@@ -359,6 +359,17 @@ defmodule OpenResultsWeb.Plugs.Revalidate do
     |> Base.url_encode64(padding: false)
   end
 
+  @doc false
+  # The same keyed digest, for `OpenResultsWeb.HubCache`: one secret per boot
+  # for every ETag this site sends.
+  @spec sign(term()) :: String.t()
+  def sign(term) do
+    :hmac
+    |> :crypto.mac(:sha256, secret(), :erlang.term_to_binary(term))
+    |> binary_part(0, 16)
+    |> Base.url_encode64(padding: false)
+  end
+
   defp secret do
     case :persistent_term.get(@secret, nil) do
       nil ->

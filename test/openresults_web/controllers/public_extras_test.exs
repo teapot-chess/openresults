@@ -145,7 +145,7 @@ defmodule OpenResultsWeb.PublicExtrasTest do
     end
   end
 
-  describe "the front page's years" do
+  describe "a federation archive's years" do
     test "are offered once there is more than one, and filter", %{conn: conn, swiss: swiss} do
       swiss
       |> put_in(["tournament", "slug"], "last-year-open")
@@ -154,17 +154,17 @@ defmodule OpenResultsWeb.PublicExtrasTest do
       |> put_in(["tournament", "end_date"], "2025-03-05")
       |> publish()
 
-      html = conn |> get("/") |> html_response(200)
-      assert html =~ ~s(href="/?year=2025")
+      html = conn |> get("/f/BEL") |> html_response(200)
+      assert html =~ ~s(href="/f/BEL?year=2025")
       assert html =~ "Last Year Open"
 
-      filtered = build_conn() |> get("/?year=2026") |> html_response(200)
+      filtered = build_conn() |> get("/f/BEL?year=2026") |> html_response(200)
       refute filtered =~ "Last Year Open"
       assert filtered =~ "Gent Spring Open 2026"
     end
 
     test "are not offered for a single year", %{conn: conn} do
-      html = conn |> get("/") |> html_response(200)
+      html = conn |> get("/f/BEL") |> html_response(200)
       refute html =~ "?year="
     end
   end

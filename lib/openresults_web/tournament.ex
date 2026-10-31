@@ -519,15 +519,45 @@ defmodule OpenResultsWeb.Tournament do
   """
   @spec status(map(), Date.t()) :: :live | :upcoming | :finished
   def status(payload, today \\ Date.utc_today()) do
-    cond do
-      finished?(payload, today) -> :finished
-      upcoming?(payload, today) -> :upcoming
-      true -> :live
-    end
+    info = info(payload)
+
+    status_from(
+      status_facts(payload),
+      string(info, "start_date"),
+      string(info, "end_date"),
+      today
+    )
   end
 
-  defp finished?(payload, today) do
-    all_rounds_in?(payload) or past_end_date?(payload, today)
+  @doc """
+  The two halves of `status/2` that do not depend on the calendar:
+  `complete?` (every round in, published and decided) and `not_begun?`
+  (nothing published, or published without a single result - a round
+  robin's whole schedule out in advance).
+
+  Kept by `OpenResults.ResultsIndex` beside the raw dates, so a listing of
+  ten thousand tournaments is grouped by `status_from/4` without decoding
+  ten thousand payloads - and by this rule, not a second copy of it.
+  """
+  @spec status_facts(map()) :: %{complete?: boolean(), not_begun?: boolean()}
+  def status_facts(payload) do
+    %{
+      complete?: all_rounds_in?(payload),
+      not_begun?: round_numbers(payload) == [] or no_results?(payload)
+    }
+  end
+
+  @doc """
+  `status/2` from `status_facts/1` and the two dates (ISO strings or `nil`).
+  """
+  @spec status_from(map(), String.t() | nil, String.t() | nil, Date.t()) ::
+          :live | :upcoming | :finished
+  def status_from(%{complete?: complete?, not_begun?: not_begun?}, start_date, end_date, today) do
+    cond do
+      complete? or past_date?(end_date, today) -> :finished
+      not_begun? and not started_by?(start_date, today) -> :upcoming
+      true -> :live
+    end
   end
 
   # Every round published AND its results public. A round whose results the
@@ -558,17 +588,11 @@ defmodule OpenResultsWeb.Tournament do
     count > 0 and MapSet.subset?(MapSet.new(1..count), MapSet.new(round_numbers(payload)))
   end
 
-  defp past_end_date?(payload, today) do
-    case parse_date(string(info(payload), "end_date")) do
+  defp past_date?(date_string, today) do
+    case parse_date(date_string) do
       {:ok, date} -> Date.compare(date, today) == :lt
       :error -> false
     end
-  end
-
-  # Nothing published, or - a round robin's whole schedule out in advance -
-  # published without a single result yet.
-  defp upcoming?(payload, today) do
-    (round_numbers(payload) == [] or no_results?(payload)) and not started_by?(payload, today)
   end
 
   defp no_results?(payload) do
@@ -580,8 +604,8 @@ defmodule OpenResultsWeb.Tournament do
   # Absent means NOT known to have started - the safe reading for
   # `upcoming?`, which is the whole point of checking this rather than
   # assuming a silent tournament is already under way.
-  defp started_by?(payload, today) do
-    case parse_date(string(info(payload), "start_date")) do
+  defp started_by?(date_string, today) do
+    case parse_date(date_string) do
       {:ok, date} -> Date.compare(date, today) != :gt
       :error -> false
     end

@@ -1,31 +1,22 @@
 <header class="masthead">
   <h1>OpenResults</h1>
-  <p class="details"><span>{gettext("Published tournaments")}</span></p>
+
+  <p class="details">
+    <span>
+      {ngettext(
+        "Live, upcoming, and finished in the last %{count} day.",
+        "Live, upcoming, and finished in the last %{count} days.",
+        @recent_days
+      )}
+    </span>
+  </p>
 </header>
-
+<OpenResultsWeb.HubHTML.hub_nav current={:front} />
+<OpenResultsWeb.HubHTML.search_form id="front-search" />
 <section>
-  <%!-- The archive by year - see `TournamentController.index/2`. Chips, like
-        the round strip, and plain links, so it works with no script. --%>
-  <nav :if={@years != []} class="rounds" aria-label={gettext("Year")}>
-    <a
-      href={~p"/"}
-      class={["chip", is_nil(@year) && "current"]}
-      aria-current={is_nil(@year) && "page"}
-    >
-      {gettext("All years")}
-    </a>
-    <a
-      :for={year <- @years}
-      href={~p"/?#{[year: year]}"}
-      class={["chip", @year == year && "current"]}
-      aria-current={@year == year && "page"}
-    >
-      {year}
-    </a>
-  </nav>
-
-  <p :if={@snapshots == []} class="empty">
-    {gettext("Nothing has been published yet.")}
+  <p :if={@snapshots == []} class="empty" id="front-empty">
+    {gettext("Nothing is being played right now, and nothing finished recently.")}
+    <a href={~p"/federations"}>{gettext("Everything published here, by federation")}</a>
   </p>
 
   <%!-- Hidden until `html.has-js` says the script that drives it actually
@@ -35,15 +26,16 @@
         renders, grouped, with the script switched off. --%>
   <div :if={@snapshots != []} class="index-controls" data-index-controls>
     <label class="index-search">
-      <span class="visually-hidden">{gettext("Search tournaments")}</span>
+      <span class="visually-hidden">{gettext("Filter this page")}</span>
       <input
         type="search"
         class="index-search-input"
-        placeholder={gettext("Search tournaments…")}
+        placeholder={gettext("Filter this page…")}
         autocomplete="off"
         data-index-search
       />
     </label>
+
     <p class="empty" data-index-empty hidden>
       {gettext("No tournaments match your search.")}
     </p>
@@ -79,6 +71,7 @@
             </a>
           </span>
         </li>
+
         <li
           :for={{:tournament, snapshot} <- entries}
           data-name={Tournament.name(snapshot.payload)}
@@ -94,6 +87,10 @@
           <a href={~p"/t/#{snapshot.tournament_slug}"}>
             {Tournament.name(snapshot.payload)}
           </a>
+
+          <OpenResultsWeb.HubHTML.unapproved :if={
+            MapSet.member?(@pending, snapshot.tournament_slug)
+          } />
           <%!-- The same two ticks the masthead honours on every other page. This list
                 did not consult them, so an arbiter who turned the city or the dates
                 off saw them gone from their tournament's own pages and still
@@ -106,6 +103,7 @@
             }>
               {Tournament.info(snapshot.payload)["city"]}
             </span>
+
             <span :if={
               Tournament.show?(snapshot.payload, "dates") &&
                 dates(Tournament.info(snapshot.payload))
@@ -118,5 +116,7 @@
     </section>
   </div>
 </section>
-
 {OpenResultsWeb.InlineScripts.tag("index_search")}
+<p class="hub-more" id="front-more">
+  <a href={~p"/federations"}>{gettext("Older tournaments: browse by federation")}</a>
+</p>

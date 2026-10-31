@@ -15,57 +15,63 @@ defmodule OpenResultsWeb.TournamentController do
 
   use OpenResultsWeb, :controller
 
-  alias OpenResults.Snapshots
+  alias OpenResults.ResultsIndex
+  alias OpenResults.ResultsIndex.Generations
   alias OpenResults.Tournaments
   alias OpenResultsWeb.FilterParams
+  alias OpenResultsWeb.HubCache
   alias OpenResultsWeb.Meta
   alias OpenResultsWeb.Tournament
 
   @doc """
-  `GET /` - the tournaments that have published, grouped by where each one
-  sits in its own life cycle.
+  `GET /` - what is happening now: the tournaments being played, the ones
+  about to start, and the ones that finished in the last
+  `ResultsIndex.front_recent_days/0` days. Everything older lives in the
+  federation listings (`/federations`, `/f/:code`), which the page links.
 
-  Grouping and search both happen from this one list - see
-  `Tournament.status/1` for how a snapshot becomes `:live`, `:upcoming` or
-  `:finished`, and `tournament_html/index.html.heex` for the search box,
-  which is client-side for the same reason `standings_table/1`'s sort and
-  filter are: the server renders one page regardless of what a reader later
-  types into it.
+  Which tournaments, and in which group, comes from the results index
+  (`OpenResults.ResultsIndex`) rather than from decoding every snapshot on
+  the server, which is what this page did until it had ten thousand of them
+  to decode. Only the handful it shows are read as snapshots, for the event
+  grouping (`OpenResultsWeb.EventGroup`) and the details each row prints.
+
+  Two filters, with two different owners, as before: the arbiter's
+  `listed` (an unlisted tournament is absent) and moderation's (a hidden one
+  is absent; a pending one is here, marked as not yet approved). See
+  `OpenResults.Tournaments`.
+
+  Cached like a tournament page, under the index's `:all` generation and
+  today's date - see `OpenResultsWeb.HubCache`.
   """
-  def index(conn, params) do
-    # Filtered here rather than in `Snapshots.list_current/0`: which
-    # tournaments exist is a storage question and which ones are advertised is
-    # a presentation one. A storage function that silently omits rows is a
-    # trap for the next caller - a takedown sweep or an admin view would
-    # quietly skip every unlisted tournament and give no reason.
-    #
-    # Two filters, with two different owners: `listed?` is the ARBITER'S
-    # choice, carried in the payload, and `visible_only` is MODERATION'S - a
-    # hidden tournament is not there at all. A pending one is: since the admin
-    # upgrade (2026-09-13) pending keeps a tournament off the cross-tournament
-    # player pages and nowhere else. See `OpenResults.Tournaments`.
-    #
-    # Rendered on every request, never cached, so a tournament appears here
-    # the moment it publishes and stays through approval with no invalidation.
-    listed =
-      Enum.filter(Snapshots.list_current(visible_only: true), &Tournament.listed?(&1.payload))
+  def index(conn, _params) do
+    today = Date.utc_today()
+    generation = {Generations.get(:all), today}
 
-    # The archive: a tournament's year is its start date's, and only where
-    # the arbiter shows dates at all - a tournament with the dates tick off
-    # is under "all years" and no year, rather than filed by a date the page
-    # itself would not print. Plain links, no script: `?year=` is the whole
-    # state, so a filtered front page is a URL somebody can pass on.
-    years =
-      listed
-      |> Enum.map(&year(&1.payload))
-      |> Enum.reject(&is_nil/1)
-      |> Enum.uniq()
-      |> Enum.sort(:desc)
+    HubCache.serve(conn, :front, generation, conn.query_string == "", fn conn ->
+      render_index(conn, today)
+    end)
+  end
 
-    year = if params["year"] in years, do: params["year"]
-    shown = if year, do: Enum.filter(listed, &(year(&1.payload) == year)), else: listed
+  defp render_index(conn, today) do
+    groups = ResultsIndex.current_groups(:all, today, ResultsIndex.front_recent_days())
 
-    grouped = Enum.group_by(shown, &Tournament.status(&1.payload))
+    snapshots =
+      for kind <- [:live, :upcoming, :finished], into: %{} do
+        {kind,
+         groups
+         |> Map.fetch!(kind)
+         |> Enum.map(&Tournaments.public_latest(&1.slug))
+         |> Enum.reject(&is_nil/1)}
+      end
+
+    shown = Enum.flat_map([:live, :upcoming, :finished], &Map.fetch!(snapshots, &1))
+
+    pending =
+      for kind <- [:live, :upcoming, :finished],
+          entry <- Map.fetch!(groups, kind),
+          entry.status == "pending",
+          into: MapSet.new(),
+          do: entry.slug
 
     # The tournaments that are sections of one event stand together under
     # its name - see `OpenResultsWeb.EventGroup`. Decided over the whole page,
@@ -77,27 +83,16 @@ defmodule OpenResultsWeb.TournamentController do
       page_title: gettext("Tournaments"),
       page_description: Meta.index(),
       snapshots: shown,
-      # Only worth offering once there is more than one year to choose from.
-      years: if(length(years) > 1, do: years, else: []),
-      year: year,
+      pending: pending,
+      recent_days: ResultsIndex.front_recent_days(),
       # Live first (the most immediately relevant), then upcoming, then
       # finished - and in that fixed order regardless of how many of each
       # there are, so the page's shape does not shuffle between visits.
       groups:
         for kind <- [:live, :upcoming, :finished] do
-          {kind, OpenResultsWeb.EventGroup.gather(Map.get(grouped, kind, []), memberships)}
+          {kind, OpenResultsWeb.EventGroup.gather(Map.fetch!(snapshots, kind), memberships)}
         end
     )
-  end
-
-  defp year(payload) do
-    with true <- Tournament.show?(payload, "dates"),
-         <<year::binary-size(4), "-", _rest::binary>> <- Tournament.info(payload)["start_date"],
-         {_number, ""} <- Integer.parse(year) do
-      year
-    else
-      _no_year -> nil
-    end
   end
 
   @doc """

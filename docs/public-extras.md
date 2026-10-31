@@ -45,17 +45,42 @@ left out; one link back to the full page stays. Links open in the whole tab
 
 ## The sitemap - `/sitemap.xml`
 
-The front page's tournaments (moderation-visible and listed by their arbiter):
+Every listed tournament (moderation-visible and listed by their arbiter):
 standings, cross-table and each published round, as far as the arbiter
-publishes each. Player cards are never listed. `robots.txt` is static and
+publishes each. Also `/federations`, each federation's listing, and the player
+pages of players the FIDE list says are adults (see below). Player cards are
+never listed. `robots.txt` is static and
 cannot know this site's host, so submit the sitemap to search engines
 directly, or add a `Sitemap:` line to `priv/static/robots.txt` on deploy.
 
-## Year filter on the front page
+## Listings and search - `/federations`, `/f/<code>`, `/search`
 
-`/?year=2026`. Offered only when the listed tournaments span more than one
-year. A tournament's year is its start date's, and only when its arbiter
-shows dates.
+The front page shows only what is live, upcoming, or finished in the last 14
+days. Everything else is under its federation: `/f/BEL` has live, upcoming
+and the last 30 days, then the archive, 50 a page (`?page=2`), filterable by
+year (`?year=2025`, offered when there is more than one). `/f/none` holds
+tournaments that name no federation or hide it. A tournament that never
+published a round and started more than 30 days ago is left out of the
+listings (its own address still works). Unapproved tournaments are listed
+and searchable, marked "unapproved".
+
+`/search?q=` finds tournaments by name or city and players by name or FIDE
+ID, at least three letters, 30 searches a minute per address, never indexed.
+Players come from approved tournaments only.
+
+All of these read the results index (`OpenResults.ResultsIndex`), filled at
+ingest. After an upgrade, existing tournaments are indexed in the background
+on the first boot; `mix openresults.reindex [--force]` does it by hand.
+
+## Player pages - `/players/<FIDE ID>`
+
+Every approved tournament published under that FIDE ID, newest first, with a
+year filter, headed by the name, title, federation and current ratings from
+this server's copy of the FIDE list. A result whose name plainly does not
+match the FIDE list's name for that ID is dropped (see
+`OpenResults.ResultsIndex.NameMatch` for the rule). Players who may be under
+18 by the FIDE list's birth year, or whose birth year is unknown, get
+`noindex` and stay out of the sitemap. A page the admin hid answers 404.
 
 ## The hall display - `/t/<slug>/hall`
 

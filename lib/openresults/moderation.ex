@@ -1335,6 +1335,63 @@ defmodule OpenResults.Moderation do
     |> Repo.all()
   end
 
+  @doc """
+  Hides `fide_id`'s cross-tournament player page at the player's request:
+  the page answers 404 and the id leaves player search and the sitemap. The
+  tournaments, and the name on them, are untouched. Logged, and journalled
+  so a restored backup cannot bring the page back
+  (`OpenResults.ModerationJournal`).
+
+  `{:error, :already_hidden}` when it already is.
+  """
+  @spec suppress_player(integer(), String.t() | nil, map()) ::
+          {:ok, OpenResults.ResultsIndex.Suppression.t()} | {:error, :already_hidden}
+  def suppress_player(fide_id, note, actor) when is_integer(fide_id) and fide_id > 0 do
+    email = actor!(actor)
+
+    transaction(fn ->
+      if OpenResults.ResultsIndex.suppressed?(fide_id) do
+        Repo.rollback(:already_hidden)
+      else
+        suppression = OpenResults.ResultsIndex.insert_suppression!(fide_id, note, email)
+
+        row =
+          log!(email, "hide_player", "player", Integer.to_string(fide_id), %{scope: "history"})
+
+        {suppression, row}
+      end
+    end)
+    |> committed(fn {suppression, row} ->
+      ModerationJournal.record_hide_player(fide_id, row.inserted_at)
+      OpenResults.ResultsIndex.bump([{:player, fide_id}, :all])
+      suppression
+    end)
+  end
+
+  @doc """
+  Puts a hidden player page back - the player withdrew the request.
+  `{:error, :not_hidden}` when it was not hidden.
+  """
+  @spec restore_player(integer(), map()) :: {:ok, integer()} | {:error, :not_hidden}
+  def restore_player(fide_id, actor) when is_integer(fide_id) do
+    email = actor!(actor)
+
+    transaction(fn ->
+      case OpenResults.ResultsIndex.delete_suppression!(fide_id) do
+        0 ->
+          Repo.rollback(:not_hidden)
+
+        _deleted ->
+          log!(email, "restore_player", "player", Integer.to_string(fide_id), %{})
+          fide_id
+      end
+    end)
+    |> committed(fn fide_id ->
+      OpenResults.ResultsIndex.bump([{:player, fide_id}, :all])
+      fide_id
+    end)
+  end
+
   @doc false
   # For `OpenResults.TournamentKeys`: a use of the operator token in the
   # tournament-key position. Never raises - an audit entry that failed to write

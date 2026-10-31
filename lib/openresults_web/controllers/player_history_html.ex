@@ -14,14 +14,27 @@ defmodule OpenResultsWeb.PlayerHistoryHTML do
   embed_templates "player_history_html/*"
 
   @doc """
-  The heading name: the player's own name as the most recent tournament
-  recorded it, or the FIDE id alone when nothing has matched yet.
+  The heading name: the FIDE list's, then the player's own name as the most
+  recent tournament recorded it, or the FIDE id alone when neither has it.
 
   Never a name manufactured from the id - if nothing published it, this page
   has nothing to call the player but the number in its own address.
   """
-  def heading(fide_id, []), do: "FIDE #{fide_id}"
-  def heading(_fide_id, [entry | _newest_first]), do: entry.player_name
+  def heading(_fide_id, %{name: name}, _entries) when is_binary(name), do: name
+  def heading(fide_id, _listed, []), do: "FIDE #{fide_id}"
+  def heading(_fide_id, _listed, [entry | _newest_first]), do: entry.player_name
+
+  @doc "The current ratings line, from the FIDE list's row: `[{label, value}]`, rated lists only."
+  def ratings(nil), do: []
+
+  def ratings(listed) do
+    [
+      {gettext("Standard"), listed[:standard_rating]},
+      {gettext("Rapid"), listed[:rapid_rating]},
+      {gettext("Blitz"), listed[:blitz_rating]}
+    ]
+    |> Enum.filter(fn {_label, value} -> is_integer(value) end)
+  end
 
   @doc "One entry's dates, reusing the same rendering the masthead uses."
   def dates(entry) do
@@ -39,4 +52,8 @@ defmodule OpenResultsWeb.PlayerHistoryHTML do
   end
 
   def placing(_no_rank), do: nil
+
+  @doc "A link to the page narrowed to one year, or to every year."
+  def year_path(fide_id, nil), do: ~p"/players/#{fide_id}"
+  def year_path(fide_id, year), do: ~p"/players/#{fide_id}?#{[year: year]}"
 end

@@ -1,20 +1,58 @@
 <header class="masthead">
   <h1>
-    {heading(@fide_id, @entries)}
+    {heading(@fide_id, @listed, @entries)}
     <span class="quiet">{gettext("FIDE %{id}", id: @fide_id)}</span>
   </h1>
-  <p class="details">
-    <span>{gettext("Every published tournament this site has for this FIDE id.")}</span>
+  <p class="details" id="player-header">
+    <span :if={@listed && @listed.title}>{@listed.title}</span>
+    <span :if={@listed && @listed.federation}>
+      <Flags.flag code={@listed.federation} />{@listed.federation}
+    </span>
+    <span :for={{label, value} <- ratings(@listed)} class="player-rating">
+      {label} <strong>{value}</strong>
+    </span>
+  </p>
+  <p :if={@listed} class="hub-note" id="player-ratings-note">
+    {gettext(
+      "Current ratings, from this site's copy of the FIDE rating list. Each tournament below shows the rating it was played at."
+    )}
+  </p>
+  <p :if={!@listed} class="hub-note" id="player-not-listed">
+    {gettext("This FIDE id is not on this site's copy of the FIDE rating list.")}
   </p>
 </header>
 
+<OpenResultsWeb.HubHTML.hub_nav />
+
 <section>
-  <p :if={@entries == []} class="empty">
+  <p class="details">
+    <span>{gettext("Every approved tournament published here that lists this FIDE id.")}</span>
+  </p>
+
+  <nav :if={@years != []} class="rounds" aria-label={gettext("Year")} id="player-years">
+    <a
+      href={year_path(@fide_id, nil)}
+      class={["chip", is_nil(@year) && "current"]}
+      aria-current={is_nil(@year) && "page"}
+    >
+      {gettext("All years")}
+    </a>
+    <a
+      :for={year <- @years}
+      href={year_path(@fide_id, year)}
+      class={["chip", @year == year && "current"]}
+      aria-current={@year == year && "page"}
+    >
+      {year}
+    </a>
+  </nav>
+
+  <p :if={@entries == []} class="empty" id="player-empty">
     {gettext("No published tournament lists this FIDE id yet.")}
   </p>
 
-  <ul :if={@entries != []} class="tournaments player-history">
-    <li :for={entry <- @entries}>
+  <ul :if={@entries != []} class="tournaments player-history" id="player-history">
+    <li :for={entry <- @entries} id={"history-" <> entry.slug}>
       <a :if={entry.linkable?} href={~p"/t/#{entry.slug}/player/#{entry.player_no}"}>
         {entry.name}
       </a>
@@ -23,8 +61,24 @@
       <span class="details">
         <span :if={entry.city}>{entry.city}</span>
         <span :if={dates(entry)}>{dates(entry)}</span>
+        <span :if={entry.rating}>{gettext("rated %{rating}", rating: entry.rating)}</span>
         <span :if={placing(entry)}>{placing(entry)}</span>
+        <span :if={entry.performance}>
+          {gettext("performance %{rating}", rating: entry.performance)}
+        </span>
       </span>
     </li>
   </ul>
+
+  <p class="hub-note" id="player-removal">
+    {raw(
+      gettext("Is this you, and would you rather it were not here? %{link}",
+        link:
+          TournamentHTML.anchor(
+            ~p"/terms" <> "#terms-player-pages",
+            gettext("Ask the operator to remove this page.")
+          )
+      )
+    )}
+  </p>
 </section>

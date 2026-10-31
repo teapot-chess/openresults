@@ -52,11 +52,15 @@ defmodule OpenResultsWeb.EventGroupTest do
     payload["tournament"]["slug"]
   end
 
+  # The front page shows live, upcoming and the last fortnight; the fixture is
+  # dated March 2026, so a front-page test publishes it moved to this week.
+  defp current!(payload), do: payload |> SnapshotPayloads.current() |> publish!()
+
   # Open | U20 | U12, each naming the other two.
-  defp festival! do
-    publish!(section("fest-open", "Open", 1, [{"fest-u20", "U20"}, {"fest-u12", "U12"}]))
-    publish!(section("fest-u20", "U20", 2, [{"fest-open", "Open"}, {"fest-u12", "U12"}]))
-    publish!(section("fest-u12", "U12", 3, [{"fest-open", "Open"}, {"fest-u20", "U20"}]))
+  defp festival!(publish \\ &publish!/1) do
+    publish.(section("fest-open", "Open", 1, [{"fest-u20", "U20"}, {"fest-u12", "U12"}]))
+    publish.(section("fest-u20", "U20", 2, [{"fest-open", "Open"}, {"fest-u12", "U12"}]))
+    publish.(section("fest-u12", "U12", 3, [{"fest-open", "Open"}, {"fest-u20", "U20"}]))
     :ok
   end
 
@@ -447,8 +451,8 @@ defmodule OpenResultsWeb.EventGroupTest do
 
   describe "the front page" do
     test "gathers an event's tournaments under its name", %{conn: conn} do
-      festival!()
-      alone = SnapshotPayloads.swiss() |> put_in(["tournament", "slug"], "alone") |> publish!()
+      festival!(&current!/1)
+      alone = SnapshotPayloads.swiss() |> put_in(["tournament", "slug"], "alone") |> current!()
 
       document = doc(conn, ~p"/")
 
@@ -469,8 +473,8 @@ defmodule OpenResultsWeb.EventGroupTest do
     end
 
     test "an event with one listed tournament is just that tournament", %{conn: conn} do
-      publish!(section("fest-open", "Open", 1, [{"fest-u20", "U20"}], listed: true))
-      publish!(section("fest-u20", "U20", 2, [{"fest-open", "Open"}], listed: false))
+      current!(section("fest-open", "Open", 1, [{"fest-u20", "U20"}], listed: true))
+      current!(section("fest-u20", "U20", 2, [{"fest-open", "Open"}], listed: false))
 
       document = doc(conn, ~p"/")
       assert count(document, "li.event-entry") == 0
@@ -480,7 +484,7 @@ defmodule OpenResultsWeb.EventGroupTest do
     end
 
     test "without events the page is what it was", %{conn: conn} do
-      slug = publish!(SnapshotPayloads.swiss())
+      slug = current!(SnapshotPayloads.swiss())
       document = doc(conn, ~p"/")
 
       assert count(document, "li.event-entry") == 0
