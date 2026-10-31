@@ -27,6 +27,8 @@ Each entry is tagged so a version can be skimmed:
 
 ## [Unreleased]
 
+- [Feature] **Games where people look for them.** A tournament with live boards now links each board on a round page, and each game on a player's card, to its live page and its PGN, instead of leaving the "Live boards" chip as the only door in a building with several windows. Under the standings and the cross-table there is also "Download all games": every published round in one PGN, with the same names, Elo, titles and FIDE IDs the single games carry, and nothing the arbiter withheld. The links appear on the arbiter's word alone, because these pages are cached per snapshot and a link that waited for a first move would not turn up until the next publish. A board nobody has reported yet opens a page that says so, which is at least candid.
+
 ## [0.30.0] - 2026-10-31
 
 - [Feature] **Standings, cross-table, pairings and player list as CSV.** Each list has a download link under it, and `/t/<slug>/standings.csv` and friends work for anyone who prefers typing. A file holds exactly what its page shows: a column the arbiter hides is not in it, a list the arbiter does not publish is a 404 rather than an empty spreadsheet, and the FIDE ID appears only where the player cards, which already print it, are published. Numbers use a decimal point in every language, because a CSV is read by programs and programs do not negotiate. A name somebody published as a spreadsheet formula arrives as text, which is a disappointment only to the person who tried it.

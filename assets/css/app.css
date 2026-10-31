@@ -7030,3 +7030,27 @@ button.lb-move:hover {
 .player-rating strong {
   font-variant-numeric: tabular-nums;
 }
+
+/* The "Game" and "PGN" links beside a result: there for whoever wants them,
+   quiet for everyone else, on their own line so the result column keeps its
+   width. */
+.game-links {
+  display: block;
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+
+.game-links .game-link {
+  color: var(--quiet);
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+
+.game-links .game-link + .game-link {
+  margin-left: 0.5rem;
+}
+
+.game-links .game-link:hover,
+.game-links .game-link:focus-visible {
+  color: inherit;
+}

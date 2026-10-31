@@ -175,6 +175,8 @@ defmodule OpenResultsWeb.Router do
     # the `live_session` all the same: `/live/:round/:board` would take
     # "pgn" for a board.
     get "/t/:slug/live/:round/pgn", LivePgnController, :round_pgn
+    # The whole tournament, the same way.
+    get "/t/:slug/games.pgn", LivePgnController, :all_pgn
 
     live_session :live_boards,
       root_layout: {OpenResultsWeb.Layouts, :live_root},

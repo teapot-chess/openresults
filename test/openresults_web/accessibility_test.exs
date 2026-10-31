@@ -37,6 +37,7 @@ defmodule OpenResultsWeb.AccessibilityTest do
     # A PGN file, not a document.
     "/t/:slug/live/:round/:board/pgn",
     "/t/:slug/live/:round/pgn",
+    "/t/:slug/games.pgn",
     # Files and feeds, not documents (results hub phase 2).
     "/t/:slug/standings.csv",
     "/t/:slug/crosstable.csv",
