@@ -1,0 +1,54 @@
+<header class="masthead">
+  <h1>{gettext("Tournaments A-Z")}</h1>
+  <p class="details">
+    <span>{gettext("Every tournament on the listings, by name.")}</span>
+  </p>
+</header>
+
+<.hub_nav current={:alphabetical} />
+<.search_form id="alphabetical-search" />
+
+<p :if={@letters == []} class="empty" id="alphabetical-empty">
+  {gettext("Nothing has been published yet.")}
+</p>
+
+<nav :if={@letters != []} class="rounds letters" aria-label={gettext("Letter")} id="letters">
+  <a
+    :for={letter <- @letters}
+    id={"letter-" <> letter_id(letter)}
+    href={letter_path(letter, 1)}
+    class={["chip", @letter == letter && "current"]}
+    aria-current={@letter == letter && "page"}
+  >
+    {String.upcase(letter)}
+  </a>
+</nav>
+
+<section :if={@letter} id="alphabetical" data-letter={@letter}>
+  <h2>{String.upcase(@letter)}</h2>
+  <ul class="tournaments" id="alphabetical-list">
+    <.entry_row :for={entry <- @list.entries} entry={entry} show_federation />
+  </ul>
+
+  <nav :if={@list.pages > 1} class="pager" aria-label={gettext("Pages")} id="alphabetical-pager">
+    <a
+      :if={@list.page > 1}
+      href={letter_path(@letter, @list.page - 1)}
+      rel="prev"
+      id="alphabetical-prev"
+    >
+      {gettext("Previous")}
+    </a>
+    <span class="quiet">
+      {gettext("Page %{page} of %{pages}", page: @list.page, pages: @list.pages)}
+    </span>
+    <a
+      :if={@list.page < @list.pages}
+      href={letter_path(@letter, @list.page + 1)}
+      rel="next"
+      id="alphabetical-next"
+    >
+      {gettext("Next")}
+    </a>
+  </nav>
+</section>

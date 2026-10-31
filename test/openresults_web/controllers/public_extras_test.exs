@@ -15,6 +15,18 @@ defmodule OpenResultsWeb.PublicExtrasTest do
     {:ok, swiss: swiss, slug: swiss["tournament"]["slug"]}
   end
 
+  # The sitemap index and every sitemap it points to, as one text.
+  defp whole_sitemap(conn) do
+    index = conn |> get("/sitemap.xml") |> response(200)
+
+    parts =
+      for [_, loc] <- Regex.scan(~r{<loc>([^<]+)</loc>}, index) do
+        build_conn() |> get(URI.parse(loc).path) |> response(200)
+      end
+
+    Enum.join([index | parts], "\n")
+  end
+
   defp publish(payload), do: {:ok, _snapshot} = Snapshots.ingest(payload)
 
   defp display(payload, key, value),
@@ -77,7 +89,7 @@ defmodule OpenResultsWeb.PublicExtrasTest do
 
   describe "the sitemap" do
     test "lists a listed tournament's pages and no player cards", %{conn: conn, slug: slug} do
-      body = conn |> get("/sitemap.xml") |> response(200)
+      body = whole_sitemap(conn)
 
       assert body =~ "/t/#{slug}</loc>"
       assert body =~ "/t/#{slug}/round/5</loc>"
@@ -91,7 +103,7 @@ defmodule OpenResultsWeb.PublicExtrasTest do
       |> put_in(["tournament", "listed"], false)
       |> publish()
 
-      body = conn |> get("/sitemap.xml") |> response(200)
+      body = whole_sitemap(conn)
       refute body =~ "unlisted-sitemap"
     end
   end

@@ -38,7 +38,15 @@ defmodule OpenResultsWeb.AccessibilityTest do
     "/t/:slug/live/:round/:board/pgn",
     "/t/:slug/live/:round/pgn",
     # Liveness JSON for a monitor - see `OpenResultsWeb.HealthControllerTest`.
-    "/healthz"
+    "/healthz",
+    # Files and feeds, not documents (results hub phase 2).
+    "/t/:slug/standings.csv",
+    "/t/:slug/crosstable.csv",
+    "/t/:slug/pairings.csv",
+    "/t/:slug/players.csv",
+    "/sitemaps/:part",
+    "/f/:code/feed.xml",
+    "/f/:code/calendar.ics"
   ]
 
   setup do
@@ -239,6 +247,12 @@ defmodule OpenResultsWeb.AccessibilityTest do
       "/federations" ->
         ["/federations", "/federations?lang=nl"]
 
+      "/tournaments" ->
+        ["/tournaments", "/tournaments?letter=x", "/tournaments?lang=nl"]
+
+      "/statistics" ->
+        ["/statistics", "/statistics?lang=fr", "/statistics?year=1900"]
+
       "/f/:code" ->
         ["/f/BEL", "/f/BEL?lang=fr", "/f/none", "/f/12345"]
 
@@ -388,11 +402,20 @@ defmodule OpenResultsWeb.AccessibilityTest do
                 do: assert(policy =~ directive, "#{path}: no #{directive} in #{policy}")
 
             for [attrs, body] <- Regex.scan(~r{<script([^>]*)>(.*?)</script>}s, html) do
-              if attrs =~ "src=" do
-                assert body == "", "#{path}: a script with both src and a body"
-              else
-                hash = "'sha256-" <> Base.encode64(:crypto.hash(:sha256, body)) <> "'"
-                assert policy =~ hash, "#{path}: an inline script the policy does not allow"
+              cond do
+                # A data block (the JSON-LD, `OpenResultsWeb.StructuredData`)
+                # is never run, so no policy applies; it must parse, and must
+                # not be able to end its own element.
+                attrs =~ ~s(type="application/ld+json") ->
+                  assert {:ok, %{}} = Jason.decode(body), "#{path}: JSON-LD that does not parse"
+                  refute body =~ "</", "#{path}: JSON-LD that could close its element"
+
+                attrs =~ "src=" ->
+                  assert body == "", "#{path}: a script with both src and a body"
+
+                true ->
+                  hash = "'sha256-" <> Base.encode64(:crypto.hash(:sha256, body)) <> "'"
+                  assert policy =~ hash, "#{path}: an inline script the policy does not allow"
               end
             end
 

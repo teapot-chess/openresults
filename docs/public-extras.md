@@ -1,4 +1,4 @@
-# Printing, feeds, embeds, the sitemap and the hall display
+# Printing, feeds, embeds, exports, the sitemap and the hall display
 
 None of these compute anything or read anything the pages do not already
 show. Each honours the arbiter's display switches the same way the pages do.
@@ -45,7 +45,10 @@ left out; one link back to the full page stays. Links open in the whole tab
 
 ## The sitemap - `/sitemap.xml`
 
-Every listed tournament (moderation-visible and listed by their arbiter):
+A sitemap index pointing to `/sitemaps/pages.xml` (the hub's own pages),
+`/sitemaps/tournaments-N.xml` (1,000 tournaments a file) and
+`/sitemaps/players-N.xml` (40,000 player pages a file), all built from the
+results index. Every listed tournament (moderation-visible and listed by their arbiter):
 standings, cross-table and each published round, as far as the arbiter
 publishes each. Also `/federations`, each federation's listing, and the player
 pages of players the FIDE list says are adults (see below). Player cards are
@@ -71,6 +74,37 @@ Players come from approved tournaments only.
 All of these read the results index (`OpenResults.ResultsIndex`), filled at
 ingest. After an upgrade, existing tournaments are indexed in the background
 on the first boot; `mix openresults.reindex [--force]` does it by hand.
+
+`/tournaments` lists the same tournaments by name, a letter at a time
+(`?letter=e`, `#` for names that do not start with a letter a-z once
+accents are folded). `/statistics` counts tournaments and player entries per federation and
+month for a year (`?year=2026`), counting only tournaments that show their
+dates.
+
+## Federation feed and calendar - `/f/<code>/feed.xml`, `/f/<code>/calendar.ics`
+
+Atom: one entry when an approved tournament of that federation first
+publishes here, one when it finishes. iCalendar: its approved upcoming and
+running tournaments as all-day events (no round times), leaving out those
+whose dates are hidden. Tournaments only - no player appears in either.
+Both are linked from the federation's listing and cached under its
+generation.
+
+## CSV exports - `/t/<slug>/standings.csv`, `crosstable.csv`, `pairings.csv`, `players.csv`
+
+Linked under the standings and the cross-table. Each file is its page in
+another shape: the same switch (a list the arbiter does not publish is a
+404), the same columns (a hidden column is absent), the FIDE ID only where
+player cards are published. UTF-8 with a byte order mark, comma separated,
+decimal points; a text cell starting with `=`, `+`, `-` or `@` gets a
+leading apostrophe. `noindex`, cached until the next publish.
+
+## Other editions, JSON-LD
+
+A tournament whose snapshot carries `tournament.series_id` shows its other
+editions under the standings (same id and same publisher only - see
+`docs/snapshot-schema.md`). Every tournament page carries a schema.org
+`SportsEvent` (name, dates, city, address - as far as shown; no players).
 
 ## Player pages - `/players/<FIDE ID>`
 

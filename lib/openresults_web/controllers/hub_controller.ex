@@ -74,7 +74,9 @@ defmodule OpenResultsWeb.HubController do
     archive = ResultsIndex.archive(code, today, year: year, page: page)
     label = OpenResultsWeb.HubHTML.federation_label(code)
 
-    render(conn, :federation,
+    conn
+    |> assign(:feed_path, OpenResultsWeb.HubHTML.federation_path(code) <> "/feed.xml")
+    |> render(:federation,
       page_title: gettext("%{federation} - tournaments", federation: label),
       page_description:
         gettext("Chess tournaments of %{federation} published on this site.", federation: label),
@@ -85,6 +87,87 @@ defmodule OpenResultsWeb.HubController do
       year: year,
       empty?: archive.total == 0 and is_nil(year) and Enum.all?(Map.values(groups), &(&1 == []))
     )
+  end
+
+  @doc """
+  `GET /tournaments` - every tournament the listings show, by name, one
+  letter at a time (`?letter=b`, `?page=2`). The letters are the names
+  folded the way search folds them, so "Émile" is under E; `#` holds the
+  rest.
+  """
+  def alphabetical(conn, params) do
+    today = Date.utc_today()
+    letters = ResultsIndex.letters(today)
+    letter = if params["letter"] in letters, do: params["letter"], else: List.first(letters)
+    page = page(params["page"])
+
+    canonical =
+      canonical_query(
+        letter: if(params["letter"] in letters, do: letter),
+        page: if(page > 1, do: Integer.to_string(page))
+      )
+
+    HubCache.serve(
+      conn,
+      :alphabetical,
+      {Generations.get(:all), today},
+      conn.query_string == canonical,
+      fn conn ->
+        render(conn, :alphabetical,
+          page_title: gettext("Tournaments A-Z"),
+          page_description: gettext("Every chess tournament published on this site, by name."),
+          letters: letters,
+          letter: letter,
+          list:
+            if(letter,
+              do: ResultsIndex.alphabetical(letter, today, page),
+              else: %{entries: [], page: 1, pages: 1, total: 0}
+            )
+        )
+      end
+    )
+  end
+
+  @doc """
+  `GET /statistics` - counting, and only counting: per federation, how many
+  tournaments started in each month of a year (`?year=2026`) and how many
+  player entries they had. See `ResultsIndex.statistics/2` for what is
+  counted.
+  """
+  def statistics(conn, params) do
+    today = Date.utc_today()
+    years = ResultsIndex.statistics_years(today)
+    year = if params["year"] in years, do: params["year"], else: List.first(years)
+    canonical = canonical_query(year: if(params["year"] in years, do: year))
+
+    HubCache.serve(
+      conn,
+      :statistics,
+      {Generations.get(:all), today},
+      conn.query_string == canonical,
+      fn conn ->
+        rows = if year, do: ResultsIndex.statistics(year, today), else: []
+
+        render(conn, :statistics,
+          page_title: gettext("Statistics"),
+          page_description:
+            gettext("How many tournaments were published here, by federation and month."),
+          years: years,
+          year: year,
+          rows: rows,
+          totals: totals(rows)
+        )
+      end
+    )
+  end
+
+  defp totals(rows) do
+    %{
+      months:
+        Map.new(1..12, fn m -> {m, rows |> Enum.map(&Map.get(&1.months, m, 0)) |> Enum.sum()} end),
+      tournaments: rows |> Enum.map(& &1.tournaments) |> Enum.sum(),
+      players: rows |> Enum.map(& &1.players) |> Enum.sum()
+    }
   end
 
   def search(conn, params) do

@@ -3813,4 +3813,69 @@ defmodule OpenResultsWeb.TournamentHTML do
 
   def bye_kind(kind) when is_binary(kind), do: kind
   def bye_kind(_absent), do: gettext("bye")
+
+  @doc """
+  The other editions of this tournament's series - the same event in other
+  years - as `OpenResults.ResultsIndex.editions/1` found them: same series,
+  same publisher, visible here. Nothing at all when there are none.
+  """
+  attr :editions, :list, default: []
+
+  def other_editions(assigns) do
+    ~H"""
+    <section :if={@editions != []} id="other-editions" class="other-editions">
+      <h2>{gettext("Other editions")}</h2>
+      <ul class="tournaments" id="other-editions-list">
+        <li :for={entry <- @editions} id={"edition-" <> entry.slug} class="hub-entry">
+          <a href={~p"/t/#{entry.slug}"}>{entry.name}</a>
+          <OpenResultsWeb.HubHTML.unapproved :if={entry.status == "pending"} />
+          <span class="details">
+            <span :if={entry.city}>{entry.city}</span>
+            <span :if={OpenResultsWeb.HubHTML.dates(entry)}>
+              {OpenResultsWeb.HubHTML.dates(entry)}
+            </span>
+          </span>
+        </li>
+      </ul>
+    </section>
+    """
+  end
+
+  @doc """
+  Links to the CSV exports (`OpenResultsWeb.ExportController`), each only
+  where its page is published - the same switches the controller enforces.
+  """
+  attr :payload, :map, required: true
+  attr :slug, :string, required: true
+
+  def export_links(assigns) do
+    payload = assigns.payload
+
+    links =
+      Enum.filter(
+        [
+          {Tournament.show?(payload, "standings"), "standings", gettext("Standings")},
+          {Tournament.crosstable?(payload), "crosstable", gettext("Cross-table")},
+          {Tournament.show?(payload, "pairings"), "pairings", gettext("Pairings")},
+          {Tournament.show?(payload, "standings"), "players", gettext("Player list")}
+        ],
+        &elem(&1, 0)
+      )
+
+    assigns = assign(assigns, :links, links)
+
+    ~H"""
+    <p :if={@links != []} class="footnote export-links" id="export-links">
+      <span>{gettext("Download as CSV:")}</span>
+      <a
+        :for={{_shown, kind, label} <- @links}
+        id={"export-" <> kind}
+        href={"/t/#{@slug}/#{kind}.csv"}
+        download
+      >
+        {label}
+      </a>
+    </p>
+    """
+  end
 end

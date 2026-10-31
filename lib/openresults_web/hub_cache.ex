@@ -39,10 +39,20 @@ defmodule OpenResultsWeb.HubCache do
   Answers from the cache when it can, and otherwise calls `render` (a
   function of the conn that returns a conn with the page) and keeps a 200
   for the next reader.
+
+  The last argument is the type the route serves - HTML unless said
+  otherwise (the federation feeds and the sitemap parts pass theirs). Only a
+  200 of that type is kept, and a hit is sent as that type.
   """
-  @spec serve(Plug.Conn.t(), term(), term(), boolean(), (Plug.Conn.t() -> Plug.Conn.t())) ::
-          Plug.Conn.t()
-  def serve(conn, slot, generation, cacheable?, render) do
+  @spec serve(
+          Plug.Conn.t(),
+          term(),
+          term(),
+          boolean(),
+          (Plug.Conn.t() -> Plug.Conn.t()),
+          String.t()
+        ) :: Plug.Conn.t()
+  def serve(conn, slot, generation, cacheable?, render, type \\ "text/html") do
     locale = conn.assigns[:locale] || OpenResultsWeb.Locale.default()
     notice = OpenResultsWeb.Plugs.PublicNotice.version(conn)
 
@@ -67,16 +77,16 @@ defmodule OpenResultsWeb.HubCache do
       gzip ->
         conn
         |> put_resp_header("content-encoding", "gzip")
-        |> put_resp_content_type("text/html")
+        |> Revalidate.put_served_type(type)
         |> send_resp(200, gzip)
         |> halt()
 
       body ->
-        conn |> put_resp_content_type("text/html") |> send_resp(200, body) |> halt()
+        conn |> Revalidate.put_served_type(type) |> send_resp(200, body) |> halt()
 
       cacheable? ->
         conn
-        |> register_before_send(&keep(&1, slot, generation, locale, etag))
+        |> register_before_send(&keep(&1, slot, generation, locale, etag, type))
         |> render.()
 
       true ->
@@ -84,8 +94,8 @@ defmodule OpenResultsWeb.HubCache do
     end
   end
 
-  defp keep(%{status: 200} = conn, slot, generation, locale, etag) do
-    if Enum.any?(get_resp_header(conn, "content-type"), &String.starts_with?(&1, "text/html")) do
+  defp keep(%{status: 200} = conn, slot, generation, locale, etag, type) do
+    if Enum.any?(get_resp_header(conn, "content-type"), &String.starts_with?(&1, type)) do
       body = IO.iodata_to_binary(conn.resp_body)
       Page.put(slot, generation, locale, etag, body)
 
@@ -96,7 +106,7 @@ defmodule OpenResultsWeb.HubCache do
     conn
   end
 
-  defp keep(conn, _slot, _generation, _locale, _etag), do: conn
+  defp keep(conn, _slot, _generation, _locale, _etag, _type), do: conn
 
   defp vary(conn) do
     case get_resp_header(conn, "vary") do

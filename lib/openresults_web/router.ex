@@ -124,6 +124,28 @@ defmodule OpenResultsWeb.Router do
     get "/t/:slug/board-prizes", TournamentController, :board_prizes
   end
 
+  # The CSV exports - a tournament's standings, cross-table, pairings and
+  # player list as files. Behind `Visibility` and `Revalidate` like the pages
+  # they copy (an ETag on the snapshot id, the file kept in the page cache
+  # until the next publish), but off `:browser`, whose `accepts ["html"]`
+  # would answer a client asking for `text/csv` with a 406.
+  # `CsvDownload` goes between the two, so a cached answer still carries
+  # its file name and its `noindex`. See `OpenResultsWeb.ExportController`.
+  scope "/", OpenResultsWeb do
+    pipe_through [
+      OpenResultsWeb.Plugs.Locale,
+      OpenResultsWeb.Plugs.PublicNotice,
+      OpenResultsWeb.Plugs.Visibility,
+      OpenResultsWeb.Plugs.CsvDownload,
+      OpenResultsWeb.Plugs.Revalidate
+    ]
+
+    get "/t/:slug/standings.csv", ExportController, :standings
+    get "/t/:slug/crosstable.csv", ExportController, :crosstable
+    get "/t/:slug/pairings.csv", ExportController, :pairings
+    get "/t/:slug/players.csv", ExportController, :players
+  end
+
   # The event stream every open page of a tournament listens on, so a
   # publish reaches it within a second instead of at its next poll - see
   # `OpenResultsWeb.EventsController`. Outside `:browser`, which accepts only
@@ -213,6 +235,11 @@ defmodule OpenResultsWeb.Router do
     get "/f/:code", HubController, :federation
     get "/search", HubController, :search
 
+    # Phase 2 of the hub: every tournament by name, and a page of counts.
+    # Cached like the listings, under the index's `:all` generation.
+    get "/tournaments", HubController, :alphabetical
+    get "/statistics", HubController, :statistics
+
     # An event: the tournaments that are sections of it, as cards. `:id` is
     # the random id the arbiter's app minted for the group, not a slug - so
     # `Visibility` and `Revalidate` have nothing to key on, and the page is
@@ -292,6 +319,16 @@ defmodule OpenResultsWeb.Router do
 
     get "/t/:slug/feed.xml", FeedController, :show
     get "/sitemap.xml", SitemapController, :show
+
+    # The parts the sitemap index at `/sitemap.xml` points to (`pages.xml`,
+    # `tournaments-N.xml`, `players-N.xml`), and a federation's Atom feed
+    # and calendar of upcoming tournaments. No slug, so `Visibility` does
+    # nothing here; each reads only the results index, which applied the
+    # display rules when it copied the fields. See
+    # `OpenResultsWeb.SitemapController` and `OpenResultsWeb.HubFeedController`.
+    get "/sitemaps/:part", SitemapController, :part
+    get "/f/:code/feed.xml", HubFeedController, :atom
+    get "/f/:code/calendar.ics", HubFeedController, :calendar
   end
 
   # Public publishing, the open half: an OpenPairings installation asking for
