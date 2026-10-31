@@ -21,8 +21,8 @@ SQL.Query: SQL injection,lib/openresults/fide_list/store.ex:222,649A096
 SQL.Query: SQL injection,lib/openresults/fide_list/store.ex:232,20E42AC
 SQL.Query: SQL injection,lib/openresults/fide_list/store.ex:312,2122D73
 SQL.Query: SQL injection,lib/openresults/fide_list/store.ex:330,1043705
-SQL.Query: SQL injection,lib/openresults/results_index.ex:193,283CEF3
-SQL.Query: SQL injection,lib/openresults/results_index.ex:226,78485F9
+SQL.Query: SQL injection,lib/openresults/results_index.ex:203,25CC27D
+SQL.Query: SQL injection,lib/openresults/results_index.ex:236,3466114
 Traversal.FileModule: Directory Traversal in `File.mkdir_p!`,lib/openresults/fide_list/repo.ex:36,7430AD8
 Traversal.FileModule: Directory Traversal in `File.mkdir_p!`,lib/openresults/fide_list/source.ex:138,33A2B24
 Traversal.FileModule: Directory Traversal in `File.mkdir_p`,lib/openresults/backup.ex:90,13529B
@@ -68,9 +68,9 @@ XSS.Raw: XSS,lib/openresults_web/controllers/tournament_html.ex:3447,4D64A2D
 XSS.Raw: XSS,lib/openresults_web/controllers/tournament_html/player.html.heex:104,31DE7E6
 XSS.Raw: XSS,lib/openresults_web/inline_scripts.ex:40,747FDFD
 XSS.SendResp: XSS in `send_resp`,lib/openresults_web/controllers/feed_controller.ex:58,277C1E7
-XSS.SendResp: XSS in `send_resp`,lib/openresults_web/controllers/sitemap_controller.ex:39,9EAAA7
-XSS.SendResp: XSS in `send_resp`,lib/openresults_web/controllers/sitemap_controller.ex:52,6E950A0
-XSS.SendResp: XSS in `send_resp`,lib/openresults_web/hub_cache.ex:71,6ACD7DA
-XSS.SendResp: XSS in `send_resp`,lib/openresults_web/hub_cache.ex:75,57D3F53
+XSS.SendResp: XSS in `send_resp`,lib/openresults_web/controllers/hub_feed_controller.ex:50,573DD84
+XSS.SendResp: XSS in `send_resp`,lib/openresults_web/controllers/sitemap_controller.ex:177,152639
+XSS.SendResp: XSS in `send_resp`,lib/openresults_web/hub_cache.ex:81,7D28A2C
+XSS.SendResp: XSS in `send_resp`,lib/openresults_web/hub_cache.ex:85,4ED7569
 XSS.SendResp: XSS in `send_resp`,lib/openresults_web/plugs/revalidate.ex:196,29D3D60
 XSS.SendResp: XSS in `send_resp`,lib/openresults_web/plugs/revalidate.ex:206,48A155E

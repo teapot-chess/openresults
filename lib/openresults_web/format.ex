@@ -161,6 +161,9 @@ defmodule OpenResultsWeb.Format do
   # function above exists to allow - gets that locale's month name even
   # from a process rendering some other page, and its own locale back
   # afterwards.
+  @doc "A month's name, 1-12, in the current language - the statistics page's headings."
+  def month_name(month) when month in 1..12, do: month_name(month, current_locale())
+
   defp month_name(month, locale) do
     Gettext.with_locale(OpenResultsWeb.Gettext, locale, fn -> month(month) end)
   end

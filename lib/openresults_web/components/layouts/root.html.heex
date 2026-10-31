@@ -41,6 +41,14 @@
       href={assigns[:feed_path]}
       title={assigns[:page_title]}
     />
+    <%!-- The tournament as a schema.org SportsEvent, for search engines -
+          see `OpenResultsWeb.StructuredData`: a data block, never run, and
+          nothing in it about players. --%>
+    <%= if assigns[:json_ld] do %>
+      <script type="application/ld+json">
+        <%= assigns[:json_ld] %>
+      </script>
+    <% end %>
     <%!-- An embed is a window onto this site, not a copy of it: a link
           followed inside a club's iframe opens the page in the club's whole
           tab rather than stacking this site's chrome inside theirs. A target

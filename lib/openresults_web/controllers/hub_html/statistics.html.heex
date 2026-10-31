@@ -1,0 +1,70 @@
+<header class="masthead">
+  <h1>{gettext("Statistics")}</h1>
+  <p class="details">
+    <span>{gettext(
+      "Tournaments published here, counted by federation and by the month they started."
+    )}</span>
+  </p>
+</header>
+
+<.hub_nav current={:statistics} />
+
+<p :if={@years == []} class="empty" id="statistics-empty">
+  {gettext("Nothing has been published yet.")}
+</p>
+
+<nav :if={length(@years) > 1} class="rounds" aria-label={gettext("Year")} id="statistics-years">
+  <a
+    :for={year <- @years}
+    href={~p"/statistics?#{[year: year]}"}
+    class={["chip", @year == year && "current"]}
+    aria-current={@year == year && "page"}
+  >
+    {year}
+  </a>
+</nav>
+
+<section :if={@year} id="statistics" data-year={@year}>
+  <h2>{@year}</h2>
+  <div class="scroller">
+    <table class="standings statistics" id="statistics-table">
+      <caption class="visually-hidden">
+        {gettext("Tournaments per federation and month, %{year}", year: @year)}
+      </caption>
+      <thead>
+        <tr>
+          <th scope="col">{gettext("Federation")}</th>
+          <th :for={month <- 1..12} class="num" scope="col">
+            <abbr title={OpenResultsWeb.Format.month_name(month)}>{month}</abbr>
+          </th>
+          <th class="num" scope="col">{gettext("Tournaments")}</th>
+          <th class="num" scope="col">{gettext("Players")}</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr :for={row <- @rows} id={"stats-" <> (row.federation || "none")}>
+          <th scope="row" class="row-head">
+            <a href={federation_path(row.federation)}>{federation_label(row.federation)}</a>
+          </th>
+          <td :for={month <- 1..12} class="num">{Map.get(row.months, month, 0)}</td>
+          <td class="num strong">{row.tournaments}</td>
+          <td class="num">{row.players}</td>
+        </tr>
+      </tbody>
+      <tfoot>
+        <tr id="stats-total">
+          <th scope="row">{gettext("Total")}</th>
+          <td :for={month <- 1..12} class="num">{Map.get(@totals.months, month, 0)}</td>
+          <td class="num strong">{@totals.tournaments}</td>
+          <td class="num">{@totals.players}</td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+
+  <p class="hub-note">
+    {gettext(
+      "Only tournaments that show their dates are counted, by the month they started. Players are entries: somebody who played three tournaments counts three times."
+    )}
+  </p>
+</section>

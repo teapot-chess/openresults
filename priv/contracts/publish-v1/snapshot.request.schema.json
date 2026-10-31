@@ -156,6 +156,11 @@
             "presence": { "type": ["number", "null"] }
           }
         },
+        "series_id": {
+          "description": "The series this tournament is one edition of - the same event in other years. A random id the arbiter's app mints; absent means no series. Not a section grouping: that is `group`.",
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]{6,64}$"
+        },
         "group": {
           "description": "The event this tournament is one section of. A block not of this shape is read as absent, whole.",
           "type": "object",

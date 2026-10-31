@@ -21,6 +21,7 @@ defmodule OpenResultsWeb.TournamentController do
   alias OpenResultsWeb.FilterParams
   alias OpenResultsWeb.HubCache
   alias OpenResultsWeb.Meta
+  alias OpenResultsWeb.StructuredData
   alias OpenResultsWeb.Tournament
 
   @doc """
@@ -114,6 +115,7 @@ defmodule OpenResultsWeb.TournamentController do
       page_description: Meta.standings(payload),
       payload: payload,
       slug: slug,
+      editions: ResultsIndex.editions(slug),
       current: :standings,
       filters: filters
     )
@@ -453,6 +455,12 @@ defmodule OpenResultsWeb.TournamentController do
         conn
         |> assign(:report_path, ~p"/t/#{slug}/report")
         |> assign(:feed_path, ~p"/t/#{slug}/feed.xml")
+        |> assign(
+          :json_ld,
+          StructuredData.encode(
+            StructuredData.sports_event(snapshot.payload, url(~p"/t/#{slug}"))
+          )
+        )
         |> render_fun.(snapshot.payload)
     end
   end

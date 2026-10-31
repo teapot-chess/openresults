@@ -30,6 +30,18 @@ defmodule OpenResultsWeb.ResultsHubTest do
     payload["tournament"]["slug"]
   end
 
+  # The sitemap index and every sitemap it points to, as one text.
+  defp whole_sitemap(conn) do
+    index = conn |> get("/sitemap.xml") |> response(200)
+
+    parts =
+      for [_, loc] <- Regex.scan(~r{<loc>([^<]+)</loc>}, index) do
+        build_conn() |> get(URI.parse(loc).path) |> response(200)
+      end
+
+    Enum.join([index | parts], "\n")
+  end
+
   defp tournament(slug, opts \\ []) do
     today = Date.utc_today()
     start = Date.add(today, Keyword.get(opts, :starts_in, -1))
@@ -244,7 +256,7 @@ defmodule OpenResultsWeb.ResultsHubTest do
     end
 
     test "is in the sitemap only for an adult", %{conn: conn} do
-      xml = conn |> get("/sitemap.xml") |> response(200)
+      xml = whole_sitemap(conn)
       assert xml =~ "/players/901001"
       refute xml =~ "/players/901005"
     end

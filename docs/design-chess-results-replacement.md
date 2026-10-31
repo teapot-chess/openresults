@@ -18,6 +18,31 @@ Status: proposal, 2026-10-31. **Phase 1 is built** (branch
 - A stale shell is a tournament with no published round whose start date is
   more than 30 days ago.
 
+**Phase 2 is built** (branch `results-hub-phase2`, with OpenPairings'
+`results-series`), **without national ids**: the maintainer's decision is
+that only the FIDE id is public, so there is no `players[].national_id`,
+no national-id page and no alias table (gap #4 and section 2's rule 3 are
+dropped, not postponed). Built, and where it departs from the text below:
+
+- CSV exports at `/t/:slug/{standings,crosstable,pairings,players}.csv`,
+  each behind its page's switch and holding only that page's columns
+  (`OpenResultsWeb.Export`); cached like the pages (ETag on the snapshot id,
+  body in the page cache), `noindex`. The FIDE id is in the player list
+  only where the player cards are published.
+- Series: additive `tournament.series_id` (publish-v1, both copies). The
+  "other editions" block lists same-id, same-publisher, visible, listed
+  editions; their pages are touched like event siblings on any change.
+- `/f/:code/feed.xml` and `/f/:code/calendar.ics`: approved tournaments
+  only (a pending one's "unapproved" mark would not travel into somebody's
+  calendar), tournaments never players, no event for hidden dates.
+- JSON-LD `SportsEvent` on every tournament page: name, dates, city, url.
+- The sitemap is always an index (not only past 50,000 URLs), built from
+  the results index; the tournament URLs no longer come from the
+  tournaments table and decoded snapshots.
+- `/tournaments` (A-Z, by the folded name) and `/statistics` (tournaments
+  and player entries per federation and month; tournaments that hide
+  their dates are not counted by month). Counts by title were not built.
+
 The original proposal follows unchanged. Guesses are marked
 **(guess)**; everything else was read from this repo, OpenPairings, or
 chess-results.com itself (read-only).
