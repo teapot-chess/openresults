@@ -40,7 +40,7 @@ defmodule OpenResultsWeb.Hall do
   alias OpenResultsWeb.Flags
   alias OpenResultsWeb.Tournament
 
-  @boards_per_page 12
+  @boards_per_page 10
   @names_per_page 28
   @standings_per_page 12
   @latest_results 12

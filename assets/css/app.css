@@ -2699,6 +2699,15 @@ a.xt-opp:hover {
   width: 14%;
 }
 
+/* Pairings and results only. A board row carries two players with title,
+   federation and rating where a name row carries one, so at the shared size
+   it read as fine print from the back of the hall. A quarter larger, and two
+   boards fewer per page (`@boards_per_page`) so the rows still fit. */
+.hall-boards tbody,
+.hall-matches tbody {
+  font-size: 1.25em;
+}
+
 .hall-board {
   font-weight: 800;
 }
